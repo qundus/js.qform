@@ -1,0 +1,54 @@
+{
+	"name": "@qundus/qform",
+	"version": "0.0.1",
+	"description": "The only form library you'll ever need :)",
+	"keywords": [
+		"forms",
+		"html-forms",
+		"svelte",
+		"solidjs",
+		"solid",
+		"react",
+		"preact",
+		"vuejs",
+		"vue",
+		"vanilla",
+		"vanilla-forms"
+	],
+	"license": "GPL-3.0-only",
+	"author": {
+		"name": "qundus"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/qundus/js.qform.git"
+	},
+	"homepage": "https://github.com/qundus/js.qform#readme",
+	"main": "./dist/index.js",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.ts",
+	"files": ["dist/"],
+	"scripts": {
+		"build": "unbuild",
+		"build:skipcache": "unbuild --skip-nx-cache",
+		"publish": "bun publish --access=public --no-git-checks"
+	},
+	"devDependencies": {
+		"@types/node": "^20.10.6",
+		"typescript": "^5.3.3"
+	},
+	"dependencies": {
+		"unbuild": "^2.0.0",
+		"@qundus/qstate": "^0.0.2"
+	},
+	"exports": {
+		".": {
+			"require": "./dist/index.js",
+			"import": "./dist/index.mjs",
+			"types": "./dist/index.d.ts"
+		},
+		"./types": {
+			"types": "./dist/_model.d.ts"
+		}
+	}
+}

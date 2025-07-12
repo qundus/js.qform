@@ -1,0 +1,88 @@
+import type {
+	ElementDomType,
+	ElementKeysType,
+	ElementProps,
+	ElementReturns,
+	Field,
+	FieldState,
+} from "../_model";
+import onBlur from "../interactions/on-blur";
+import onValue from "../interactions/on-value";
+import makeBaseElement, { type Returns as BaseReturns } from "./element-base";
+
+//
+type OnInput = (event: Event) => void;
+export type Returns<T extends ElementDomType> = ElementReturns<
+	T,
+	{
+		type: string;
+		name: string;
+		value: any;
+	},
+	BaseReturns<"dom"> & {
+		oninput: OnInput;
+	},
+	BaseReturns<"vdom"> & {
+		onInput: OnInput;
+	}
+>;
+export default function makeInputElement<F extends Field>(props: ElementProps<F>) {
+	const { key, field, $state, options } = props;
+	const key_str = String(key);
+	const baseEl = makeBaseElement(props);
+	return <D extends ElementDomType, K extends ElementKeysType>(
+		dType: D,
+		kType: K,
+		reactive: FieldState<Field>["value"] | (() => FieldState<Field>["value"]),
+	) => {
+		const data = typeof reactive === "function" ? reactive() : reactive;
+		let result = {} as any;
+		if (kType !== "special") {
+			result = baseEl(dType, kType, data);
+		}
+		if (kType !== "base") {
+			result = {
+				...result,
+				type: data.condition.hidden ? "hidden" : field.type,
+				name: key_str,
+				// defaultValue: data?.value,
+				// checked: false,
+			};
+			const addValue = field.type !== "checkbox" && field.type !== "radio" && field.type !== "file";
+			if (addValue) {
+				result.value = data?.value;
+			}
+			if (field.validateOn === "input") {
+				const id = dType !== "vdom" ? "oninput" : "onInput";
+				result[id] = (event: Event) => {
+					event.preventDefault();
+					$state.update((next) => {
+						onValue({ ...props, $next: next, event, value: null });
+						return next;
+					});
+				};
+			}
+			if (field.validateOn === "change") {
+				const id = dType !== "vdom" ? "onchange" : "onChange";
+				result[id] = (event: Event) => {
+					event.preventDefault();
+					$state.update((next) => {
+						onValue({ ...props, $next: next, event, value: null });
+						return next;
+					});
+				};
+			}
+		}
+
+		// check user process
+		const processProps = { key, isVdom: dType === "vdom", kType, value: data, element: result };
+		if (options.processElementOrder === "before") {
+			options?.processElement?.(processProps);
+		}
+		field.processElement?.(processProps);
+		if (options.processElementOrder === "after") {
+			options?.processElement?.(processProps);
+		}
+		return result as Returns<D>;
+	};
+}

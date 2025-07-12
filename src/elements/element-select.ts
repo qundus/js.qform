@@ -1,0 +1,78 @@
+import type {
+	ElementDomType,
+	ElementKeysType,
+	ElementProps,
+	ElementReturns,
+	Field,
+	FieldState,
+} from "../_model";
+import onValue from "../interactions/on-value";
+import makeBaseElement, { type Returns as BaseReturns } from "./element-base";
+//
+type OnInput = (event: Event) => void;
+export type Returns<T extends ElementDomType> = ElementReturns<
+	T,
+	{
+		name: string;
+		value: any;
+	},
+	BaseReturns<"dom"> & {
+		oninput: OnInput;
+	},
+	BaseReturns<"vdom"> & {
+		onInput: OnInput;
+	}
+>;
+export default function makeSelectElement<F extends Field>(props: ElementProps<F>) {
+	const { key, field, $state, options } = props;
+	const key_str = String(key);
+	const baseEl = makeBaseElement(props);
+	return <D extends ElementDomType, K extends ElementKeysType>(
+		dType: D,
+		kType: K,
+		reactive: FieldState<Field>["value"] | (() => FieldState<Field>["value"]),
+	) => {
+		const data = typeof reactive === "function" ? reactive() : reactive;
+		let result = {} as any;
+		if (kType !== "special") {
+			result = baseEl(dType, kType, data);
+		}
+		if (kType !== "base") {
+			result = {
+				...result,
+				name: key_str,
+				value: data?.value,
+				multiple: field.multiple ?? false,
+			};
+			if (field.validateOn === "input") {
+				const id = dType ? "oninput" : "onInput";
+				result[id] = (event: Event) => {
+					$state.update(($next) => {
+						onValue({ ...props, $next, event, value: null });
+						return $next;
+					});
+				};
+			}
+			if (field.validateOn === "change") {
+				const id = dType ? "onchange" : "onChange";
+				result[id] = (event: Event) => {
+					$state.update((next) => {
+						onValue({ ...props, $next: next, event, value: null });
+						return next;
+					});
+				};
+			}
+		}
+
+		// check user process
+		const processProps = { key, isVdom: dType === "vdom", kType, value: data, element: result };
+		if (options.processElementOrder === "before") {
+			options?.processElement?.(processProps);
+		}
+		field.processElement?.(processProps);
+		if (options.processElementOrder === "after") {
+			options?.processElement?.(processProps);
+		}
+		return result as Returns<D>;
+	};
+}
