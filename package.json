@@ -39,7 +39,7 @@
 	},
 	"dependencies": {
 		"unbuild": "^2.0.0",
-		"@qundus/qstate": "^0.0.2"
+		"@qundus/qstate": "^0.0.3"
 	},
 	"exports": {
 		".": {
