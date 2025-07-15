@@ -1,4 +1,4 @@
-import type { Basics, Fields, Options } from "../_model";
+import type { Basics, Fields, Options, State } from "../_model";
 // checks
 import checkBasics from "../checks/check-basics";
 import checkOptions from "../checks/check-options";
@@ -11,20 +11,31 @@ import prepareAtoms from "../preparations/atoms";
 import prepareFields from "../preparations/fields";
 import prepareState from "../preparations/state";
 
-export default function createForm<B extends Basics, F extends Fields<B> = Fields<B>>(
+export type CreateForm<B extends Basics, F extends Fields<B>> = ReturnType<
+	typeof prepareAtoms<F>
+> & {
+	actions: ReturnType<typeof formActions<F>>;
+	button: ReturnType<typeof formButton<F>>;
+	placeholders: typeof PLACEHOLDERS;
+	get keys(): () => (keyof F)[];
+	$hooks: State<F>["hooks"];
+	$subscribe: State<F>["subscribe"];
+	$listen: State<F>["listen"];
+}
+export default function createForm<B extends Basics, F extends Fields<B>>(
 	basics: B,
 	_options?: Options<F>,
-) {
+): CreateForm<B, F> {
 	checkBasics(basics);
-	const options = checkOptions(_options);
+	const options = checkOptions<F>(_options);
 	// necessary preparations
-	const { fields, state_init } = prepareFields({ basics, options });
-	const { $state } = prepareState({ fields, state_init, options });
-	const { atoms, elements } = prepareAtoms({ fields, options, $state });
+	const { fields, state_init } = prepareFields<B, F>({ basics, options });
+	const $state = prepareState<F>({ fields, state_init, options });
+	const { atoms, elements } = prepareAtoms<F>({ fields, options, $state });
 
 	// plugins
-	const actions = formActions({ fields, options, $state });
-	const button = formButton({ fields, options, $state });
+	const actions = formActions<F>({ fields, options, $state });
+	const button = formButton<F>({ fields, options, $state });
 
 	// other helpers
 	let keys = null as (keyof F)[];

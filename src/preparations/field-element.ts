@@ -1,5 +1,4 @@
 import type { ElementDomType, ElementKeysType, ElementProps, Field, FieldState } from "../_model";
-// import makeBaseElement from "../elements/element-base";
 import makeInputElement from "../elements/element-input";
 import makeSelectElement from "../elements/element-select";
 
@@ -24,9 +23,9 @@ export default function getFormElements<F extends Field>(props: Props<F> & Eleme
 	const { derived, key, field, $state, options } = props;
 	// const baseEl = makeBaseElement({ field, key, $state, options });
 	const element =
-		"select" === field.type
-			? makeSelectElement({ field, key, $state, options })
-			: makeInputElement({ field, key, $state, options });
+	"select" === field.type
+		? makeSelectElement<F>({ field, key, $state, options })
+		: makeInputElement<F>({ field, key, $state, options });
 
 	return {
 		get dom() {
@@ -43,7 +42,7 @@ export default function getFormElements<F extends Field>(props: Props<F> & Eleme
 			return <D extends ElementDomType, K extends ElementKeysType>(
 				props?: ElementCustomProps<D, K>,
 			) => {
-				const data = derived.hooks.useSolid();
+				const data = derived.hooks.solid();
 				const [dType, kType] = getElementCustomProps("dom", props);
 				return element(dType, kType, data);
 			};
@@ -53,14 +52,20 @@ export default function getFormElements<F extends Field>(props: Props<F> & Eleme
 			return <D extends ElementDomType, K extends ElementKeysType>(
 				props?: ElementCustomProps<D, K>,
 			) => {
-				const data = derived.hooks.usePreact();
+				const data = derived.hooks.preact();
 				const [dType, kType] = getElementCustomProps("vdom", props);
 				return element(dType, kType, data);
 			};
 		},
 		// react
 		get react() {
-			return this.preact;
+			return <D extends ElementDomType, K extends ElementKeysType>(
+				props?: ElementCustomProps<D, K>,
+			) => {
+				const data = derived.hooks.react();
+				const [dType, kType] = getElementCustomProps("vdom", props);
+				return element(dType, kType, data);
+			};
 		},
 		get svelte() {
 			const data = derived.get();

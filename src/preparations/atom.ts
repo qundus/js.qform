@@ -1,26 +1,43 @@
-import type { ElementProps, Field, FieldCondition, FieldOptions, FieldValidate } from "../_model";
+import type { ElementProps, Field, FieldCondition, FieldState, FieldValidate } from "../_model";
 import { PLACEHOLDERS } from "../const";
 import onValue from "../interactions/on-value";
 import mergeConditions from "../methods/merge-conditions";
 import prepareFieldElement from "../preparations/field-element";
 import prepareFieldState from "../preparations/field-state";
 
-export default function prepareAtom<F extends Field>(props: ElementProps<F>) {
+export type PreparedAtom<F extends Field> = {
+	$listen: FieldState<F>["listen"];
+	$subscribe: FieldState<F>["subscribe"];
+	$hooks: FieldState<F>["hooks"];
+	key: string;
+	type: F["type"];
+	label: string;
+	getOptions?: F["options"];
+	get element(): ReturnType<typeof prepareFieldElement<F>>;
+	placeholders: typeof PLACEHOLDERS;
+	get addValidation(): (func: FieldValidate) => (() => void) | null;
+	updateValue: (
+		value: F["value"] | ((prev: F["value"]) => void),
+		configs?: { preprocessValue?: boolean },
+	) => void;
+	clearValue: () => void;
+	updateCondition: (
+		value: Partial<FieldCondition> | ((prev: Partial<FieldCondition>) => Partial<FieldCondition>),
+	) => void;
+};
+export default function prepareAtom<F extends Field>(props: ElementProps<F>): PreparedAtom<F> {
 	const { key, field, $state } = props;
-	const { derived } = prepareFieldState(props);
-	// F["options"] extends never
-	// 	? never
-	// 	: F["options"] extends any[]
-	// 		? Extract<F["options"], any[]>
-	// 		: Extract<F["options"], Function>
+	const derived = prepareFieldState<F>(props);
 	return {
 		// field,
 		key,
 		type: field.type,
 		label: field.label,
-		$state: derived,
+		$hooks: derived.hooks,
+		$subscribe: derived.subscribe,
+		$listen: derived.listen,
 		get element() {
-			return prepareFieldElement({ ...props, derived });
+			return prepareFieldElement<F>({ ...props, derived });
 		},
 		get placeholders() {
 			return PLACEHOLDERS;
@@ -53,10 +70,7 @@ export default function prepareAtom<F extends Field>(props: ElementProps<F>) {
 				};
 			};
 		},
-		updateValue: (
-			value: F["value"] | ((prev: F["value"]) => void),
-			configs?: { preprocessValue?: boolean },
-		) => {
+		updateValue: (value, configs) => {
 			const prev = $state.get().values[key];
 			const current = typeof value === "function" ? (value as any)(prev) : value;
 			$state.update((next) => {
@@ -70,9 +84,7 @@ export default function prepareAtom<F extends Field>(props: ElementProps<F>) {
 				return next;
 			});
 		},
-		updateCondition: (
-			value: Partial<FieldCondition> | ((prev: Partial<FieldCondition>) => Partial<FieldCondition>),
-		) => {
+		updateCondition: (value) => {
 			const prev = $state.get().values[key];
 			const newCondition = typeof value === "function" ? (value as any)(prev) : value;
 			$state.update(($next) => {

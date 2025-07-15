@@ -2,7 +2,8 @@ import type { ElementProps, Field, FieldState } from "../_model";
 
 // TODO: atom state may become inconsistent with onchange function
 // find another way to do it!
-export default function prepareFieldState<F extends Field>(props: ElementProps<F>) {
+export type PrepareFieldState<F extends Field> = FieldState<F>;
+export default function prepareFieldState<F extends Field>(props: ElementProps<F>): FieldState<F> {
 	const { key, field, $state, options } = props;
 	const derived = $state.derive((state) => {
 		const value = {
@@ -10,7 +11,7 @@ export default function prepareFieldState<F extends Field>(props: ElementProps<F
 			condition: state.conditions?.[key],
 			errors: state.errors?.[key],
 			extras: state.extras?.[key], //as FieldExtras<F["type"]>,
-		} as FieldState<F>["value"];
+		};
 		if (field.onChange != null && typeof field.onChange === "function") {
 			field.onChange({
 				$value: value,
@@ -25,7 +26,5 @@ export default function prepareFieldState<F extends Field>(props: ElementProps<F
 		return value;
 	});
 
-	return {
-		derived,
-	};
+	return derived as PrepareFieldState<F>;
 }

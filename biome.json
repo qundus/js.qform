@@ -1,0 +1,73 @@
+{
+	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"vcs": {
+		"enabled": false,
+		"clientKind": "git",
+		"useIgnoreFile": false
+	},
+	"files": {
+		"ignoreUnknown": false,
+		"includes": ["src"]
+	},
+	"assist": { "actions": { "source": { "organizeImports": "on" } } },
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"useEditorconfig": false,
+		"formatWithErrors": false,
+		"indentWidth": 2,
+		"lineWidth": 100,
+		"attributePosition": "multiline",
+		"bracketSpacing": true,
+		"includes": ["src"]
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"suspicious": {
+				"noConfusingVoidType": "off",
+				"noExplicitAny": "info"
+			},
+			"a11y": {
+				"useButtonType": "off",
+				"noLabelWithoutControl": "off"
+			},
+			"style": {
+				"useTemplate": "off"
+			},
+			"complexity": {
+				"useOptionalChain": "off",
+				"noBannedTypes": "off"
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	},
+	"overrides": [
+		{
+			"includes": ["setup/**/*.ts", "setup/**/*.mts", "setup/**/*.tsx"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noParameterAssign": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["**/*.solid.ts", "**/*.solid.tsx", "**/solid/**/*.ts", "**/solid/**/*.tsx"],
+			"linter": {
+				"enabled": true,
+				"rules": {
+					"correctness": {
+						"useJsxKeyInIterable": "off"
+					}
+				}
+			}
+		}
+	]
+}

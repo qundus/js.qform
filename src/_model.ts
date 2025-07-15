@@ -1,4 +1,4 @@
-import type { _STATE } from ":setup/state";
+import type { _QSTATE } from "@qundus/qstate";
 import type { default as formButton } from "./plugins/form-button";
 import type { default as prepareAtom } from "./preparations/atom";
 import type createProcessors from "./processors";
@@ -136,8 +136,8 @@ export type FieldValidateOn = "input" | "change";
 export type FieldOptions =
 	// | { label: string; value: string }[]
 	(<G>(props?: G) => { label: string; value: string }[]) | null | undefined;
-export type FieldState<F extends Field> = _STATE.Derived<{
-	value: F["value"] | null;
+export type FieldState<F extends Field> = _QSTATE.Derived<{
+	value: F["value"] | null | undefined;
 	condition: FieldCondition;
 	errors?: string[] | null;
 	extras?: FieldExtras<F["type"]>;
@@ -227,14 +227,13 @@ export type StateConditions<T extends Fields> = {
 export type StateExtras<T extends Fields> = {
 	[K in keyof T as FieldExtras<T[K]["type"]> extends never ? never : K]: FieldExtras<T[K]["type"]>;
 };
-export type State<S extends Fields> = _STATE.Map<
+export type State<S extends Fields> = _QSTATE.MapExtended<
 	{
 		values: StateValues<S>;
 		conditions: StateConditions<S>;
 		errors: StateErrors<S>;
 		extras: StateExtras<S>;
 		incomplete: string[];
-		// focused: boolean;
 		status: "idle" | "incomplete" | "error" | "valid" | "submit";
 	} extends infer G
 		? { [K in keyof G]: G[K] }
@@ -342,14 +341,12 @@ export type Options<F extends Fields> = {
 	 * @default ' ' or empty spcace
 	 */
 	flatLabelJoinChar?: string;
-	triggers?: {
-		onMounted?: (props: {
-			init: State<F>["value"];
-			update: (values: any) => void | Promise<void>;
-		}) => void | Promise<void>;
-		onMountedError?: (error: any) => void;
-		onChange?: (props: { $next: State<F>["value"]; abort: () => void }) => void;
-	};
+	onMounted?: (props: {
+		init: State<F>["value"];
+		update: (values: any) => void | Promise<void>;
+	}) => void | Promise<void>;
+	onMountedError?: (error: any) => void;
+	onChange?: (props: { $next: State<F>["value"]; abort: () => void }) => void;
 };
 
 // internal props

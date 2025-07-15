@@ -1,10 +1,9 @@
-import { type _STATE, createMap } from ":setup/state";
-import type { Basics, Field, Fields, Options, State } from "../_model";
+import type { Basics, Fields, Options, State } from "../_model";
 
 import prepareField from "../preparations/field";
 import prepareFieldCondition from "../preparations/field-condition";
 
-export default function prepareFields<B extends Basics, F extends Fields<B> = Fields<B>>(props: {
+export default function prepareFields<B extends Basics, F extends Fields<B>>(props: {
 	basics: B;
 	options: Options<F>;
 }) {

@@ -8,10 +8,12 @@ function getDeepPath(obj: any, _path: string) {
 	const path = _path.split(".");
 	const len = path.length;
 	for (let i = 0; i < len; i++) {
+		// @ts-ignore
 		obj = obj[path[i]];
 	}
 	return obj;
 }
+
 export default function formActions<F extends Fields>(props: PluginProps<F>) {
 	const { fields, $state, options } = props;
 	function canSubmit() {
@@ -27,7 +29,7 @@ export default function formActions<F extends Fields>(props: PluginProps<F>) {
 		canSubmit,
 		startSubmitting: () => {
 			if (!canSubmit()) {
-				return;
+				return null;
 			}
 			$state.update((next) => {
 				next.status = "submit";

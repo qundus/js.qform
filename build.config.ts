@@ -4,6 +4,7 @@ export default defineBuildConfig({
 	failOnWarn: false,
 	declaration: true,
 	clean: true,
+	externals: ["zod", "solid-js"],
 	entries: [
 		{
 			builder: "mkdist",
@@ -11,9 +12,8 @@ export default defineBuildConfig({
 			declaration: true,
 			outDir: "./dist",
 			cleanDist: true,
-			// srcDir: "./src",
-			// pattern: ["**/index.ts", "**/_types.ts"],
 			// addRelativeDeclarationExtensions: false,
+			// pattern: ["**/index.ts", "**/_types.ts"],
 		},
 	],
 	rollup: {
@@ -27,7 +27,7 @@ export default defineBuildConfig({
 		},
 		dts: {
 			compilerOptions: {
-				// types: ["unocss", "unocss/vite"],
+				// types: ["solid-js", "astro", "nanostores", "zod", "@qundus/qstate"],
 				noUnusedLocals: false,
 				noUnusedParameters: false,
 				allowUnusedLabels: true,

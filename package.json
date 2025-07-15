@@ -1,6 +1,6 @@
 {
 	"name": "@qundus/qform",
-	"version": "0.0.1",
+	"version": "0.1.1",
 	"description": "The only form library you'll ever need :)",
 	"keywords": [
 		"forms",
@@ -24,31 +24,47 @@
 		"url": "https://github.com/qundus/js.qform.git"
 	},
 	"homepage": "https://github.com/qundus/js.qform#readme",
-	"main": "./dist/index.js",
-	"module": "./dist/index.mjs",
-	"types": "./dist/index.d.ts",
 	"files": ["dist/"],
-	"scripts": {
-		"build": "unbuild",
-		"build:skipcache": "unbuild --skip-nx-cache",
-		"publish": "bun publish --access=public --no-git-checks"
-	},
-	"devDependencies": {
-		"@types/node": "^20.10.6",
-		"typescript": "^5.3.3"
-	},
-	"dependencies": {
-		"unbuild": "^2.0.0",
-		"@qundus/qstate": "^0.0.3"
-	},
 	"exports": {
 		".": {
-			"require": "./dist/index.js",
-			"import": "./dist/index.mjs",
+			"module": "./dist/index.mjs",
 			"types": "./dist/index.d.ts"
 		},
-		"./types": {
+		"./converters": {
+			"module": "./dist/converters/index.mjs",
+			"types": "./dist/converters/index.d.ts"
+		},
+		"./validators": {
+			"module": "./dist/validators/index.mjs",
+			"types": "./dist/validators/index.d.ts"
+		},
+		"./_model": {
 			"types": "./dist/_model.d.ts"
 		}
+	},
+	"scripts": {
+		"build": "unbuild --skip-cache",
+		"check:all": "biome check",
+		"check:all:fix": "biome check --write",
+		"check:errors": "biome check --diagnostic-level=error",
+		"check:errors:fix": "biome check --write --diagnostic-level=error",
+		"check:ci": "biome check --write --diagnostic-level=error --log-kind=compact --reporter=github",
+		"check:lint": "biome lint",
+		"check:lint:fix": "biome lint --write",
+		"check:format": "biome format",
+		"check:format:fix": "biome format --write",
+		"typecheck": "tsc --noEmit",
+		"postinstall": "lefthook install",
+		"prepublishOnly": "bun run build"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.1.1",
+		"@types/node": "^24.0.14",
+		"lefthook": "^1.12.2",
+		"typescript": "^5.8.3",
+		"unbuild": "^3.5.0"
+	},
+	"dependencies": {
+		"@qundus/qstate": "^0.1.11"
 	}
 }

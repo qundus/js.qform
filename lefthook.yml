@@ -1,0 +1,14 @@
+pre-commit:
+  commands:
+    lint-and-format:
+      glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
+      # @biomejs/biome
+      run: bunx biome check --write --diagnostic-level=error --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+      exclude:
+        - root
+      stage_fixed: true
+
+commit-msg:
+  commands:
+    check-commit-message: # check for commit prefixes, settings in ./settings/git/const.js
+      run: node ./root/git/check-commit.cjs {1}
