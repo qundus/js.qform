@@ -1,26 +1,27 @@
 // thanks for the idea -> https://github.com/paxcode-it/zod-to-fields
 import type { Field } from "../../_model";
-import type { SchemaToFields, SchemaToFieldsExtenders } from "./_model";
+import type { Options, SchemaToFields, SchemaToFieldsExtenders } from "./_model";
+import checks from "./checks";
 
 import helpers from "./helpers";
 import type { ZodTypeAny } from "zod";
 
 export default function schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 	zod: Z,
-	extenders?: E,
+	_options?: Options<Z, E>,
 ) {
 	const typeName = helpers.getZodTypeName(zod, "MAIN");
 	if (!typeName.startsWith("object")) {
 		throw new Error("qForm: please use a valid zod object not a " + typeName);
 	}
-	const result = _schemaToFields<Z, E>(zod, extenders);
-	// console.log("result :: ", result);
+	const options = helpers.processOptions(_options);
+	const result = _schemaToFields<Z, E>(zod, options);
 	return result;
 }
 
 function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 	obj: Z,
-	extenders?: E,
+	options: Options<Z, E>,
 	baseKey = "",
 ) {
 	let result = {} as SchemaToFields<Z>; //MergedFields<Z, O, E>;
@@ -32,13 +33,13 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 		const typeName = helpers.getZodTypeName(schema, key);
 
 		if (typeName.startsWith("object")) {
-			const fields = _schemaToFields(schema, extenders, key);
+			const fields = _schemaToFields(schema, options, key);
 			result = { ...result, ...fields };
 			continue;
 		}
 
 		//
-		const field = (extenders?.[key as keyof E] ?? {}) as Field;
+		const field = (options.override?.[key as keyof E] ?? {}) as Field;
 		const active = {
 			type: null as "string" | "number" | "boolean" | "date" | "file" | "enum" | "nativeEnum",
 			isArray: typeName.startsWith("array"),
@@ -66,43 +67,6 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 		} else if (typeName.includes("date")) {
 			field.type = field.type ?? "date";
 			active.type = "date";
-		} else {
-			if (field.type == null) {
-				// const baseType = helpers.unwrapZodType(schema);
-				// console.error(
-				// 	"qForm: Zod type ",
-				// 	typeName,
-				// 	" in key :: ",
-				// 	key,
-				// 	" doesn't have a proper way to be handled, ",
-				// 	" please specify a type for it through the extenders, entry removed!!",
-				// );
-				continue;
-			}
-		}
-
-		// field optional?
-		field.required = field.required ?? !schema.isOptional();
-		field.valueNullable = field.valueNullable ?? schema.isNullable();
-
-		// validation
-		const validation = (value: any) => {
-			const parse = schema.safeParse(value);
-			if (parse.success) {
-				return null;
-			}
-			const result = [];
-			for (const err of parse.error.errors) {
-				result.push(err.message);
-			}
-			return result;
-		};
-		if (field.validate == null) {
-			field.validate = validation;
-		} else if (typeof field.validate === "function") {
-			field.validate = [field.validate, validation];
-		} else {
-			field.validate.push(validation);
 		}
 
 		// type specific settings
@@ -136,6 +100,59 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 					}
 				}
 				break;
+			default:
+				{
+					// const baseType = helpers.unwrapZodType(schema);
+					let removeKey = false;
+					if (field.type == null && options?.unknownsAsText) {
+						if (checks.isZodTypeNameNull(typeName)) {
+							field.type = "text";
+						} else {
+							removeKey = true;
+						}
+					}
+					// for any other types of array that is not clear on how to make a field
+					if (active.isArray) {
+						if (options?.verbose) {
+							console.error(
+								"qForm: removed ",
+								key,
+								" with type ",
+								typeName,
+								", because requires explicit intervention!",
+							);
+						}
+						removeKey = true;
+					}
+					if (removeKey) {
+						continue;
+					}
+				}
+				break;
+		}
+
+		// field optional?
+		field.required = field.required ?? !schema.isOptional();
+		field.valueNullable = field.valueNullable ?? schema.isNullable();
+
+		// validation
+		const validation = (value: any) => {
+			const parse = schema.safeParse(value);
+			if (parse.success) {
+				return null;
+			}
+			const result = [];
+			for (const err of parse.error.errors) {
+				result.push(err.message);
+			}
+			return result;
+		};
+		if (field.validate == null) {
+			field.validate = validation;
+		} else if (typeof field.validate === "function") {
+			field.validate = [field.validate, validation];
+		} else {
+			field.validate.push(validation);
 		}
 
 		result[key] = field as any;

@@ -2,44 +2,53 @@ import { createForm } from "../src";
 import { z } from "zod";
 import { cZod } from "../src/converters";
 
-enum Wow {
-	LOCATION = "location",
-	yeah = "yeah",
+enum Questions {
+	first = "are you cool?",
+	second = "why are you gay?",
 }
-enum No {
-	geepe = "geepe",
-	hooray = "hooray",
+enum Colors {
+	red = "Red",
+	blue = "Blue",
 }
+const jobs = ["student", "employee"] as const;
+const locations = ["saudi", "kuwait"] as const;
 const schema = z.object({
-	name: z.string().nullable().or(z.boolean()), //.nullable(), //.min(3, "at least 3 characters"),
-	// single: z.boolean(),
-	job: z
-		.enum(["student", "employee"])
-		.and(z.enum(["wow", "yeah"]))
-		.nullable(),
+	// primitives
+	name: z.string(),
+	single: z.boolean(),
+	stringOrBoolean: z.string().nullable().or(z.boolean()), // not supported, fallsback to "text" field.type
+	huh: z.unknown().nullable(), // supports unknownTypes through unknownAsTextFields option
+	// objects
 	address: z.object({
 		street: z.string(),
-		zip: z.number(),
+		zip: z.number(), // deep keys will be flattned address.zip
 	}),
-	wow: z.nativeEnum(Wow),
-	picture: z.array(z.instanceof(File)),
-	arrayOfNativeEnum: z.array(z.nativeEnum(Wow).and(z.nativeEnum(No))),
+	// files
+	picture: z.instanceof(File),
+	documents: z.array(z.instanceof(File)),
+	// enums & nativeEnums
+	job: z.enum(jobs),
+	jobAndLocations: z.enum(jobs).and(z.enum(locations)), // collective enums
+	question: z.nativeEnum(Questions),
+	color: z.nativeEnum(Colors).nullable(),
+	questionOrColor: z.array(z.nativeEnum(Questions).and(z.nativeEnum(Colors))), // intersections and unions are treated the same for now
+	// arrays are not supported for now, you have to set the type yourself
+	// only enums, nativeEnums and files are supported for now
+	options: z.array(z.string()),
 });
+
 // console.log(z.array(z.nativeEnum(Wow).and(z.nativeEnum(No)))._def);
-const fields = cZod.schemaToFields(schema);
+const fields = cZod.schemaToFields(schema, {
+	// override
+	override: {
+		huh: { valueNullable: false },
+		// for logically undefined types like array<string>
+		options: {
+			type: "select",
+			processValue: (value) => {}, // tell the form how to process the value before it's validated
+		},
+	},
+});
 
-// z.enum(["student", "employee"]).or(z.enum(["wow", "yeah"])).nullable()._def.innerType._def.
-
-// import { z } from "zod";
-// const schema = z.object({
-// 	name: z.string().nullable(), //.min(3, "at least 3 characters"),
-// 	single: z.boolean(),
-// 	job: z.enum(["student", "employee"]),
-// 	address: z.object({
-// 		street: z.string(),
-// 		zip: z.number(),
-// 	}),
-// 	picture: z.instanceof(String).nullable(),
-// });
-
-// const ss: SchemaToFields<typeof schema> = {};
+// console.log("fields :: ", fields);
+// const zodForm = createForm(fields);

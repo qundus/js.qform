@@ -1,3 +1,5 @@
+import type { Options, SchemaToFieldsExtenders } from "./_model";
+
 function getZodTypeName(schema: any, name: string): string {
 	// 1. Safety check
 	if (typeof schema !== "object" || schema === null) return "unknown";
@@ -160,6 +162,12 @@ function getEnumValues(schema: any) {
 	return {};
 }
 export default {
+	processOptions<Z, E extends SchemaToFieldsExtenders<Z>>(_options: Options<Z, E>) {
+		const result = { ..._options };
+		result.verbose = result.verbose ?? false;
+		result.unknownsAsText = result.unknownsAsText ?? false;
+		return result;
+	},
 	getZodTypeName,
 	getEnumValues,
 };

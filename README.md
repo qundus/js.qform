@@ -113,28 +113,53 @@ import { createForm, cZod } from "@qundus/qform";
 import { cZod } from "@qundus/qform/converters";
 import { z } from "zod";
 
-// any zod schema
+
+enum Questions {
+	first = "are you cool?",
+	second = "why are you gay?",
+}
+enum Colors {
+	red = "Red",
+	blue = "Blue",
+}
+const jobs = ["student", "employee"] as const;
+const locations = ["saudi", "kuwait"] as const;
 const schema = z.object({
-	name: z.string().nullable(), //.min(3, "at least 3 characters"),
+	// primitives
+	name: z.string(),
 	single: z.boolean(),
-	job: z.enum(["student", "employee"]),
+	stringOrBoolean: z.string().nullable().or(z.boolean()), // not supported, fallsback to "text" field.type
+	huh: z.unknown().nullable(), // supports unknownTypes through unknownAsTextFields option
+	// objects
 	address: z.object({
 		street: z.string(),
 		zip: z.number(), // deep keys will be flattned address.zip
 	}),
+	// files
 	picture: z.instanceof(File),
-	options: z.array(z.string()), // arrays are not supported for now, you have to set the type yourself
+	documents: z.array(z.instanceof(File)),
+	// enums & nativeEnums
+	job: z.enum(jobs),
+	jobAndLocations: z.enum(jobs).and(z.enum(locations)), // collective enums
+	question: z.nativeEnum(Questions),
+	color: z.nativeEnum(Colors).nullable(),
+	questionOrColor: z.array(z.nativeEnum(Questions).and(z.nativeEnum(Colors))), // intersections and unions are treated the same for now
+	// arrays are not supported for now, you have to set the type yourself
+	// only enums, nativeEnums and files are supported for now
+	options: z.array(z.string()),
 });
 
-// convert the schema into fields with cZod
+// console.log(z.array(z.nativeEnum(Wow).and(z.nativeEnum(No)))._def);
 const fields = cZod.schemaToFields(schema, {
-	name: {// optional adjust fields, you can do it any time afterwards ofcourse but not recommnded!
-		valueNullable: false,
+	// override
+	override: {
+		huh: { valueNullable: false },
+		// for logically undefined types like array<string>
+		options: {
+			type: "select",
+			processValue: (value) => {}, // tell the form how to process the value before it's validated
+		},
 	},
-	options: {
-		type: "select",
-		processValue: (value) => {} // tell the form how to process the value before it's validated
-	}
 });
 
 export const zodForm = createForm(fields);

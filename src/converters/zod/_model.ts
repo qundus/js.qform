@@ -87,7 +87,11 @@ export type SchemaToFieldsExtenders<Z> = FlatObject<Z> extends infer G
 // > = SchemaToFields<Z>;
 
 // options
-export type Options<Z, O extends SchemaToFields<Z>> = {};
+export type Options<Z, E extends SchemaToFieldsExtenders<Z>> = {
+	override?: E;
+	verbose?: boolean;
+	unknownsAsText?: boolean;
+};
 
 // tests
 type ZodTypeName<T> = // Primitives
