@@ -157,7 +157,10 @@ const fields = cZod.schemaToFields(schema, {
 		// for logically undefined types like array<string>
 		options: {
 			type: "select",
-			processValue: (value) => {}, // tell the form how to process the value before it's validated
+			processValue: (value) => {
+				// tell the form how to process the value before it's validated
+				return value
+			}, 
 		},
 	},
 });

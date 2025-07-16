@@ -52,14 +52,18 @@ export default function onValueProcessInteraction<F extends Field>(props: Intera
 		}
 	}
 
-	//////
+	////// try to keep this as the only place to processValues from user
 	if (field.processValue != null) {
-		value = field.processValue?.({
-			...processorProps,
-			value,
-			$condition: $next.conditions[key],
-			processors,
-		});
+		const funcs =
+			typeof field.processValue === "function" ? [field.processValue] : field.processValue;
+		for (const pro of funcs) {
+			value = pro({
+				...processorProps,
+				value,
+				$condition: $next.conditions[key],
+				processors,
+			});
+		}
 	}
 	return value;
 }

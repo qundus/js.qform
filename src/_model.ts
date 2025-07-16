@@ -150,7 +150,9 @@ export type Field<T extends FieldType = FieldType, V = any> = {
 	value?: FieldValue<T, V>;
 	hidden?: boolean;
 	label?: string;
-	processValue?: FieldProcess<Field<any, FieldValue<T, V>>, any>;
+	processValue?:
+		| FieldProcess<Field<any, FieldValue<T, V>>, any>
+		| FieldProcess<Field<any, FieldValue<T, V>>, any>[];
 	/** validate value */
 	validate?: FieldValidate | FieldValidate[]; //| FieldValidate[];
 	validateOn?: FieldValidateOn;

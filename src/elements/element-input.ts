@@ -45,8 +45,7 @@ export default function makeInputElement<F extends Field>(props: ElementProps<F>
 				...result,
 				type: data.condition.hidden ? "hidden" : field.type,
 				name: key_str,
-				// defaultValue: data?.value,
-				// checked: false,
+				multiple: field.multiple,
 			};
 			const addValue = field.type !== "checkbox" && field.type !== "radio" && field.type !== "file";
 			if (addValue) {
