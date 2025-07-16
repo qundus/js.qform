@@ -7,19 +7,22 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"includes": ["src"]
+		"includes": ["{src,tests}/**/*"]
 	},
-	"assist": { "actions": { "source": { "organizeImports": "on" } } },
+	"assist": {
+		"enabled": false,
+		"includes": [],
+		"actions": { "source": { "organizeImports": "on" } }
+	},
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "tab",
 		"useEditorconfig": false,
-		"formatWithErrors": false,
+		"formatWithErrors": true,
 		"indentWidth": 2,
 		"lineWidth": 100,
 		"attributePosition": "multiline",
-		"bracketSpacing": true,
-		"includes": ["src"]
+		"bracketSpacing": true
 	},
 	"linter": {
 		"enabled": true,

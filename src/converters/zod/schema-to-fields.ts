@@ -9,7 +9,7 @@ export default function schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 	zod: Z,
 	extenders?: E,
 ) {
-	const typeName = helpers.getZodTypeName(zod);
+	const typeName = helpers.getZodTypeName(zod, "MAIN");
 	if (!typeName.startsWith("object")) {
 		throw new Error("qForm: please use a valid zod object not a " + typeName);
 	}
@@ -29,7 +29,7 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 		// get the key for flat/nested object
 		const key = (baseKey.length > 0 ? `${baseKey}.` : "") + _key;
 		const schema = _schema as ZodTypeAny;
-		const typeName = helpers.getZodTypeName(schema);
+		const typeName = helpers.getZodTypeName(schema, key);
 
 		if (typeName.startsWith("object")) {
 			const fields = _schemaToFields(schema, extenders, key);
@@ -39,49 +39,34 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 
 		//
 		const field = (extenders?.[key as keyof E] ?? {}) as Field;
+		const active = {
+			type: null as "string" | "number" | "boolean" | "date" | "file" | "enum" | "nativeEnum",
+			isArray: typeName.startsWith("array"),
+		};
 
 		// determine field type
-		if (typeName.startsWith("string")) {
+		if (typeName.includes("string")) {
 			field.type = field.type ?? "text";
-		} else if (typeName.startsWith("number")) {
+			active.type = "string";
+		} else if (typeName.includes("number")) {
 			field.type = field.type ?? "number";
-		} else if (typeName.startsWith("boolean")) {
+			active.type = "number";
+		} else if (typeName.includes("boolean")) {
 			field.type = field.type ?? "checkbox";
-		} else if (typeName.startsWith("enum")) {
+			active.type = "boolean";
+		} else if (typeName.includes("enum")) {
 			field.type = field.type ?? "select";
-			const options = schema._def.values.map((value: any) => ({
-				label: value.charAt(0).toUpperCase() + value.slice(1),
-				value: value as any,
-			}));
-			field.options = () => options;
-		} else if (typeName.startsWith("nativeEnum")) {
+			active.type = "enum";
+		} else if (typeName.includes("nativeEnum")) {
 			field.type = field.type ?? "select";
-			const options = Object.entries(schema._def.values).map(([key, value]) => ({
-				label: key.charAt(0).toUpperCase() + key.slice(1),
-				value: value as any,
-			}));
-			field.options = () => options;
+			active.type = "nativeEnum";
 		} else if (typeName.includes("file")) {
 			field.type = field.type ?? "file";
-			if (typeName.startsWith("array")) {
-				field.multiple = field.multiple ?? true;
-			} else {
-				// TODO: find a way for files when singular
-				field.processValue = ({value}) => {
-					if (value == null) {
-						return value;
-					}
-					if (value instanceof FileList) {
-						return value[0]
-					}
-					return value;
-				}
-			}
-		} else if (typeName.startsWith("date")) {
+			active.type = "file";
+		} else if (typeName.includes("date")) {
 			field.type = field.type ?? "date";
+			active.type = "date";
 		} else {
-			// TODO: find a proper way to handle arrays
-			// TODO: find a proper way to process arrays values 
 			if (field.type == null) {
 				// const baseType = helpers.unwrapZodType(schema);
 				// console.error(
@@ -120,7 +105,39 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 			field.validate.push(validation);
 		}
 
-		// // @ts-ignore
+		// type specific settings
+		switch (active.type) {
+			case "nativeEnum":
+			case "enum":
+				{
+					field.multiple = field.multiple ?? active.isArray ?? false;
+					const obj = helpers.getEnumValues(schema);
+					const options = [] as { label: string; value: string }[]; // maybe shift this logic to inside of the field.options function for performance??!
+					for (const key in obj) {
+						const value = obj[key];
+						options.push({ label: key, value });
+					}
+					field.options = () => options;
+				}
+				break;
+			case "file":
+				{
+					field.multiple = field.multiple ?? active.isArray ?? false;
+					if (!active.isArray) {
+						field.processValue = ({ value }) => {
+							if (value == null) {
+								return value;
+							}
+							if (value instanceof FileList) {
+								return value[0];
+							}
+							return value;
+						};
+					}
+				}
+				break;
+		}
+
 		result[key] = field as any;
 	}
 

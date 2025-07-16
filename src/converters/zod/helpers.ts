@@ -1,4 +1,4 @@
-function getZodTypeName(schema: any): string {
+function getZodTypeName(schema: any, name: string): string {
 	// 1. Safety check
 	if (typeof schema !== "object" || schema === null) return "unknown";
 
@@ -11,7 +11,7 @@ function getZodTypeName(schema: any): string {
 
 	// 2. Handle wrappers first (nullable, optional, etc)
 	if (def.typeName === "ZodNullable" || def.typeName === "ZodOptional") {
-		return getZodTypeName(def.innerType) + (def.typeName === "ZodNullable" ? "?" : "");
+		return getZodTypeName(def.innerType, name) + (def.typeName === "ZodNullable" ? "?" : "");
 	}
 
 	// 3. Handle effects (transform, preprocess, etc)
@@ -22,6 +22,7 @@ function getZodTypeName(schema: any): string {
 			return "null";
 		}
 		const msg = res.error?.message.toLowerCase();
+		// console.log("effect of :: ", name, " :: ", msg);
 		if (msg.includes("file")) {
 			return "file";
 		}
@@ -30,6 +31,9 @@ function getZodTypeName(schema: any): string {
 		}
 		if (msg.includes("boolean")) {
 			return "boolean";
+		}
+		if (msg.includes("date")) {
+			return "date";
 		}
 		return "effect";
 		// return getZodTypeName(def.schema);
@@ -86,7 +90,7 @@ function getZodTypeName(schema: any): string {
 
 	// 5. Complex types (with recursion)
 	if (def.typeName === "ZodArray") {
-		return `array<${getZodTypeName(def.type)}>`;
+		return `array<${getZodTypeName(def.type, name)}>`;
 	}
 
 	if (def.typeName === "ZodObject") {
@@ -94,7 +98,7 @@ function getZodTypeName(schema: any): string {
 	}
 
 	if (def.typeName === "ZodRecord") {
-		return `record<${getZodTypeName(def.valueType)}>`;
+		return `record<${getZodTypeName(def.valueType, name)}>`;
 	}
 
 	if (def.typeName === "ZodUnion") {
@@ -102,11 +106,11 @@ function getZodTypeName(schema: any): string {
 	}
 
 	if (def.typeName === "ZodIntersection") {
-		return `${getZodTypeName(def.left)} & ${getZodTypeName(def.right)}`;
+		return `${getZodTypeName(def.left, name)} & ${getZodTypeName(def.right, name)}`;
 	}
 
 	if (def.typeName === "ZodTuple") {
-		return `[${def.items.map(getZodTypeName).join(", ")}]`;
+		return `[${def.items.map((item: any) => getZodTypeName(item, name)).join(", ")}]`;
 	}
 
 	// 6. Fallback - try to extract meaningful name
@@ -114,6 +118,48 @@ function getZodTypeName(schema: any): string {
 	return fallback || "unknown";
 }
 
+function getEnumValues(schema: any) {
+	if (schema == null) {
+		return null;
+	}
+	const def = schema._def;
+	const typeName = def.typeName;
+	if (typeName === "ZodNullable" || typeName === "ZodOptional") {
+		return getEnumValues(def.type ?? def.innerType);
+	}
+	if (typeName === "ZodArray") {
+		return getEnumValues(schema._def.type);
+	}
+	if (def.left != null) {
+		const left = getEnumValues(def.left);
+		const right = getEnumValues(def.right);
+		return { ...left, ...right };
+	}
+	if (def.options != null) {
+		let result = {};
+		for (const option of def.options) {
+			const values = option.Values;
+			result = { ...result, ...values };
+		}
+		// console.log(result)
+
+		return result;
+	}
+	if (def.values != null) {
+		if (Array.isArray(def.values)) {
+			return Object.values(def.values).reduce((obj, value) => {
+				if (typeof value === "string") {
+					obj[value as string] = value;
+				}
+				return obj;
+			}, {});
+		}
+		return def.values;
+	}
+
+	return {};
+}
 export default {
 	getZodTypeName,
+	getEnumValues,
 };

@@ -1,6 +1,6 @@
 {
 	"name": "@qundus/qform",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"description": "The only form library you'll ever need :)",
 	"keywords": [
 		"forms",
@@ -24,7 +24,9 @@
 		"url": "https://github.com/qundus/js.qform.git"
 	},
 	"homepage": "https://github.com/qundus/js.qform#readme",
-	"files": ["dist/"],
+	"files": [
+		"dist/"
+	],
 	"exports": {
 		".": {
 			"module": "./dist/index.mjs",

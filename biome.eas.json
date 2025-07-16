@@ -1,0 +1,89 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": {
+    "enabled": false,
+    "clientKind": "git",
+    "useIgnoreFile": false
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "ignore": ["node_modules", ".next", "public", "dist", "build", "root"]
+  },
+  "organizeImports": {
+    "enabled": true
+  },
+  "formatter": {
+    "enabled": true,
+    "useEditorconfig": false,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "attributePosition": "multiline",
+    "bracketSpacing": true,
+    "ignore": [
+      "**/.next/",
+      "**/node_modules/",
+      "**/dist/",
+      "**/build/",
+      "**/public/"
+    ]
+  },
+  "linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"suspicious": {
+				"noConfusingVoidType": "off",
+				"noExplicitAny": "info"
+			},
+			"a11y": {
+				"useButtonType": "off",
+				"noLabelWithoutControl": "off"
+			},
+			"style": {
+				"useTemplate": "off"
+			},
+			"complexity": {
+				"useOptionalChain": "off",
+				"noBannedTypes": "off"
+			}
+		}
+	},
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double",
+      "quoteProperties": "asNeeded",
+      "trailingCommas": "es5",
+      "semicolons": "always",
+      "arrowParentheses": "always",
+      "bracketSameLine": false,
+      "attributePosition": "auto",
+      "bracketSpacing": true
+    }
+  },
+"overrides": [
+		{
+			"includes": ["setup/**/*.ts", "setup/**/*.mts", "setup/**/*.tsx"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noParameterAssign": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["**/*.solid.ts", "**/*.solid.tsx", "**/solid/**/*.ts", "**/solid/**/*.tsx"],
+			"linter": {
+				"enabled": true,
+				"rules": {
+					"correctness": {
+						"useJsxKeyInIterable": "off"
+					}
+				}
+			}
+		}
+	]
+}
