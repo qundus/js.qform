@@ -1,6 +1,7 @@
 import type { _QSTATE } from "@qundus/qstate";
 export type * from "./plugins/form-button";
-import type { default as prepareAtom } from "./preparations/atom";
+export type * from "./preparations/field-atom";
+export type * from "./preparations/atoms";
 import type createProcessors from "./processors";
 
 // internal
@@ -247,12 +248,6 @@ export type Store<F extends Fields, O extends Options<any, any>> = _QSTATE.Store
 	Statee<F>,
 	O["state"]
 >;
-
-// atoms & elements
-export type Atom<S extends Field> = ReturnType<typeof prepareAtom<S>>;
-export type Atoms<S extends Fields> = {
-	[K in keyof S]: Atom<S[K]>;
-};
 
 // creator options
 export type Options<F extends Fields, O extends _QSTATE.Options<Statee<F>>> = {

@@ -1,14 +1,22 @@
-import type { ElementProps, Field, FieldCondition, FieldState, FieldValidate } from "../_model";
+import type {
+	ElementProps,
+	Field,
+	FieldCondition,
+	FieldStore,
+	FieldValidate,
+	Options,
+} from "../_model";
 import { PLACEHOLDERS } from "../const";
 import onValue from "../interactions/on-value";
 import mergeConditions from "../methods/merge-conditions";
 import prepareFieldElement from "../preparations/field-element";
 import prepareFieldState from "../preparations/field-state";
 
-export type PreparedAtom<F extends Field> = {
-	$listen: FieldState<F>["listen"];
-	$subscribe: FieldState<F>["subscribe"];
-	$hooks: FieldState<F>["hooks"];
+export type FieldAtom<F extends Field, O extends Options<any, any>> = {
+	$store: FieldStore<F, O>;
+	$hooks: FieldStore<F, O>["hooks"];
+	$listen: FieldStore<F, O>["listen"];
+	$subscribe: FieldStore<F, O>["subscribe"];
 	key: string;
 	type: F["type"];
 	label: string;
@@ -25,14 +33,17 @@ export type PreparedAtom<F extends Field> = {
 		value: Partial<FieldCondition> | ((prev: Partial<FieldCondition>) => Partial<FieldCondition>),
 	) => void;
 };
-export default function prepareAtom<F extends Field>(props: ElementProps<F>): PreparedAtom<F> {
-	const { key, field, $state } = props;
+export default function prepareAtom<F extends Field, O extends Options<any, any>>(
+	props: ElementProps<F, O>,
+): FieldAtom<F, O> {
+	const { key, field, $store } = props;
 	const derived = prepareFieldState<F>(props);
 	return {
 		// field,
 		key,
 		type: field.type,
 		label: field.label,
+		$store: derived,
 		$hooks: derived.hooks,
 		$subscribe: derived.subscribe,
 		$listen: derived.listen,
@@ -71,23 +82,23 @@ export default function prepareAtom<F extends Field>(props: ElementProps<F>): Pr
 			};
 		},
 		updateValue: (value, configs) => {
-			const prev = $state.get().values[key];
+			const prev = $store.get().values[key];
 			const current = typeof value === "function" ? (value as any)(prev) : value;
-			$state.update((next) => {
+			$store.update((next) => {
 				onValue({ ...props, $next: next, event: null, value: current, ...configs });
 				return next;
 			});
 		},
 		clearValue: () => {
-			$state.update((next) => {
+			$store.update((next) => {
 				onValue({ ...props, $next: next, event: null, value: null, preprocessValue: false });
 				return next;
 			});
 		},
 		updateCondition: (value) => {
-			const prev = $state.get().values[key];
+			const prev = $store.get().values[key];
 			const newCondition = typeof value === "function" ? (value as any)(prev) : value;
-			$state.update(($next) => {
+			$store.update(($next) => {
 				$next.conditions[key] = mergeConditions($next.conditions[key], newCondition);
 				return $next;
 			});
