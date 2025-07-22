@@ -1,9 +1,11 @@
-import type { Field, InteractionProps } from "../_model";
+import type { Field, InteractionProps, Options } from "../_model";
 import createProcessors from "../processors";
 
-type Props<S extends Field> = InteractionProps<S>;
-export default function onFocusInteraction<S extends Field>(props: Props<S>) {
-	const { key, field, $next, event, $state } = props;
+type Props<S extends Field, O extends Options<any, any>> = InteractionProps<S, O>;
+export default function onFocusInteraction<S extends Field, O extends Options<any, any>>(
+	props: Props<S, O>,
+) {
+	const { key, field, $next, event, $store } = props;
 	$next.conditions[key].element.state = "focus";
 	$next.conditions[key].element.visited = true;
 	const value = $next.values[key];
@@ -20,7 +22,7 @@ export default function onFocusInteraction<S extends Field>(props: Props<S>) {
 	field.processCondition?.({
 		...processorProps,
 		get processors() {
-			return createProcessors({ ...processorProps, $next, $state });
+			return createProcessors({ ...processorProps, $next, $store });
 		},
 	});
 }

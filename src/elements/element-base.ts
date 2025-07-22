@@ -4,7 +4,8 @@ import type {
 	ElementProps,
 	ElementReturns,
 	Field,
-	FieldState,
+	FieldStateObject,
+	Options,
 } from "../_model";
 import onBlur from "../interactions/on-blur";
 import onFocus from "../interactions/on-focus";
@@ -29,12 +30,14 @@ export type Returns<T extends ElementDomType> = ElementReturns<
 		autoComplete?: "on" | "off";
 	}
 >;
-export default function makeBaseElement<F extends Field>(props: ElementProps<F>) {
-	const { key, $state, field, options } = props;
+export default function makeBaseElement<F extends Field, O extends Options<any, any>>(
+	props: ElementProps<F, O>,
+) {
+	const { key, $store, field, options } = props;
 	return <D extends ElementDomType, K extends ElementKeysType>(
 		dType: D,
 		_kType: K,
-		reactive: FieldState<Field>["value"] | (() => FieldState<Field>["value"]),
+		reactive: FieldStateObject<Field> | (() => FieldStateObject<Field>),
 	) => {
 		const data = typeof reactive === "function" ? reactive() : reactive;
 		return {
@@ -49,7 +52,7 @@ export default function makeBaseElement<F extends Field>(props: ElementProps<F>)
 				event.stopPropagation();
 				// @ts-ignore
 				// field?.element?.onfocus?.(event);
-				$state.update((next) => {
+				$store.update((next) => {
 					onFocus({ ...props, $next: next, event, value: null });
 					return next;
 				});
@@ -61,7 +64,7 @@ export default function makeBaseElement<F extends Field>(props: ElementProps<F>)
 				// if (field.validateOn === "change") {
 				// 	return;
 				// }
-				$state.update((next) => {
+				$store.update((next) => {
 					onBlur({ ...props, $next: next, event, value: null });
 					return next;
 				});

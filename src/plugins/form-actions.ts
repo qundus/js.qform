@@ -1,4 +1,4 @@
-import type { Field, FieldCondition, FieldType, Fields, PluginProps } from "../_model";
+import type { Field, FieldCondition, FieldType, Fields, Options, PluginProps } from "../_model";
 import isKeyInFields from "../checks/is-key-in-fields";
 import onValue from "../interactions/on-value";
 import getFormValues from "../methods/get-form-values";
@@ -14,10 +14,12 @@ function getDeepPath(obj: any, _path: string) {
 	return obj;
 }
 
-export default function formActions<F extends Fields>(props: PluginProps<F>) {
-	const { fields, $state, options } = props;
+export default function formActions<F extends Fields, O extends Options<F, any>>(
+	props: PluginProps<F, O>,
+) {
+	const { fields, $store, options } = props;
 	function canSubmit() {
-		const status = $state.get().status;
+		const status = $store.get().status;
 		if (status === "submit") {
 			return false;
 		}
@@ -31,15 +33,15 @@ export default function formActions<F extends Fields>(props: PluginProps<F>) {
 			if (!canSubmit()) {
 				return null;
 			}
-			$state.update((next) => {
+			$store.update((next) => {
 				next.status = "submit";
 				return next;
 			});
 			return () => {
-				if ($state.get().status !== "submit") {
+				if ($store.get().status !== "submit") {
 					return;
 				}
-				$state.update((next) => {
+				$store.update((next) => {
 					next.status = "valid";
 					return next;
 				});
@@ -58,7 +60,7 @@ export default function formActions<F extends Fields>(props: PluginProps<F>) {
 				return;
 			}
 			try {
-				$state.update((next) => {
+				$store.update((next) => {
 					next.status = "submit";
 					return next;
 				});
@@ -66,7 +68,7 @@ export default function formActions<F extends Fields>(props: PluginProps<F>) {
 			} catch (e: any) {
 				error?.(e);
 			} finally {
-				$state.update((next) => {
+				$store.update((next) => {
 					next.status = "valid";
 					return next;
 				});
@@ -79,7 +81,7 @@ export default function formActions<F extends Fields>(props: PluginProps<F>) {
 			if (values == null) {
 				return;
 			}
-			$state.update((next) => {
+			$store.update((next) => {
 				for (const _key in values) {
 					let path = paths?.[_key];
 					let key = _key;
@@ -99,7 +101,7 @@ export default function formActions<F extends Fields>(props: PluginProps<F>) {
 						key,
 						field,
 						options,
-						$state,
+						$store,
 						$next: next,
 						event: null,
 						value,
@@ -119,7 +121,7 @@ export default function formActions<F extends Fields>(props: PluginProps<F>) {
 			if (conditions == null) {
 				return;
 			}
-			$state.update(($next) => {
+			$store.update(($next) => {
 				for (const key in conditions) {
 					const condition = conditions[key];
 					if (!isKeyInFields(fields, key, options) || condition == null) {

@@ -1,27 +1,37 @@
-import type { Fields, PluginProps, State as FormState } from "../_model";
+import type { Fields, Options, PluginProps, StateObject } from "../_model";
 import type { _QSTATE } from "@qundus/qstate";
 
-export type State<F extends Fields> = {
-	status: FormState<F>["value"]["status"];
+export type ButtonObject<F extends Fields> = {
+	status: StateObject<F>["status"];
 	disabled: boolean;
 	canSubmit: boolean;
 	submitting: boolean;
 };
-export type FormButton<F extends Fields> = {
-	$hooks: _QSTATE.Derived<State<F>>["hooks"];
-	$subscribe: _QSTATE.Derived<State<F>>["subscribe"];
-	$listen: _QSTATE.Derived<State<F>>["listen"];
+export type ButtonStore<F extends Fields, O extends Options<F, any>> = _QSTATE.DerivedStore<
+	ButtonObject<F>,
+	O["state"]
+>;
+export type Button<
+	F extends Fields,
+	O extends Options<F, any>,
+	S extends ButtonStore<F, O> = ButtonStore<F, O>,
+> = {
+	$hooks: S["hooks"];
+	$listen: S["listen"];
+	$subscribe: S["subscribe"];
 };
-export default function formButton<F extends Fields>(props: PluginProps<F>): FormButton<F> {
-	const { $state } = props;
-	const derived = $state.derive((state) => {
+export default function formButton<F extends Fields, O extends Options<F, any>>(
+	props: PluginProps<F, O>,
+): Button<F, O> {
+	const { $store } = props;
+	const derived = $store.derive((state) => {
 		const status = state.status;
 		return {
 			status: status,
 			disabled: status !== "valid",
 			canSubmit: status === "valid",
 			submitting: status === "submit",
-		} as State<F>;
+		} as ButtonObject<F>;
 	});
 
 	return {

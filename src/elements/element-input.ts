@@ -4,7 +4,8 @@ import type {
 	ElementProps,
 	ElementReturns,
 	Field,
-	FieldState,
+	FieldStateObject,
+	Options,
 } from "../_model";
 import onBlur from "../interactions/on-blur";
 import onValue from "../interactions/on-value";
@@ -26,14 +27,16 @@ export type Returns<T extends ElementDomType> = ElementReturns<
 		onInput: OnInput;
 	}
 >;
-export default function makeInputElement<F extends Field>(props: ElementProps<F>) {
-	const { key, field, $state, options } = props;
+export default function makeInputElement<F extends Field, O extends Options<any, any>>(
+	props: ElementProps<F, O>,
+) {
+	const { key, field, $store, options } = props;
 	const key_str = String(key);
 	const baseEl = makeBaseElement(props);
 	return <D extends ElementDomType, K extends ElementKeysType>(
 		dType: D,
 		kType: K,
-		reactive: FieldState<Field>["value"] | (() => FieldState<Field>["value"]),
+		reactive: FieldStateObject<Field> | (() => FieldStateObject<Field>),
 	) => {
 		const data = typeof reactive === "function" ? reactive() : reactive;
 		let result = {} as any;
@@ -55,7 +58,7 @@ export default function makeInputElement<F extends Field>(props: ElementProps<F>
 				const id = dType !== "vdom" ? "oninput" : "onInput";
 				result[id] = (event: Event) => {
 					event.preventDefault();
-					$state.update((next) => {
+					$store.update((next) => {
 						onValue({ ...props, $next: next, event, value: null });
 						return next;
 					});
@@ -65,7 +68,7 @@ export default function makeInputElement<F extends Field>(props: ElementProps<F>
 				const id = dType !== "vdom" ? "onchange" : "onChange";
 				result[id] = (event: Event) => {
 					event.preventDefault();
-					$state.update((next) => {
+					$store.update((next) => {
 						onValue({ ...props, $next: next, event, value: null });
 						return next;
 					});

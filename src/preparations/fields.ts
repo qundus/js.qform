@@ -1,12 +1,13 @@
-import type { Basics, Fields, Options, State } from "../_model";
+import type { Basics, Fields, Options, StateObject } from "../_model";
 
 import prepareField from "../preparations/field";
 import prepareFieldCondition from "../preparations/field-condition";
 
-export default function prepareFields<B extends Basics, F extends Fields<B>>(props: {
-	basics: B;
-	options: Options<F>;
-}) {
+export default function prepareFields<
+	B extends Basics,
+	F extends Fields<B>,
+	O extends Options<F, any>,
+>(props: { basics: B; options: O }) {
 	const { basics, options } = props;
 	const fields = {} as F;
 	const state_init = {
@@ -17,7 +18,7 @@ export default function prepareFields<B extends Basics, F extends Fields<B>>(pro
 		incomplete: [],
 		// focused: false,
 		status: "valid",
-	} as State<F>["value"];
+	} as StateObject<F>;
 	for (const key in basics) {
 		const basic = basics[key];
 		const field = prepareField({ key, basic, options });

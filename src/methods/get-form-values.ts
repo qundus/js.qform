@@ -1,4 +1,4 @@
-import type { Fields, PluginProps, State } from "../_model";
+import type { Fields, Options, PluginProps, Store } from "../_model";
 import { PLACEHOLDERS } from "../const";
 
 // basics
@@ -105,17 +105,13 @@ function getValueCase(key: string, convertCase: FieldKeyCase = "same") {
 
 function _getValues<
 	F extends Fields,
-	S extends State<F>,
-	D extends FieldKeyCase,
-	O extends FieldsKeysCaseMap<F>,
->(props: {
-	fields: F;
-	$state: S;
-	defaultCase: D;
-	special?: O;
-}) {
+	L extends Options<F, any>,
+	S extends Store<F, L>,
+	D extends FieldKeyCase = FieldKeyCase,
+	O extends FieldsKeysCaseMap<F> = FieldsKeysCaseMap<F>,
+>(props: { fields: F; $store: S; defaultCase: D; special?: O }) {
 	const result = {} as any;
-	const values = props.$state.get().values;
+	const values = props.$store.get().values;
 	for (const key in props.fields) {
 		const field = props.fields[key];
 		const key_case = getValueCase(key, props.special?.[key] ?? props.defaultCase);
@@ -133,29 +129,41 @@ function _getValues<
 	return result as FieldsValues<F, D, O>;
 }
 
-export default function getFormValues<F extends Fields>(props: PluginProps<F>) {
-	const { fields, $state } = props;
+export default function getFormValues<F extends Fields, L extends Options<F, any>>(
+	props: PluginProps<F, L>,
+) {
+	const { fields, $store } = props;
 	return {
 		getValues<O extends FieldsKeysCaseMap<F>>(special?: O) {
-			return _getValues({ fields, $state, defaultCase: "same", special });
+			return _getValues<F, L, typeof $store>({ fields, $store, defaultCase: "same", special });
 		},
 		getValuesLowercase<O extends FieldsKeysCaseMap<F>>(special?: O) {
-			return _getValues({ fields, $state, defaultCase: "lowercase", special });
+			return _getValues<F, L, typeof $store>({ fields, $store, defaultCase: "lowercase", special });
 		},
 		getValuesUppercase<O extends FieldsKeysCaseMap<F>>(special?: O) {
-			return _getValues({ fields, $state, defaultCase: "uppercase", special });
+			return _getValues<F, L, typeof $store>({ fields, $store, defaultCase: "uppercase", special });
 		},
 		getValuesSnakecase<O extends FieldsKeysCaseMap<F>>(special?: O) {
-			return _getValues({ fields, $state, defaultCase: "snake", special });
+			return _getValues<F, L, typeof $store>({ fields, $store, defaultCase: "snake", special });
 		},
 		getValuesSnakecaseAggressive<O extends FieldsKeysCaseMap<F>>(special?: O) {
-			return _getValues({ fields, $state, defaultCase: "snake_aggressive", special });
+			return _getValues<F, L, typeof $store>({
+				fields,
+				$store,
+				defaultCase: "snake_aggressive",
+				special,
+			});
 		},
 		getValuesKebabcase<O extends FieldsKeysCaseMap<F>>(special?: O) {
-			return _getValues({ fields, $state, defaultCase: "kebab", special });
+			return _getValues<F, L, typeof $store>({ fields, $store, defaultCase: "kebab", special });
 		},
 		getValuesKebabcaseAggressive<O extends FieldsKeysCaseMap<F>>(special?: O) {
-			return _getValues({ fields, $state, defaultCase: "kebab_aggressive", special });
+			return _getValues<F, L, typeof $store>({
+				fields,
+				$store,
+				defaultCase: "kebab_aggressive",
+				special,
+			});
 		},
 	};
 }

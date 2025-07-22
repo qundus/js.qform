@@ -1,9 +1,9 @@
 import type { Fields, Options } from "../_model";
 
-export default function isKeyInFields<F extends Fields>(
+export default function isKeyInFields<F extends Fields, O extends Options<F, any>>(
 	fields: F,
 	key: string | keyof F,
-	options: Options<F>,
+	options: O,
 ) {
 	if (!(key in fields)) {
 		if (options.onUpdateKeyNotFound === "warn") {

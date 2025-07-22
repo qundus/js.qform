@@ -1,10 +1,12 @@
-import type * as _MODEL from "../_model";
+import type { Field, InteractionProps, Options } from "../_model";
 import isFieldIncomplete from "../checks/is-field-incomplete";
 import createProcessors from "../processors";
 
-type Props<S extends _MODEL.Field> = _MODEL.InteractionProps<S>;
-export default function onBlurInteraction<S extends _MODEL.Field>(props: Props<S>) {
-	const { key, field, $next, event, $state } = props;
+type Props<S extends Field, O extends Options<any, any>> = InteractionProps<S, O>;
+export default function onBlurInteraction<S extends Field, O extends Options<any, any>>(
+	props: Props<S, O>,
+) {
+	const { key, field, $next, event, $store } = props;
 	$next.conditions[key].element.state = "blur";
 	const value = $next.values[key];
 	const processorProps = {
@@ -20,7 +22,7 @@ export default function onBlurInteraction<S extends _MODEL.Field>(props: Props<S
 	field.processCondition?.({
 		...processorProps,
 		get processors() {
-			return createProcessors({ ...processorProps, $next, $state });
+			return createProcessors({ ...processorProps, $next, $store });
 		},
 	});
 

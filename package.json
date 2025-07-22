@@ -67,6 +67,6 @@
 		"unbuild": "^3.5.0"
 	},
 	"dependencies": {
-		"@qundus/qstate": "^0.1.11"
+		"@qundus/qstate": "file:../js.qstate"
 	}
 }

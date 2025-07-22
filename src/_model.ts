@@ -1,5 +1,5 @@
 import type { _QSTATE } from "@qundus/qstate";
-import type { default as formButton } from "./plugins/form-button";
+export type * from "./plugins/form-button";
 import type { default as prepareAtom } from "./preparations/atom";
 import type createProcessors from "./processors";
 
@@ -90,7 +90,7 @@ export type FieldCondition = {
 export type FieldErrors = string[];
 export type FieldValidate = (
 	value: any,
-	helpers: { $values: State<any>["value"]["values"] },
+	helpers: { $values: StateObject<any>["values"] },
 ) => string | string[] | undefined;
 /**
  * processor used in case of complex data values
@@ -115,7 +115,7 @@ export type FieldProcessElement<D extends ElementDomType = ElementDomType> = (pr
 	key: string;
 	// element: ElementSelectReturns<D> | ElementInputReturns<D>;
 	element: Record<string, any>; // very tough getting the proper types here while allowing freedom of key assignment
-	value: FieldState<any>["value"];
+	value: FieldStateObject<any>;
 	isVdom: D extends "vdom" ? true : false;
 	kType: ElementKeysType;
 }) => void;
@@ -136,18 +136,22 @@ export type FieldValidateOn = "input" | "change";
 export type FieldOptions =
 	// | { label: string; value: string }[]
 	(<G>(props?: G) => { label: string; value: string }[]) | null | undefined;
-export type FieldState<F extends Field> = _QSTATE.Derived<{
+export type FieldStateObject<F extends Field> = {
 	value: F["value"] | null | undefined;
 	condition: FieldCondition;
 	errors?: string[] | null;
 	extras?: FieldExtras<F["type"]>;
-}>;
+};
+export type FieldStore<F extends Field, O extends Options<any, any>> = _QSTATE.DerivedStore<
+	FieldStateObject<F>,
+	O["state"]
+>;
 
 // DON'T CHANGE TEMPLATES, IF CHANGED CHECK EVERY FIELD ATTRIBUTES
 export type Field<T extends FieldType = FieldType, V = any> = {
 	type: T;
 	/** initial value */
-	value?: FieldValue<T, V>;
+	value?: V | FieldValue<T, V>;
 	hidden?: boolean;
 	label?: string;
 	processValue?:
@@ -157,10 +161,7 @@ export type Field<T extends FieldType = FieldType, V = any> = {
 	validate?: FieldValidate | FieldValidate[]; //| FieldValidate[];
 	validateOn?: FieldValidateOn;
 	processCondition?: FieldProcess<Field<any, FieldValue<T, V>>, void>;
-	onChange?: (props: {
-		$value: FieldState<Field<T, V>>["value"];
-		state: State<Fields>["value"];
-	}) => void;
+	onChange?: (props: { $value: FieldStateObject<Field<T>>; state: StateObject<Fields> }) => void;
 	required?: boolean;
 	disabled?: boolean;
 	//
@@ -229,17 +230,22 @@ export type StateConditions<T extends Fields> = {
 export type StateExtras<T extends Fields> = {
 	[K in keyof T as FieldExtras<T[K]["type"]> extends never ? never : K]: FieldExtras<T[K]["type"]>;
 };
-export type State<S extends Fields> = _QSTATE.MapExtended<
-	{
-		values: StateValues<S>;
-		conditions: StateConditions<S>;
-		errors: StateErrors<S>;
-		extras: StateExtras<S>;
-		incomplete: string[];
-		status: "idle" | "incomplete" | "error" | "valid" | "submit";
-	} extends infer G
-		? { [K in keyof G]: G[K] }
-		: never
+export type StateObject<F extends Fields> = {
+	values: StateValues<F>;
+	conditions: StateConditions<F>;
+	errors: StateErrors<F>;
+	extras: StateExtras<F>;
+	incomplete: string[];
+	status: "idle" | "incomplete" | "error" | "valid" | "submit";
+} extends infer G
+	? { [K in keyof G]: G[K] }
+	: never;
+type Statee<F extends Fields> = _QSTATE.NanoMap<StateObject<F>>;
+
+// store
+export type Store<F extends Fields, O extends Options<any, any>> = _QSTATE.Store<
+	Statee<F>,
+	O["state"]
 >;
 
 // atoms & elements
@@ -247,10 +253,10 @@ export type Atom<S extends Field> = ReturnType<typeof prepareAtom<S>>;
 export type Atoms<S extends Fields> = {
 	[K in keyof S]: Atom<S[K]>;
 };
-export type Button<F extends Fields> = ReturnType<typeof formButton<F>>;
 
 // creator options
-export type Options<F extends Fields> = {
+export type Options<F extends Fields, O extends _QSTATE.Options<Statee<F>>> = {
+	state?: _QSTATE.Options<Statee<F>, O>;
 	vmcm?: FieldVMCM;
 	/**
 	 * usually all values are immediatly updated in the state,
@@ -343,39 +349,41 @@ export type Options<F extends Fields> = {
 	 * @default ' ' or empty spcace
 	 */
 	flatLabelJoinChar?: string;
-	onMounted?: (props: {
-		init: State<F>["value"];
+	onMount?: (props: {
+		init: StateObject<F>;
 		update: (values: any) => void | Promise<void>;
 	}) => void | Promise<void>;
-	onMountedError?: (error: any) => void;
-	onChange?: (props: { $next: State<F>["value"]; abort: () => void }) => void;
+	onMountError?: (error: any) => void;
+	onChange?: (props: { $next: StateObject<F>; abort: () => void }) => void;
 };
 
 // internal props
-export type CreateProcessorProps<F extends Field> = {
+export type CreateProcessorProps<F extends Field, O extends Options<any, any>> = {
 	key: string;
 	field: F;
 	event: Event;
 	manualUpdate: boolean;
-	$next: State<any>["value"];
-	$state: State<any>;
+	$next: StateObject<any>;
+	$store: Store<any, O>;
 };
-export type PluginProps<F extends Fields> = {
+export type PluginProps<F extends Fields, O extends Options<F, any>> = {
 	fields: F;
-	// atoms: <G extends keyof F>(key: G) => A[G];
-	options: Options<any>;
-	$state: State<F>;
+	options: O;
+	$store: Store<F, O>;
 };
-export type ElementProps<F extends Field = Field> = {
+export type ElementProps<F extends Field, O extends Options<any, any>> = {
 	key: string;
 	field: F;
-	options: Options<any>;
-	$state: State<any>;
+	options: O;
+	$store: Store<any, O>;
 };
-export type InteractionProps<S extends Field = Field> = Omit<ElementProps<S>, "state"> & {
+export type InteractionProps<S extends Field, O extends Options<any, any>> = Omit<
+	ElementProps<S, O>,
+	"$store"
+> & {
 	event: Event;
 	value: any; //S["value"];
 	preprocessValue?: boolean;
-	$next: State<any>["value"];
-	$state: State<any>;
+	$next: StateObject<any>;
+	$store: Store<any, O>;
 };

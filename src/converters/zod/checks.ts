@@ -1,5 +1,3 @@
-import { Options } from "./_model";
-
 const zodNulls = ["undefined", "null", "void", "any", "unknown", "never", "nan"];
 export default {
 	// Enhanced type guard with File support

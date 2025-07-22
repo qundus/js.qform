@@ -1,59 +1,63 @@
-import { createMap } from "@qundus/qstate";
-import type { Field, Fields, Options, State } from "../_model";
+import { map } from "@qundus/qstate";
+import type { Field, Fields, Options, StateObject, Store } from "../_model";
 import isFieldIncomplete from "../checks/is-field-incomplete";
 import isKeyInFields from "../checks/is-key-in-fields";
 import onValue from "../interactions/on-value";
 
-// export type PreparedState<F extends Fields> = {
-// 	$state: State<F>
-// }
-export default function prepareState<F extends Fields>(props: {
+export default function prepareState<F extends Fields, O extends Options<F, any>>(props: {
 	fields: F;
-	state_init: State<F>["value"];
-	options: Options<F>;
-}): State<F> {
+	options: O;
+	state_init: StateObject<F>;
+}): Store<F, O> {
 	const { fields, state_init, options } = props;
-	const $state = createMap(state_init, {
-		async onMountAsync({ helpers, update, store }) {
-			if (helpers.isServer) {
+	const $store = map(state_init, {
+		...options.state,
+		async onMount(props) {
+			const { checks, actions, state } = props;
+			if (checks.isServerSide()) {
 				return;
 			}
-			if (options?.onMounted != null) {
-				try {
-					await options.onMounted({
-						init: state_init,
-						update(values) {
-							if (typeof values === "undefined") {
-								return;
-							}
-							update(($next) => {
-								for (const key in values) {
-									const value = values[key];
-									const field = fields[key as keyof typeof fields] as Field;
-									if (!isKeyInFields(fields, key, options)) {
-										continue;
-									}
-									onValue({
-										key,
-										field,
-										options,
-										$state: store as any,
-										$next,
-										event: null,
-										value,
-									});
-								}
-								return $next;
-							});
-						},
-					});
-				} catch (e: any) {
-					options?.onMountedError?.(e);
-				}
+			const ureturns = options?.state?.onMount?.(props) ?? null;
+			if (options.onMount == null) {
+				return ureturns;
 			}
+			try {
+				await options.onMount({
+					init: state_init,
+					update(values) {
+						if (typeof values === "undefined") {
+							return;
+						}
+						actions.update(($next) => {
+							for (const key in values) {
+								const value = values[key];
+								const field = fields[key as keyof typeof fields] as Field;
+								if (!isKeyInFields(fields, key, options)) {
+									continue;
+								}
+								onValue({
+									key,
+									field,
+									options,
+									$next,
+									$store,
+									value,
+									event: null,
+								});
+							}
+							return $next;
+						});
+					},
+				});
+			} catch (e: any) {
+				options?.onMountError?.(e);
+			}
+			return ureturns;
 		},
-		onChange({ payload }) {
-			const next = payload.newValue as typeof $state.value;
+		onChange(props) {
+			const { payload } = props;
+			const next = payload.newValue as typeof $store.value;
+			options?.state?.onChange?.(props);
 			options?.onChange?.({ ...payload, $next: next });
 			// check form status
 			if (next.status === "submit") {
@@ -122,5 +126,5 @@ export default function prepareState<F extends Fields>(props: {
 			//
 		},
 	});
-	return $state;
+	return $store;
 }

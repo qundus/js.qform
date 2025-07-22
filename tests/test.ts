@@ -1,6 +1,6 @@
-import { createForm } from "../dist";
-import { vFile } from "../dist/validators";
-
+import { createForm } from "../src";
+import { vFile } from "../src/validators";
+import { preactHook } from "@qundus/qstate/hooks";
 export const form = createForm(
 	{
 		name: null,
@@ -102,8 +102,13 @@ export const form = createForm(
 		},
 	},
 	{
+		state: {
+			hooks: {
+				usePreact: preactHook,
+			},
+		},
 		// incompleteListCount: 0,
-		onMounted: ({ init }) => {
+		onMount: ({ init }) => {
 			console.log("mounted form loginform :: ", init);
 		},
 		onChange: ({ $next }) => {
@@ -112,6 +117,9 @@ export const form = createForm(
 		},
 	},
 );
+form.actions.getValues();
+form.actions.getValuesLowercase();
+const fo = form.$hooks.usePreact();
 // form.$listen((value) => {});
 const name = form.atoms("name");
 name.$listen((value) => {});

@@ -1,13 +1,14 @@
-import type * as _MODEL from "../_model";
+import type { Field, FieldVMCM, InteractionProps, Options } from "../_model";
 import isFieldIncomplete from "../checks/is-field-incomplete";
 import processValue from "./on-value-process";
 
-export default function onValueInteraction<S extends _MODEL.Field>(
-	props: _MODEL.InteractionProps<S>,
+type Props<S extends Field, O extends Options<any, any>> = InteractionProps<S, O>;
+export default function onValueInteraction<S extends Field, O extends Options<any, any>>(
+	props: Props<S, O>,
 ) {
 	const { key, field, options, $next, event } = props;
 	const manual_update = event == null;
-	const vmcm: _MODEL.FieldVMCM = manual_update ? (options.vmcm ?? field.vmcm) : "normal";
+	const vmcm: FieldVMCM = manual_update ? (options.vmcm ?? field.vmcm) : "normal";
 	const condition = $next.conditions[key];
 	const value = processValue(props);
 	// start by notifying modified

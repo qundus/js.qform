@@ -1,4 +1,4 @@
-import type { Basics, Fields, Options, State } from "../_model";
+import type { Basics, Fields, Options, Store } from "../_model";
 // checks
 import checkBasics from "../checks/check-basics";
 import checkOptions from "../checks/check-options";
@@ -11,31 +11,34 @@ import prepareAtoms from "../preparations/atoms";
 import prepareFields from "../preparations/fields";
 import prepareState from "../preparations/state";
 
-export type CreateForm<B extends Basics, F extends Fields<B>> = ReturnType<
-	typeof prepareAtoms<F>
-> & {
-	actions: ReturnType<typeof formActions<F>>;
-	button: ReturnType<typeof formButton<F>>;
+export type CreateForm<
+	B extends Basics,
+	F extends Fields<B>,
+	O extends Options<F, unknown>,
+> = ReturnType<typeof prepareAtoms<F, O>> & {
+	actions: ReturnType<typeof formActions<F, O>>;
+	button: ReturnType<typeof formButton<F, O>>;
 	placeholders: typeof PLACEHOLDERS;
 	get keys(): () => (keyof F)[];
-	$hooks: State<F>["hooks"];
-	$subscribe: State<F>["subscribe"];
-	$listen: State<F>["listen"];
-}
-export default function createForm<B extends Basics, F extends Fields<B>>(
-	basics: B,
-	_options?: Options<F>,
-): CreateForm<B, F> {
+	$hooks: Store<F, O>["hooks"];
+	$subscribe: Store<F, O>["subscribe"];
+	$listen: Store<F, O>["listen"];
+};
+export default function createForm<
+	B extends Basics,
+	F extends Fields<B>,
+	O extends Options<F, unknown>,
+>(basics: B, _options?: O): CreateForm<B, F, O> {
 	checkBasics(basics);
-	const options = checkOptions<F>(_options);
+	const options = checkOptions<F, O>(_options);
 	// necessary preparations
-	const { fields, state_init } = prepareFields<B, F>({ basics, options });
-	const $state = prepareState<F>({ fields, state_init, options });
-	const { atoms, elements } = prepareAtoms<F>({ fields, options, $state });
+	const { fields, state_init } = prepareFields<B, F, O>({ basics, options });
+	const $store = prepareState<F, O>({ fields, state_init, options });
+	const { atoms, elements } = prepareAtoms<F, O>({ fields, options, $store });
 
 	// plugins
-	const actions = formActions<F>({ fields, options, $state });
-	const button = formButton<F>({ fields, options, $state });
+	const actions = formActions<F, O>({ fields, options, $store });
+	const button = formButton<F, O>({ fields, options, $store });
 
 	// other helpers
 	let keys = null as (keyof F)[];
@@ -54,10 +57,10 @@ export default function createForm<B extends Basics, F extends Fields<B>>(
 				return keys;
 			};
 		},
-		// $state, // not a good decition considering how update channels are occuring!
-		$hooks: $state.hooks,
-		$subscribe: $state.subscribe,
-		$listen: $state.listen,
+		// $store, // not a good decition considering how update channels are occuring!
+		$hooks: $store.hooks,
+		$subscribe: $store.subscribe,
+		$listen: $store.listen,
 	};
 }
 

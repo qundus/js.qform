@@ -1,9 +1,12 @@
 // https://dev.to/milliemolotov/how-to-retrieve-values-from-all-types-of-html-inputs-in-javascript-3143
-import type { Field, InteractionProps } from "../_model";
+import type { Field, InteractionProps, Options } from "../_model";
 import createProcessors from "../processors";
 
-export default function onValueProcessInteraction<F extends Field>(props: InteractionProps<F>) {
-	const { key, $next, event, $state, field } = props;
+type Props<S extends Field, O extends Options<any, any>> = InteractionProps<S, O>;
+export default function onValueProcessInteraction<F extends Field, O extends Options<any, any>>(
+	props: Props<F, O>,
+) {
+	const { key, $next, event, $store, field } = props;
 	let { value } = props;
 	const el = event?.target as any;
 	const manual_update = event == null;
@@ -17,7 +20,7 @@ export default function onValueProcessInteraction<F extends Field>(props: Intera
 		getValueOf: (key: string) => $next.values[key],
 		getConditionOf: (key: string) => $next.conditions[key],
 	};
-	const processors = createProcessors({ ...processorProps, $next, $state });
+	const processors = createProcessors({ ...processorProps, $next, $store });
 	if (field.type === "select") {
 		value = !manual_update ? el?.value : value;
 		if (preprocessValue) {
