@@ -1,13 +1,16 @@
-import type { Fields, Options, Store } from "../_model";
+import type { Fields, FormStore, Options } from "../_model";
 import prepareAtom, { type FieldAtom } from "../preparations/field-atom";
 
 export type Atoms<S extends Fields, O extends Options<S, any>> = {
 	[K in keyof S]: FieldAtom<S[K], O>;
 };
-export default function prepareAtoms<F extends Fields, O extends Options<F, any>>(props: {
+export type AtomsPrepared<S extends Fields, O extends Options<S, any>> = ReturnType<
+	typeof prepareFormAtoms<S, O>
+>;
+export default function prepareFormAtoms<F extends Fields, O extends Options<F, any>>(props: {
 	fields: F;
 	options: O;
-	$store: Store<F, O>;
+	$store: FormStore<F, O>;
 }) {
 	const { fields, $store, options } = props;
 	const atoms = {} as Atoms<F, O>;

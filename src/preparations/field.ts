@@ -1,10 +1,10 @@
 import type { Basic, BasicToField, Field, Options } from "../_model";
 import { PLACEHOLDERS } from "../const";
 
-export default function prepareFieldSetup<B extends Basic>(props: {
+export default function prepareField<B extends Basic, O extends Options<any, any>>(props: {
 	key: string;
 	basic: B;
-	options: Options<any>;
+	options: O;
 }) {
 	const { key, basic, options } = props;
 	let field = {} as Partial<BasicToField<B>>;

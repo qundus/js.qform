@@ -1,7 +1,7 @@
-import type { CreateProcessorProps, Field } from "../_model";
+import type { CreateProcessorProps, Field, Options } from "../_model";
 
-export default function createCheckboxProcessor<F extends Field, Returns>(
-	_props: CreateProcessorProps<F>,
+export default function createCheckboxProcessor<F extends Field, O extends Options<any, any>>(
+	_props: CreateProcessorProps<F, O>,
 ) {
 	// const { field } = props;
 	return (checked: any, value: any) => {

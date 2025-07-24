@@ -4,7 +4,7 @@ import type {
 	ElementProps,
 	ElementReturns,
 	Field,
-	FieldStateObject,
+	FieldStoreObject,
 	Options,
 } from "../_model";
 import onBlur from "../interactions/on-blur";
@@ -36,7 +36,7 @@ export default function makeInputElement<F extends Field, O extends Options<any,
 	return <D extends ElementDomType, K extends ElementKeysType>(
 		dType: D,
 		kType: K,
-		reactive: FieldStateObject<Field> | (() => FieldStateObject<Field>),
+		reactive: FieldStoreObject<Field> | (() => FieldStoreObject<Field>),
 	) => {
 		const data = typeof reactive === "function" ? reactive() : reactive;
 		let result = {} as any;
@@ -59,7 +59,7 @@ export default function makeInputElement<F extends Field, O extends Options<any,
 				result[id] = (event: Event) => {
 					event.preventDefault();
 					$store.update((next) => {
-						onValue({ ...props, $next: next, event, value: null });
+						onValue({ ...props, $form: next, event, value: null });
 						return next;
 					});
 				};
@@ -69,7 +69,7 @@ export default function makeInputElement<F extends Field, O extends Options<any,
 				result[id] = (event: Event) => {
 					event.preventDefault();
 					$store.update((next) => {
-						onValue({ ...props, $next: next, event, value: null });
+						onValue({ ...props, $form: next, event, value: null });
 						return next;
 					});
 				};

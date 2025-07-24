@@ -1,16 +1,9 @@
-import type {
-	ElementProps,
-	Field,
-	FieldCondition,
-	FieldStore,
-	FieldValidate,
-	Options,
-} from "../_model";
+import type { ElementProps, Field, FieldCondition, FieldValidate, Options } from "../_model";
 import { PLACEHOLDERS } from "../const";
 import onValue from "../interactions/on-value";
 import mergeConditions from "../methods/merge-conditions";
-import prepareFieldElement from "../preparations/field-element";
-import prepareFieldState from "../preparations/field-state";
+import prepareFieldElement, { type FieldElement } from "../preparations/field-element";
+import prepareFieldStore, { type FieldStore } from "../preparations/field-store";
 
 export type FieldAtom<F extends Field, O extends Options<any, any>> = {
 	$store: FieldStore<F, O>;
@@ -21,7 +14,7 @@ export type FieldAtom<F extends Field, O extends Options<any, any>> = {
 	type: F["type"];
 	label: string;
 	getOptions?: F["options"];
-	get element(): ReturnType<typeof prepareFieldElement<F>>;
+	get element(): FieldElement<F, O>;
 	placeholders: typeof PLACEHOLDERS;
 	get addValidation(): (func: FieldValidate) => (() => void) | null;
 	updateValue: (
@@ -37,7 +30,7 @@ export default function prepareAtom<F extends Field, O extends Options<any, any>
 	props: ElementProps<F, O>,
 ): FieldAtom<F, O> {
 	const { key, field, $store } = props;
-	const derived = prepareFieldState<F>(props);
+	const derived = prepareFieldStore<F, O>(props);
 	return {
 		// field,
 		key,
@@ -48,7 +41,7 @@ export default function prepareAtom<F extends Field, O extends Options<any, any>
 		$subscribe: derived.subscribe,
 		$listen: derived.listen,
 		get element() {
-			return prepareFieldElement<F>({ ...props, derived });
+			return prepareFieldElement<F, O>({ ...props, derived });
 		},
 		get placeholders() {
 			return PLACEHOLDERS;
@@ -84,15 +77,15 @@ export default function prepareAtom<F extends Field, O extends Options<any, any>
 		updateValue: (value, configs) => {
 			const prev = $store.get().values[key];
 			const current = typeof value === "function" ? (value as any)(prev) : value;
-			$store.update((next) => {
-				onValue({ ...props, $next: next, event: null, value: current, ...configs });
-				return next;
+			$store.update(($form) => {
+				onValue({ ...props, $form, event: null, value: current, ...configs });
+				return $form;
 			});
 		},
 		clearValue: () => {
-			$store.update((next) => {
-				onValue({ ...props, $next: next, event: null, value: null, preprocessValue: false });
-				return next;
+			$store.update(($form) => {
+				onValue({ ...props, $form, event: null, value: null, preprocessValue: false });
+				return $form;
 			});
 		},
 		updateCondition: (value) => {

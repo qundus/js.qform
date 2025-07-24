@@ -6,14 +6,14 @@ type Props<S extends Field, O extends Options<any, any>> = InteractionProps<S, O
 export default function onValueInteraction<S extends Field, O extends Options<any, any>>(
 	props: Props<S, O>,
 ) {
-	const { key, field, options, $next, event } = props;
+	const { key, field, options, $form, event } = props;
 	const manual_update = event == null;
 	const vmcm: FieldVMCM = manual_update ? (options.vmcm ?? field.vmcm) : "normal";
-	const condition = $next.conditions[key];
+	const condition = $form.conditions[key];
 	const value = processValue(props);
 	// start by notifying modified
-	$next.conditions[key].value.updated = true;
-	$next.conditions[key].value.lastUpdate = manual_update ? "manual" : "user";
+	$form.conditions[key].value.updated = true;
+	$form.conditions[key].value.lastUpdate = manual_update ? "manual" : "user";
 
 	// start by validating values.
 	let validation_errors = null as string[];
@@ -22,7 +22,7 @@ export default function onValueInteraction<S extends Field, O extends Options<an
 			validation_errors = [];
 			const validations = Array.isArray(field.validate) ? field.validate : [field.validate];
 			for (const validation of validations) {
-				const err = validation(value, { $values: $next.values });
+				const err = validation(value, { $values: $form.values });
 				if (Array.isArray(err)) {
 					if (err.length < 0) {
 						continue;
@@ -45,11 +45,11 @@ export default function onValueInteraction<S extends Field, O extends Options<an
 	}
 	/////         KEEP ORDER            \\\\\
 	if (validation_errors != null) {
-		$next.errors = { ...$next.errors, [key]: validation_errors };
+		$form.errors = { ...$form.errors, [key]: validation_errors };
 	} else {
-		if ($next.errors != null && key in $next.errors) {
+		if ($form.errors != null && key in $form.errors) {
 			// check if key exist before
-			delete $next.errors[key];
+			delete $form.errors[key];
 		}
 	}
 	// process value condition
@@ -77,9 +77,9 @@ export default function onValueInteraction<S extends Field, O extends Options<an
 	//
 	if (options.preventErroredValues) {
 		if (validation_errors == null) {
-			$next.values[key] = value;
+			$form.values[key] = value;
 		}
 	} else {
-		$next.values[key] = value;
+		$form.values[key] = value;
 	}
 }

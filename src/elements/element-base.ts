@@ -4,7 +4,7 @@ import type {
 	ElementProps,
 	ElementReturns,
 	Field,
-	FieldStateObject,
+	FieldStoreObject,
 	Options,
 } from "../_model";
 import onBlur from "../interactions/on-blur";
@@ -37,11 +37,10 @@ export default function makeBaseElement<F extends Field, O extends Options<any, 
 	return <D extends ElementDomType, K extends ElementKeysType>(
 		dType: D,
 		_kType: K,
-		reactive: FieldStateObject<Field> | (() => FieldStateObject<Field>),
+		reactive: FieldStoreObject<Field> | (() => FieldStoreObject<Field>),
 	) => {
 		const data = typeof reactive === "function" ? reactive() : reactive;
 		return {
-			// @ts-ignore
 			id: field.label,
 			[dType !== "vdom" ? "autocomplete" : "autoComplete"]: "off",
 			required: data?.condition.element.required,
@@ -50,10 +49,8 @@ export default function makeBaseElement<F extends Field, O extends Options<any, 
 				event.preventDefault();
 				event.stopImmediatePropagation();
 				event.stopPropagation();
-				// @ts-ignore
-				// field?.element?.onfocus?.(event);
 				$store.update((next) => {
-					onFocus({ ...props, $next: next, event, value: null });
+					onFocus({ ...props, $form: next, event, value: null });
 					return next;
 				});
 			},
@@ -65,7 +62,7 @@ export default function makeBaseElement<F extends Field, O extends Options<any, 
 				// 	return;
 				// }
 				$store.update((next) => {
-					onBlur({ ...props, $next: next, event, value: null });
+					onBlur({ ...props, $form: next, event, value: null });
 					return next;
 				});
 			},

@@ -108,10 +108,10 @@ export const form = createForm(
 			},
 		},
 		// incompleteListCount: 0,
-		onMount: ({ init }) => {
-			console.log("mounted form loginform :: ", init);
+		onMount: ({ form }) => {
+			console.log("mounted form loginform :: ", form);
 		},
-		onChange: ({ $next }) => {
+		onChange: ({ $form }) => {
 			console.log("changed form loginform :: ");
 			// $next.conditions.phone.hidden = $next.values.name == null || $next.values.name === "";
 		},

@@ -6,36 +6,36 @@ type Props<S extends Field, O extends Options<any, any>> = InteractionProps<S, O
 export default function onBlurInteraction<S extends Field, O extends Options<any, any>>(
 	props: Props<S, O>,
 ) {
-	const { key, field, $next, event, $store } = props;
-	$next.conditions[key].element.state = "blur";
-	const value = $next.values[key];
+	const { key, field, $form, event } = props;
+	$form.conditions[key].element.state = "blur";
+	const value = $form.values[key];
 	const processorProps = {
 		key,
 		field,
 		event,
 		value,
 		manualUpdate: false,
-		$condition: $next.conditions[key],
-		getValueOf: (key: string) => $next.values[key],
-		getConditionOf: (key: string) => $next.conditions[key],
+		$condition: $form.conditions[key],
+		getValueOf: (key: string) => $form.values[key],
+		getConditionOf: (key: string) => $form.conditions[key],
 	};
 	field.processCondition?.({
 		...processorProps,
 		get processors() {
-			return createProcessors({ ...processorProps, $next, $store });
+			return createProcessors({ ...processorProps, $form });
 		},
 	});
 
 	//
 	if (field.incompleteStatus) {
-		const value = $next.values[key];
+		const value = $form.values[key];
 		const incomplete = isFieldIncomplete({
 			value,
-			condition: $next.conditions[key],
+			condition: $form.conditions[key],
 			field,
 		});
 		if (incomplete) {
-			$next.conditions[key].value.error = "incomplete";
+			$form.conditions[key].value.error = "incomplete";
 		}
 	}
 }

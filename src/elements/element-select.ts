@@ -4,7 +4,7 @@ import type {
 	ElementProps,
 	ElementReturns,
 	Field,
-	FieldStateObject,
+	FieldStoreObject,
 	Options,
 } from "../_model";
 import onValue from "../interactions/on-value";
@@ -33,7 +33,7 @@ export default function makeSelectElement<F extends Field, O extends Options<any
 	return <D extends ElementDomType, K extends ElementKeysType>(
 		dType: D,
 		kType: K,
-		reactive: FieldStateObject<Field> | (() => FieldStateObject<Field>),
+		reactive: FieldStoreObject<Field> | (() => FieldStoreObject<Field>),
 	) => {
 		const data = typeof reactive === "function" ? reactive() : reactive;
 		let result = {} as any;
@@ -50,18 +50,18 @@ export default function makeSelectElement<F extends Field, O extends Options<any
 			if (field.validateOn === "input") {
 				const id = dType ? "oninput" : "onInput";
 				result[id] = (event: Event) => {
-					$store.update(($next) => {
-						onValue({ ...props, $next, event, value: null });
-						return $next;
+					$store.update(($form) => {
+						onValue({ ...props, $form, event, value: null });
+						return $form;
 					});
 				};
 			}
 			if (field.validateOn === "change") {
 				const id = dType ? "onchange" : "onChange";
 				result[id] = (event: Event) => {
-					$store.update((next) => {
-						onValue({ ...props, $next: next, event, value: null });
-						return next;
+					$store.update(($form) => {
+						onValue({ ...props, $form, event, value: null });
+						return $form;
 					});
 				};
 			}

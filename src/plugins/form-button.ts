@@ -1,20 +1,20 @@
-import type { Fields, Options, PluginProps, StateObject } from "../_model";
+import type { Fields, FormStatus, Options, PluginProps } from "../_model";
 import type { _QSTATE } from "@qundus/qstate";
 
-export type ButtonObject<F extends Fields> = {
-	status: StateObject<F>["status"];
+export type FormButtonObject = {
+	status: FormStatus;
 	disabled: boolean;
 	canSubmit: boolean;
 	submitting: boolean;
 };
-export type ButtonStore<F extends Fields, O extends Options<F, any>> = _QSTATE.DerivedStore<
-	ButtonObject<F>,
+export type FormButtonStore<F extends Fields, O extends Options<F, any>> = _QSTATE.DerivedStore<
+	FormButtonObject,
 	O["state"]
 >;
-export type Button<
+export type FormButton<
 	F extends Fields,
 	O extends Options<F, any>,
-	S extends ButtonStore<F, O> = ButtonStore<F, O>,
+	S extends FormButtonStore<F, O> = FormButtonStore<F, O>,
 > = {
 	$hooks: S["hooks"];
 	$listen: S["listen"];
@@ -22,7 +22,7 @@ export type Button<
 };
 export default function formButton<F extends Fields, O extends Options<F, any>>(
 	props: PluginProps<F, O>,
-): Button<F, O> {
+): FormButton<F, O> {
 	const { $store } = props;
 	const derived = $store.derive((state) => {
 		const status = state.status;
@@ -31,7 +31,7 @@ export default function formButton<F extends Fields, O extends Options<F, any>>(
 			disabled: status !== "valid",
 			canSubmit: status === "valid",
 			submitting: status === "submit",
-		} as ButtonObject<F>;
+		} as FormButtonObject;
 	});
 
 	return {

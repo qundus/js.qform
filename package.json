@@ -32,6 +32,9 @@
 			"module": "./dist/index.mjs",
 			"types": "./dist/index.d.ts"
 		},
+		"./_model": {
+			"types": "./dist/_model.d.ts"
+		},
 		"./converters": {
 			"module": "./dist/converters/index.mjs",
 			"types": "./dist/converters/index.d.ts"
@@ -39,9 +42,6 @@
 		"./validators": {
 			"module": "./dist/validators/index.mjs",
 			"types": "./dist/validators/index.d.ts"
-		},
-		"./_model": {
-			"types": "./dist/_model.d.ts"
 		}
 	},
 	"scripts": {
@@ -66,7 +66,7 @@
 		"typescript": "^5.8.3",
 		"unbuild": "^3.5.0"
 	},
-	"dependencies": {
+	"peerDependencies": {
 		"@qundus/qstate": "file:../js.qstate"
 	}
 }

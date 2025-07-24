@@ -1,14 +1,26 @@
-import type { ElementDomType, ElementKeysType, ElementProps, Field, FieldState } from "../_model";
+import type {
+	ElementDomType,
+	ElementKeysType,
+	ElementProps,
+	Field,
+	FieldStore,
+	Options,
+} from "../_model";
 import makeInputElement from "../elements/element-input";
 import makeSelectElement from "../elements/element-select";
+import { hooksInUse } from "@qundus/qstate/hooks";
 
 type ElementCustomProps<D extends ElementDomType, K extends ElementKeysType> = {
 	dType?: D;
 	kType?: K;
 };
-interface Props<F extends Field> {
-	derived: FieldState<F>;
+interface Props<F extends Field, O extends Options<any, any>> {
+	derived: FieldStore<F, O>;
 }
+
+export type FieldElement<F extends Field, O extends Options<any, any>> = ReturnType<
+	typeof prepareFieldElement<F, O>
+>;
 
 function getElementCustomProps<D extends ElementDomType, K extends ElementKeysType>(
 	dTypeFallback: ElementDomType,
@@ -19,13 +31,20 @@ function getElementCustomProps<D extends ElementDomType, K extends ElementKeysTy
 		ElementKeysType,
 	];
 }
-export default function getFormElements<F extends Field>(props: Props<F> & ElementProps<F>) {
-	const { derived, key, field, $state, options } = props;
+export default function prepareFieldElement<F extends Field, O extends Options<any, any>>(
+	props: Props<F, O> & ElementProps<F, O>,
+) {
+	const { derived, key, field, $store, options } = props;
 	// const baseEl = makeBaseElement({ field, key, $state, options });
 	const element =
-	"select" === field.type
-		? makeSelectElement<F>({ field, key, $state, options })
-		: makeInputElement<F>({ field, key, $state, options });
+		"select" === field.type
+			? makeSelectElement<F, O>({ field, key, $store, options })
+			: makeInputElement<F, O>({ field, key, $store, options });
+	// determine used hooks
+	const hooks = hooksInUse(derived);
+	const preactHook = hooks.PREACT.used && derived.hooks[hooks.PREACT.key];
+	const reactHook = hooks.REACT.used && derived.hooks[hooks.REACT.key];
+	const solidHook = hooks.SOLID.used && derived.hooks[hooks.SOLID.key];
 
 	return {
 		get dom() {
@@ -37,22 +56,17 @@ export default function getFormElements<F extends Field>(props: Props<F> & Eleme
 				return element(dType, kType, data);
 			};
 		},
-		// solidjs
-		get solid() {
-			return <D extends ElementDomType, K extends ElementKeysType>(
-				props?: ElementCustomProps<D, K>,
-			) => {
-				const data = derived.hooks.solid();
-				const [dType, kType] = getElementCustomProps("dom", props);
-				return element(dType, kType, data);
-			};
-		},
 		// preact
 		get preact() {
 			return <D extends ElementDomType, K extends ElementKeysType>(
 				props?: ElementCustomProps<D, K>,
 			) => {
-				const data = derived.hooks.preact();
+				if (preactHook == null) {
+					throw new Error(
+						"qform: preact hook does not exist, please add it to state.hooks option!",
+					);
+				}
+				const data = preactHook();
 				const [dType, kType] = getElementCustomProps("vdom", props);
 				return element(dType, kType, data);
 			};
@@ -62,8 +76,24 @@ export default function getFormElements<F extends Field>(props: Props<F> & Eleme
 			return <D extends ElementDomType, K extends ElementKeysType>(
 				props?: ElementCustomProps<D, K>,
 			) => {
-				const data = derived.hooks.react();
+				if (reactHook == null) {
+					throw new Error("qform: react hook does not exist, please add it to state.hooks option!");
+				}
+				const data = reactHook();
 				const [dType, kType] = getElementCustomProps("vdom", props);
+				return element(dType, kType, data);
+			};
+		},
+		// solidjs
+		get solid() {
+			return <D extends ElementDomType, K extends ElementKeysType>(
+				props?: ElementCustomProps<D, K>,
+			) => {
+				if (solidHook == null) {
+					throw new Error("qform: solid hook does not exist, please add it to state.hooks option!");
+				}
+				const data = solidHook();
+				const [dType, kType] = getElementCustomProps("dom", props);
 				return element(dType, kType, data);
 			};
 		},

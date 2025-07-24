@@ -6,7 +6,7 @@ type Props<S extends Field, O extends Options<any, any>> = InteractionProps<S, O
 export default function onValueProcessInteraction<F extends Field, O extends Options<any, any>>(
 	props: Props<F, O>,
 ) {
-	const { key, $next, event, $store, field } = props;
+	const { key, $form, event, field } = props;
 	let { value } = props;
 	const el = event?.target as any;
 	const manual_update = event == null;
@@ -17,10 +17,10 @@ export default function onValueProcessInteraction<F extends Field, O extends Opt
 		value,
 		field,
 		manualUpdate: manual_update,
-		getValueOf: (key: string) => $next.values[key],
-		getConditionOf: (key: string) => $next.conditions[key],
+		getValueOf: (key: string) => $form.values[key],
+		getConditionOf: (key: string) => $form.conditions[key],
 	};
-	const processors = createProcessors({ ...processorProps, $next, $store });
+	const processors = createProcessors({ ...processorProps, $form });
 	if (field.type === "select") {
 		value = !manual_update ? el?.value : value;
 		if (preprocessValue) {
@@ -63,7 +63,7 @@ export default function onValueProcessInteraction<F extends Field, O extends Opt
 			value = pro({
 				...processorProps,
 				value,
-				$condition: $next.conditions[key],
+				$condition: $form.conditions[key],
 				processors,
 			});
 		}

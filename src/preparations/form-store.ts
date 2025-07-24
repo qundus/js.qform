@@ -1,16 +1,24 @@
-import { map } from "@qundus/qstate";
-import type { Field, Fields, Options, StateObject, Store } from "../_model";
+import { type _QSTATE, map } from "@qundus/qstate";
+import type { Field, Fields, FormObject, Options } from "../_model";
 import isFieldIncomplete from "../checks/is-field-incomplete";
 import isKeyInFields from "../checks/is-key-in-fields";
 import onValue from "../interactions/on-value";
 
-export default function prepareState<F extends Fields, O extends Options<F, any>>(props: {
+// types
+export type FormState<F extends Fields> = _QSTATE.NanoMap<FormObject<F>>;
+
+// store
+export type FormStore<F extends Fields, O extends Options<any, any>> = _QSTATE.Store<
+	FormState<F>,
+	O["state"]
+>;
+export default function prepareFormStore<F extends Fields, O extends Options<F, any>>(props: {
 	fields: F;
 	options: O;
-	state_init: StateObject<F>;
-}): Store<F, O> {
-	const { fields, state_init, options } = props;
-	const $store = map(state_init, {
+	form_init: FormObject<F>;
+}) {
+	const { fields, form_init, options } = props;
+	const $store = map(form_init, {
 		...options.state,
 		async onMount(props) {
 			const { checks, actions, state } = props;
@@ -23,12 +31,12 @@ export default function prepareState<F extends Fields, O extends Options<F, any>
 			}
 			try {
 				await options.onMount({
-					init: state_init,
+					form: form_init,
 					update(values) {
 						if (typeof values === "undefined") {
 							return;
 						}
-						actions.update(($next) => {
+						actions.update(($form) => {
 							for (const key in values) {
 								const value = values[key];
 								const field = fields[key as keyof typeof fields] as Field;
@@ -39,13 +47,13 @@ export default function prepareState<F extends Fields, O extends Options<F, any>
 									key,
 									field,
 									options,
-									$next,
-									$store,
+									$form,
+									// $store: state,
 									value,
 									event: null,
 								});
 							}
-							return $next;
+							return $form;
 						});
 					},
 				});
@@ -58,7 +66,7 @@ export default function prepareState<F extends Fields, O extends Options<F, any>
 			const { payload } = props;
 			const next = payload.newValue as typeof $store.value;
 			options?.state?.onChange?.(props);
-			options?.onChange?.({ ...payload, $next: next });
+			options?.onChange?.({ ...payload, $form: next });
 			// check form status
 			if (next.status === "submit") {
 				return;
@@ -126,5 +134,6 @@ export default function prepareState<F extends Fields, O extends Options<F, any>
 			//
 		},
 	});
-	return $store;
+
+	return $store as FormStore<F, O>;
 }

@@ -1,4 +1,4 @@
-import type { Fields, Options, PluginProps, Store } from "../_model";
+import type { Fields, FormStore, Options, PluginProps } from "../_model";
 import { PLACEHOLDERS } from "../const";
 
 // basics
@@ -106,7 +106,7 @@ function getValueCase(key: string, convertCase: FieldKeyCase = "same") {
 function _getValues<
 	F extends Fields,
 	L extends Options<F, any>,
-	S extends Store<F, L>,
+	S extends FormStore<F, L>,
 	D extends FieldKeyCase = FieldKeyCase,
 	O extends FieldsKeysCaseMap<F> = FieldsKeysCaseMap<F>,
 >(props: { fields: F; $store: S; defaultCase: D; special?: O }) {

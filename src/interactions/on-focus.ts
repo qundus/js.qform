@@ -5,24 +5,24 @@ type Props<S extends Field, O extends Options<any, any>> = InteractionProps<S, O
 export default function onFocusInteraction<S extends Field, O extends Options<any, any>>(
 	props: Props<S, O>,
 ) {
-	const { key, field, $next, event, $store } = props;
-	$next.conditions[key].element.state = "focus";
-	$next.conditions[key].element.visited = true;
-	const value = $next.values[key];
+	const { key, field, $form, event } = props;
+	$form.conditions[key].element.state = "focus";
+	$form.conditions[key].element.visited = true;
+	const value = $form.values[key];
 	const processorProps = {
 		key,
 		field,
 		event,
 		value,
 		manualUpdate: false,
-		$condition: $next.conditions[key],
-		getValueOf: (key: string) => $next.values[key],
-		getConditionOf: (key: string) => $next.conditions[key],
+		$condition: $form.conditions[key],
+		getValueOf: (key: string) => $form.values[key],
+		getConditionOf: (key: string) => $form.conditions[key],
 	};
 	field.processCondition?.({
 		...processorProps,
 		get processors() {
-			return createProcessors({ ...processorProps, $next, $store });
+			return createProcessors({ ...processorProps, $form });
 		},
 	});
 }

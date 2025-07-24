@@ -14,6 +14,9 @@ function getDeepPath(obj: any, _path: string) {
 	return obj;
 }
 
+export type FormActions<F extends Fields, O extends Options<F, any>> = ReturnType<
+	typeof formActions<F, O>
+>;
 export default function formActions<F extends Fields, O extends Options<F, any>>(
 	props: PluginProps<F, O>,
 ) {
@@ -101,8 +104,8 @@ export default function formActions<F extends Fields, O extends Options<F, any>>
 						key,
 						field,
 						options,
-						$store,
-						$next: next,
+						// $store,
+						$form: next,
 						event: null,
 						value,
 					});

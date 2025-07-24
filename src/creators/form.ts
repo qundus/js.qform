@@ -1,29 +1,40 @@
-import type { Basics, Fields, Options, Store } from "../_model";
+import type { Basics, Fields, FormStore, Options } from "../_model";
 // checks
 import checkBasics from "../checks/check-basics";
 import checkOptions from "../checks/check-options";
 import { PLACEHOLDERS } from "../const";
+import mergeOptions from "../methods/merge-options";
 // methods
-import formActions from "../plugins/form-actions";
-import formButton from "../plugins/form-button";
-import prepareAtoms from "../preparations/atoms";
+import formActions, { type FormActions } from "../plugins/form-actions";
+import formButton, { type FormButton } from "../plugins/form-button";
+import prepareFormAtoms, { type AtomsPrepared } from "../preparations/form-atoms";
 // preparations
-import prepareFields from "../preparations/fields";
-import prepareState from "../preparations/state";
+import prepareFormFields from "../preparations/form-fields";
+import prepareFormStore from "../preparations/form-store";
 
 export type CreateForm<
 	B extends Basics,
 	F extends Fields<B>,
 	O extends Options<F, unknown>,
-> = ReturnType<typeof prepareAtoms<F, O>> & {
-	actions: ReturnType<typeof formActions<F, O>>;
-	button: ReturnType<typeof formButton<F, O>>;
+> = AtomsPrepared<F, O> & {
+	actions: FormActions<F, O>;
+	button: FormButton<F, O>;
 	placeholders: typeof PLACEHOLDERS;
 	get keys(): () => (keyof F)[];
-	$hooks: Store<F, O>["hooks"];
-	$subscribe: Store<F, O>["subscribe"];
-	$listen: Store<F, O>["listen"];
+	$hooks: FormStore<F, O>["hooks"];
+	$subscribe: FormStore<F, O>["subscribe"];
+	$listen: FormStore<F, O>["listen"];
 };
+
+export function createFormSetup<G extends Options<any, unknown>>(goptions: G) {
+	return <B extends Basics, F extends Fields<B>, D extends Options<F, unknown>>(
+		basics: B,
+		doptions?: D,
+	) => {
+		const options = mergeOptions(goptions, doptions);
+		return createForm<B, F, typeof options>(basics, options);
+	};
+}
 export default function createForm<
 	B extends Basics,
 	F extends Fields<B>,
@@ -32,9 +43,9 @@ export default function createForm<
 	checkBasics(basics);
 	const options = checkOptions<F, O>(_options);
 	// necessary preparations
-	const { fields, state_init } = prepareFields<B, F, O>({ basics, options });
-	const $store = prepareState<F, O>({ fields, state_init, options });
-	const { atoms, elements } = prepareAtoms<F, O>({ fields, options, $store });
+	const { fields, form_init } = prepareFormFields<B, F, O>({ basics, options });
+	const $store = prepareFormStore<F, O>({ fields, form_init, options });
+	const { atoms, elements } = prepareFormAtoms<F, O>({ fields, options, $store });
 
 	// plugins
 	const actions = formActions<F, O>({ fields, options, $store });
