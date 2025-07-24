@@ -344,9 +344,7 @@ export type Options<F extends Fields, O extends _QSTATE.Options<FormState<F>>> =
 };
 
 export type MergedOptions<G extends Options<any, unknown>, D extends Options<any, unknown>> = {
-	state: unknown extends G["state"] | D["state"]
-		? unknown
-		: _QSTATE.OptionsMerged<FormState<any>, G["state"], D["state"]>;
+	state: _QSTATE.OptionsMerged<FormState<any>, G["state"], D["state"]>;
 } & D;
 
 // internal props
