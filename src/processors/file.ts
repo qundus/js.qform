@@ -1,7 +1,7 @@
 import type { CreateProcessorProps, Field, FieldExtras, Options } from "../_model";
 import { getFileString } from "../methods/get-file-string";
 
-export default function createFileProcessor<F extends Field, O extends Options<any, any>>(
+export default function createFileProcessor<F extends Field, O extends Options<any>>(
 	props: CreateProcessorProps<F, O>,
 ) {
 	const { key, $form } = props;

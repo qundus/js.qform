@@ -2,8 +2,8 @@ import type { Field, InteractionProps, Options } from "../_model";
 import isFieldIncomplete from "../checks/is-field-incomplete";
 import createProcessors from "../processors";
 
-type Props<S extends Field, O extends Options<any, any>> = InteractionProps<S, O>;
-export default function onBlurInteraction<S extends Field, O extends Options<any, any>>(
+type Props<S extends Field, O extends Options<any>> = InteractionProps<S, O>;
+export default function onBlurInteraction<S extends Field, O extends Options<any>>(
 	props: Props<S, O>,
 ) {
 	const { key, field, $form, event } = props;

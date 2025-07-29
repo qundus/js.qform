@@ -1,7 +1,7 @@
 import type { Basic, BasicToField, Field, Options } from "../_model";
 import { PLACEHOLDERS } from "../const";
 
-export default function prepareField<B extends Basic, O extends Options<any, any>>(props: {
+export default function prepareField<B extends Basic, O extends Options<any>>(props: {
 	key: string;
 	basic: B;
 	options: O;

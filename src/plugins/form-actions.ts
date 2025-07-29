@@ -14,10 +14,10 @@ function getDeepPath(obj: any, _path: string) {
 	return obj;
 }
 
-export type FormActions<F extends Fields, O extends Options<F, any>> = ReturnType<
+export type FormActions<F extends Fields, O extends Options<F>> = ReturnType<
 	typeof formActions<F, O>
 >;
-export default function formActions<F extends Fields, O extends Options<F, any>>(
+export default function formActions<F extends Fields, O extends Options<F>>(
 	props: PluginProps<F, O>,
 ) {
 	const { fields, $store, options } = props;
@@ -36,17 +36,17 @@ export default function formActions<F extends Fields, O extends Options<F, any>>
 			if (!canSubmit()) {
 				return null;
 			}
-			$store.update((next) => {
-				next.status = "submit";
-				return next;
+			$store.update(({ $next }) => {
+				$next.status = "submit";
+				return $next;
 			});
 			return () => {
 				if ($store.get().status !== "submit") {
 					return;
 				}
-				$store.update((next) => {
-					next.status = "valid";
-					return next;
+				$store.update(({ $next }) => {
+					$next.status = "valid";
+					return $next;
 				});
 			};
 		},
@@ -63,17 +63,17 @@ export default function formActions<F extends Fields, O extends Options<F, any>>
 				return;
 			}
 			try {
-				$store.update((next) => {
-					next.status = "submit";
-					return next;
+				$store.update(({ $next }) => {
+					$next.status = "submit";
+					return $next;
 				});
 				await runner?.();
 			} catch (e: any) {
 				error?.(e);
 			} finally {
-				$store.update((next) => {
-					next.status = "valid";
-					return next;
+				$store.update(({ $next }) => {
+					$next.status = "valid";
+					return $next;
 				});
 			}
 		},
@@ -84,7 +84,7 @@ export default function formActions<F extends Fields, O extends Options<F, any>>
 			if (values == null) {
 				return;
 			}
-			$store.update((next) => {
+			$store.update(({ $next }) => {
 				for (const _key in values) {
 					let path = paths?.[_key];
 					let key = _key;
@@ -105,7 +105,7 @@ export default function formActions<F extends Fields, O extends Options<F, any>>
 						field,
 						options,
 						// $store,
-						$form: next,
+						$form: $next,
 						event: null,
 						value,
 					});
@@ -117,14 +117,14 @@ export default function formActions<F extends Fields, O extends Options<F, any>>
 					// 	}
 					// }
 				}
-				return next;
+				return $next;
 			});
 		},
 		updateConditions: <G extends Record<keyof F, Partial<FieldCondition>>>(conditions: G) => {
 			if (conditions == null) {
 				return;
 			}
-			$store.update(($next) => {
+			$store.update(({ $next }) => {
 				for (const key in conditions) {
 					const condition = conditions[key];
 					if (!isKeyInFields(fields, key, options) || condition == null) {

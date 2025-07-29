@@ -4,7 +4,7 @@ import type { Options, SchemaToFields, SchemaToFieldsExtenders } from "./_model"
 import checks from "./checks";
 
 import helpers from "./helpers";
-import type { ZodTypeAny } from "zod";
+// import type { ZodTypeAny } from "zod";
 
 export default function schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 	zod: Z,
@@ -29,10 +29,11 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 	for (const [_key, _schema] of Object.entries(obj.shape)) {
 		// get the key for flat/nested object
 		const key = (baseKey.length > 0 ? `${baseKey}.` : "") + _key;
-		const schema = _schema as ZodTypeAny;
+		const schema = _schema as any;
 		const typeName = helpers.getZodTypeName(schema, key);
 
 		if (typeName.startsWith("object")) {
+			// @ts-ignore
 			const fields = _schemaToFields(schema, options, key);
 			result = { ...result, ...fields };
 			continue;

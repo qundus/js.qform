@@ -14,17 +14,17 @@
 // 	ZodType,
 // 	ZodTypeAny,
 // } from "zod";
-import type { ZodTypeAny } from "zod";
+// import type { ZodTypeAny } from "zod";
 import type { Field, FieldType } from "../../_model";
 
 // base
-export type UnwrapZodType<T> = T extends {
-	_def: { innerType: infer U };
-}
-	? U extends ZodTypeAny
-		? UnwrapZodType<U>
-		: T
-	: T;
+// export type UnwrapZodType<T> = T extends {
+// 	_def: { innerType: infer U };
+// }
+// 	? U extends ZodTypeAny
+// 		? UnwrapZodType<U>
+// 		: T
+// 	: T;
 
 export type IsZodObject<T> = {
 	_def: { typeName: "ZodObject" };

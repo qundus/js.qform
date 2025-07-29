@@ -24,7 +24,7 @@ export type Returns<T extends ElementDomType> = ElementReturns<
 		onInput: OnInput;
 	}
 >;
-export default function makeSelectElement<F extends Field, O extends Options<any, any>>(
+export default function makeSelectElement<F extends Field, O extends Options<any>>(
 	props: ElementProps<F, O>,
 ) {
 	const { key, field, $store, options } = props;

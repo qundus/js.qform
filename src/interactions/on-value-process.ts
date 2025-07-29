@@ -2,8 +2,8 @@
 import type { Field, InteractionProps, Options } from "../_model";
 import createProcessors from "../processors";
 
-type Props<S extends Field, O extends Options<any, any>> = InteractionProps<S, O>;
-export default function onValueProcessInteraction<F extends Field, O extends Options<any, any>>(
+type Props<S extends Field, O extends Options<any>> = InteractionProps<S, O>;
+export default function onValueProcessInteraction<F extends Field, O extends Options<any>>(
 	props: Props<F, O>,
 ) {
 	const { key, $form, event, field } = props;

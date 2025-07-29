@@ -30,7 +30,7 @@ export type Returns<T extends ElementDomType> = ElementReturns<
 		autoComplete?: "on" | "off";
 	}
 >;
-export default function makeBaseElement<F extends Field, O extends Options<any, any>>(
+export default function makeBaseElement<F extends Field, O extends Options<any>>(
 	props: ElementProps<F, O>,
 ) {
 	const { key, $store, field, options } = props;

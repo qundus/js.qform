@@ -6,7 +6,7 @@ import prepareFieldCondition from "../preparations/field-condition";
 export default function prepareFormFields<
 	B extends Basics,
 	F extends Fields<B>,
-	O extends Options<F, any>,
+	O extends Options<F>,
 >(props: { basics: B; options: O }) {
 	const { basics, options } = props;
 	const fields = {} as F;

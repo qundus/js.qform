@@ -1,10 +1,15 @@
 {
 	"name": "@qundus/qform",
-	"version": "0.1.4",
+	"version": "0.2.0",
 	"description": "The only form library you'll ever need :)",
 	"keywords": [
 		"forms",
 		"html-forms",
+		"web",
+		"web-forms",
+		"web form",
+		"html",
+		"framework agnostic",
 		"svelte",
 		"solidjs",
 		"solid",
@@ -27,25 +32,33 @@
 	"files": [
 		"dist/"
 	],
+	"type": "module",
+	"types": "./dist/index.d.ts",
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.mjs",
 	"exports": {
 		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.mjs",
 			"module": "./dist/index.mjs",
-			"types": "./dist/index.d.ts"
-		},
-		"./_model": {
-			"types": "./dist/_model.d.ts"
+			"require": "./dist/index.cjs"
 		},
 		"./converters": {
+			"types": "./dist/converters/index.d.ts",
+			"import": "./dist/converters/index.mjs",
 			"module": "./dist/converters/index.mjs",
-			"types": "./dist/converters/index.d.ts"
+			"require": "./dist/converters/index.cjs"
 		},
 		"./validators": {
+			"types": "./dist/validators/index.d.ts",
+			"import": "./dist/validators/index.mjs",
 			"module": "./dist/validators/index.mjs",
-			"types": "./dist/validators/index.d.ts"
+			"require": "./dist/validators/index.cjs"
 		}
 	},
 	"scripts": {
-		"build": "unbuild --skip-cache",
+		"build": "tsup && node ./root/dist-size.mjs",
+		"watch": "tsup --watch",
 		"check:all": "biome check",
 		"check:all:fix": "biome check --write",
 		"check:errors": "biome check --diagnostic-level=error",
@@ -63,10 +76,19 @@
 		"@biomejs/biome": "^2.1.1",
 		"@types/node": "^24.0.14",
 		"lefthook": "^1.12.2",
-		"typescript": "^5.8.3",
-		"unbuild": "^3.5.0"
+		"terser": "^5.43.1",
+		"tsup": "^8.5.0",
+		"typescript": "^5.8.3"
 	},
 	"peerDependencies": {
-		"@qundus/qstate": "file:../js.qstate"
+		"@qundus/qstate": ">=0.3.7"
+	},
+	"optionalDependencies": {
+		"astro": ">=4",
+		"preact": ">=8.5.2",
+		"react": ">=16.6.3",
+		"react-dom": ">=16.6.3",
+		"solid-js": ">=1.6",
+		"svelte": ">=2.16.1"
 	}
 }

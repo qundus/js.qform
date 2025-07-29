@@ -1,6 +1,6 @@
 import type { CreateProcessorProps, Field, Options } from "../_model";
 
-export default function createNumberProcessor<F extends Field, O extends Options<any, any>>(
+export default function createNumberProcessor<F extends Field, O extends Options<any>>(
 	_props: CreateProcessorProps<F, O>,
 ) {
 	// const { field } = _props;

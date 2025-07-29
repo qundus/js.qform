@@ -1,16 +1,14 @@
-import { createForm, createFormSetup } from "../src";
+import { form, setupForm } from "../src";
 import { vFile } from "../src/validators";
 import { preactHook } from "@qundus/qstate/hooks";
 
-const formSetup = createFormSetup({
-	state: {
-		hooks: {
-			preactFromSetup: preactHook,
-		},
+const formSetup = setupForm({
+	hooks: {
+		preactFromSetup: preactHook,
 	},
 });
 
-export const form = formSetup(
+export const $form = formSetup(
 	{
 		name: null,
 		color: "color",
@@ -111,28 +109,29 @@ export const form = formSetup(
 		},
 	},
 	{
-		// state: {
-		// 	hooks: {
-		// 		usePreact: preactHook,
-		// 	},
-		// },
+		hooks: {
+			preact: preactHook,
+		},
+		events: {
+			onMount: ({ init }) => {
+				console.log("mounted form loginform :: ", init);
+			},
+			onChange: ({ $next }) => {
+				console.log("changed form loginform :: ", $next.newValue);
+				// $next.conditions.phone.hidden = $next.values.name == null || $next.values.name === "";
+			},
+		},
 		// incompleteListCount: 0,
-		onMount: ({ form }) => {
-			console.log("mounted form loginform :: ", form);
-		},
-		onChange: ({ $form }) => {
-			console.log("changed form loginform :: ");
-			// $next.conditions.phone.hidden = $next.values.name == null || $next.values.name === "";
-		},
 	},
 );
-
-form.actions.getValues();
-form.actions.getValuesLowercase();
-const fo = form.$hooks.usePreact();
+// const button = form.button.$store.form.actions.getValues();
+// form.actions.getValuesLowercase();
+// const fo = form.$store..hooks..preact();
 // form.$listen((value) => {});
-const name = form.atoms("name");
-name.$listen((value) => {});
+// const name = form.atoms("picture");
+// const $store = name.$store.hooks.preact();
+
+// name.$listen((value) => {});
 // loginForm.fields.picture.$state.value.;
 // loginForm.fields.email.$state.value.;
 //

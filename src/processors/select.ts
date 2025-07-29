@@ -2,7 +2,7 @@
 import type { CreateProcessorProps, Field, Options } from "../_model";
 import { PLACEHOLDERS } from "../const";
 
-export default function createSelectProcessor<F extends Field, O extends Options<any, any>>(
+export default function createSelectProcessor<F extends Field, O extends Options<any>>(
 	props: CreateProcessorProps<F, O>,
 ) {
 	const { event, field } = props;

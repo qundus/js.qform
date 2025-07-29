@@ -14,11 +14,11 @@ type ElementCustomProps<D extends ElementDomType, K extends ElementKeysType> = {
 	dType?: D;
 	kType?: K;
 };
-interface Props<F extends Field, O extends Options<any, any>> {
+interface Props<F extends Field, O extends Options<any>> {
 	derived: FieldStore<F, O>;
 }
 
-export type FieldElement<F extends Field, O extends Options<any, any>> = ReturnType<
+export type FieldElement<F extends Field, O extends Options<any>> = ReturnType<
 	typeof prepareFieldElement<F, O>
 >;
 
@@ -31,7 +31,7 @@ function getElementCustomProps<D extends ElementDomType, K extends ElementKeysTy
 		ElementKeysType,
 	];
 }
-export default function prepareFieldElement<F extends Field, O extends Options<any, any>>(
+export default function prepareFieldElement<F extends Field, O extends Options<any>>(
 	props: Props<F, O> & ElementProps<F, O>,
 ) {
 	const { derived, key, field, $store, options } = props;
@@ -41,11 +41,19 @@ export default function prepareFieldElement<F extends Field, O extends Options<a
 			? makeSelectElement<F, O>({ field, key, $store, options })
 			: makeInputElement<F, O>({ field, key, $store, options });
 	// determine used hooks
-	const hooks = hooksInUse(derived);
-	const preactHook = hooks.PREACT.used && derived.hooks[hooks.PREACT.key];
-	const reactHook = hooks.REACT.used && derived.hooks[hooks.REACT.key];
-	const solidHook = hooks.SOLID.used && derived.hooks[hooks.SOLID.key];
-
+	const { hasHooks, getHook, getHooks, hookNames } = hooksInUse(derived);
+	const preactHook = getHook(hookNames.preact);
+	const reactHook = getHook(hookNames.react);
+	const solidHooks = getHooks(
+		hookNames.solid,
+		hookNames.solid_unwrapped,
+		hookNames.solid_from,
+		hookNames.solid_from_unwrapped,
+	);
+	let solidHook = false as false | string;
+	if (solidHooks) {
+		solidHook = solidHooks[0];
+	}
 	return {
 		get dom() {
 			return <D extends ElementDomType, K extends ElementKeysType>(
@@ -61,12 +69,13 @@ export default function prepareFieldElement<F extends Field, O extends Options<a
 			return <D extends ElementDomType, K extends ElementKeysType>(
 				props?: ElementCustomProps<D, K>,
 			) => {
-				if (preactHook == null) {
+				if (!preactHook) {
 					throw new Error(
-						"qform: preact hook does not exist, please add it to state.hooks option!",
+						"qform: preact hook does not exist, please add it to options.hooks option!",
 					);
 				}
-				const data = preactHook();
+				// @ts-ignore
+				const data = derived.hooks[preactHook]();
 				const [dType, kType] = getElementCustomProps("vdom", props);
 				return element(dType, kType, data);
 			};
@@ -76,10 +85,13 @@ export default function prepareFieldElement<F extends Field, O extends Options<a
 			return <D extends ElementDomType, K extends ElementKeysType>(
 				props?: ElementCustomProps<D, K>,
 			) => {
-				if (reactHook == null) {
-					throw new Error("qform: react hook does not exist, please add it to state.hooks option!");
+				if (!reactHook) {
+					throw new Error(
+						"qform: react hook does not exist, please add it to options.hooks option!",
+					);
 				}
-				const data = reactHook();
+				// @ts-ignore
+				const data = derived.hooks[reactHook]();
 				const [dType, kType] = getElementCustomProps("vdom", props);
 				return element(dType, kType, data);
 			};
@@ -89,10 +101,13 @@ export default function prepareFieldElement<F extends Field, O extends Options<a
 			return <D extends ElementDomType, K extends ElementKeysType>(
 				props?: ElementCustomProps<D, K>,
 			) => {
-				if (solidHook == null) {
-					throw new Error("qform: solid hook does not exist, please add it to state.hooks option!");
+				if (!solidHook) {
+					throw new Error(
+						"qform: solid hook does not exist, please add it to options.hooks option!",
+					);
 				}
-				const data = solidHook();
+				// @ts-ignore
+				const data = derived.hooks[solidHook]();
 				const [dType, kType] = getElementCustomProps("dom", props);
 				return element(dType, kType, data);
 			};

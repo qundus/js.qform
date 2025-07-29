@@ -1,4 +1,5 @@
-import type { Basics, Fields, FormStore, Options } from "../_model";
+import type { _QSTATE } from "@qundus/qstate";
+import type { Basics, Fields, FormObject, FormStore, Options, OptionsMerged } from "../_model";
 // checks
 import checkBasics from "../checks/check-basics";
 import checkOptions from "../checks/check-options";
@@ -12,34 +13,22 @@ import prepareFormAtoms, { type AtomsPrepared } from "../preparations/form-atoms
 import prepareFormFields from "../preparations/form-fields";
 import prepareFormStore from "../preparations/form-store";
 
-export type CreateForm<
-	B extends Basics,
-	F extends Fields<B>,
-	O extends Options<F, unknown>,
-> = AtomsPrepared<F, O> & {
+export type Form<B extends Basics, F extends Fields<B>, O extends Options<F>> = AtomsPrepared<
+	F,
+	O
+> & {
 	actions: FormActions<F, O>;
 	button: FormButton<F, O>;
 	placeholders: typeof PLACEHOLDERS;
 	get keys(): () => (keyof F)[];
-	$hooks: FormStore<F, O>["hooks"];
-	$subscribe: FormStore<F, O>["subscribe"];
-	$listen: FormStore<F, O>["listen"];
+	$store: _QSTATE.StoreDerived<FormObject<F>, { hooks: O["hooks"] }>;
+	// $store: Pick<FormStore<F, O>, "get" | "derive" | "subscribe" | "listen">;
 };
 
-export function createFormSetup<G extends Options<any, unknown>>(goptions: G) {
-	return <B extends Basics, F extends Fields<B>, D extends Options<F, unknown>>(
-		basics: B,
-		doptions?: D,
-	) => {
-		const options = mergeOptions(goptions, doptions);
-		return createForm<B, F, typeof options>(basics, options);
-	};
-}
-export default function createForm<
-	B extends Basics,
-	F extends Fields<B>,
-	O extends Options<F, unknown>,
->(basics: B, _options?: O): CreateForm<B, F, O> {
+export function form<B extends Basics, F extends Fields<B>, O extends Options<F>>(
+	basics: B,
+	_options?: O,
+): Form<B, F, O> {
 	checkBasics(basics);
 	const options = checkOptions<F, O>(_options);
 	// necessary preparations
@@ -50,6 +39,9 @@ export default function createForm<
 	// plugins
 	const actions = formActions<F, O>({ fields, options, $store });
 	const button = formButton<F, O>({ fields, options, $store });
+
+	// TODO: find a better solution for this if it affects performance
+	const derived = $store.derive((value) => value);
 
 	// other helpers
 	let keys = null as (keyof F)[];
@@ -68,10 +60,14 @@ export default function createForm<
 				return keys;
 			};
 		},
-		// $store, // not a good decition considering how update channels are occuring!
-		$hooks: $store.hooks,
-		$subscribe: $store.subscribe,
-		$listen: $store.listen,
+		$store: derived,
+	};
+}
+
+export function formSetup<G extends Options<any>>(goptions: G) {
+	return <B extends Basics, F extends Fields<B>, D extends Options<F>>(basics: B, doptions?: D) => {
+		const options = mergeOptions(goptions, doptions) as OptionsMerged<G, D>;
+		return form<B, F, typeof options>(basics, options);
 	};
 }
 

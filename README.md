@@ -1,26 +1,56 @@
-<!-- disclaimer -->
-<br /><img height="50" src="https://img.shields.io/badge/Disclaimer-grey?style=for-the-badge" />
+<!-- header : <img width="150px" height="50px" src="https://img.shields.io/badge/name-blue?style=for-the-badge" /> -->
+<!-- header2: <img width="150px" src="https://img.shields.io/badge/name-blue?style=for-the-badge" /> -->
+<!-- vars -->
+[qState]: https://www.npmjs.com/package/@qundus/qstate
+
+<!-- intro -->
 <br />
+<img width="150px" height="50px" src="https://img.shields.io/badge/intro-blue?style=for-the-badge" />
+<br />
+
+it feels absolutly bizzare how html forms have become framework dedicated solution over the years, and it becomes almost impossible to switch/jump between framework if a feature is not applicable somewhere or there's simply a library in another framework would make the job at hand go faster, this is what this library targets. Offering a fresh way to look at forms and how they're used without depending on any framework and offer framework dependant solutions wherever neccessary.
+
+<!-- features -->
+<br />
+<img width="150px" height="50px" src="https://img.shields.io/badge/features-yellow?style=for-the-badge" />
+<br />
+
+- Independant and straight forward form logic
+- support for framework specific hooks through [qState]
+- modify dom/vdom element right from any input
+- global form options to control whole form behavior
+- validator function or array of functions
+- schema validation libraries converters, only Zod for now
+- listen to form mount and change events and modify data accordingly
+- ...and much more!
+
+<!-- disclaimer -->
+<br />
+<img width="150px" height="50px" src="https://img.shields.io/badge/disclaimer-red?style=for-the-badge" />
+<br />
+
 i don't have time rn to finish this but below are some helpful examples, this is still work in progress even though i'm testing it in production and it's working like a charm.
 i appreciate any feedback, issues and/or PRs
 
 <!-- installation -->
-<br /><img height="50" src="https://img.shields.io/badge/Installation-grey?style=for-the-badge" />
+<br />
+<img width="150px" height="50px" src="https://img.shields.io/badge/Installation-grey?style=for-the-badge" />
 <br />
 
 ```shell
-bun install @qundus/qform
+pnpm install @qundus/qform @qundus/qstate
 ```
 
-<!-- intro -->
-<br /><img height="50" src="https://img.shields.io/badge/intro-gray?style=for-the-badge" />
+<!-- basics -->
 <br />
-this library targets the enforcement of separation of form logic away from html, so first, create a form file:
+<img width="150px" height="50px" src="https://img.shields.io/badge/basics-gray?style=for-the-badge" />
+<br />
 
 ```ts
 // login-form | any file type js, cjs, mjs or ts
-import { createForm } from "@qundus/qform";
-export const loginForm = createForm(
+import { form } from "@qundus/qform";
+
+export const login = form(
   {
     name: null, // fallback input.type="text"
     password: "text" // place the type
@@ -28,51 +58,54 @@ export const loginForm = createForm(
 );
 ```
 
-now use it wherever
 
-<!--  -->
-<br /><img height="40" src="https://img.shields.io/badge/vanilla-red?style=for-the-badge" />
+
+<!-- basics: usage -->
 <br />
+<img height="50px" src="https://img.shields.io/badge/basics-usage-blue?style=for-the-badge" />
+<br />
+<br />
+
+> Vanilla
 
 ```html
 <div class="flex flex-col h-fit self-start">
   <label for="name" class="flex flex-row gap-2">
     <input id="name" />
   </label>
-  <label for="email" class="flex flex-row gap-2">
-    <input id="email" />
+  <label for="password" class="flex flex-row gap-2">
+    <input id="password"  />
   </label>
   <script type="module">
-    import { loginForm } from "./login-form.mjs";
+    import { login } from "./login-form.mjs";
     const name = document.getElementById("name");
-    const email = document.getElementById("email");
+    const password = document.getElementById("password");
     if (name != null) {
-      const atom = loginForm.elements("name").ref(name);
+      const atom = login.elements("name").ref(name);
     }
     if (email != null) {
-      const atom = loginForm.elements("email").ref(email);
+      const atom = login.elements("password").ref(email);
     }
   </script>
 </div>
 ```
-
-<!--  -->
-<br /><img height="40" src="https://img.shields.io/badge/react_preact_solid-red?style=for-the-badge" />
-<br />
+> Preact React Solid tsx jsx
 
 ```ts
-import { loginForm } from "./login-form";
+import { login } from "./login-form";
 
 interface Props extends IntrinsicElement<"input"> {}
 export default function (props: Props) {
-	const atom = loginForm.atoms("email");
-	const $state = atom.$hooks.preact(); // react, solid...
+	const atom = login.atoms("name");
+	// const $state = atom.$store.hooks.preact(); // use your hooks
+
 	return (
 		<label className="flex flex-col gap-2">
-			<p>Email</p>
+			<p>Name</p>
 			<input
 				{...props}
-				{...atom.element.preact()} // react, solid...
+				ref={atom.element.ref}
+				// {...atom.element.preact()} // or use your hooks
 			/>
 			{$state.errors?.[0]}
 		</label>
@@ -80,40 +113,43 @@ export default function (props: Props) {
 }
 ```
 
-<!--  -->
-<br /><img height="40" src="https://img.shields.io/badge/svelte-red?style=for-the-badge" />
-<br />
+> Svelte
+
 ```html
 <script lang="ts">
-  import { loginForm } from "./login-form";
-  const atom = loginForm.atoms("name");
-  const state = atom.$state.hooks.useSvelte();
+  import { login } from "./login-form";
+  const atom = login.atoms("password");
+  const state = atom.$store;
+  // const state = atom.$store.hooks.useSvelte(); // or use your hooks
   const props = $props();
 </script>
 
 <label class="flex flex-col gap-2">
-  <p>Name</p>
+  <p>Password</p>
   <input
     {...props}
-    {...atom.element.preact()}
-    class={`border-2px border-solid ${$state.condition.state === "focus" ? "!border-black" : "border-gray"}`}
+    {...atom.element.svelte()}
+    class={`border-2px border-solid ${$state.condition.element.state === "focus" ? "!border-black" : "border-gray"}`}
   />
   {$state.errors?.[0]}
 </label>
 ```
 
-<!--  -->
-<br /><img height="50" src="https://img.shields.io/badge/External_Validators-gray?style=for-the-badge" />
+<!-- basics: converters -->
+<br />
+<img height="50px" src="https://img.shields.io/badge/basics-converters-blue?style=for-the-badge" />
 <br />
 
-in this chapter we're going to tab into how this library can be used with zod validator and such data/schema validation libraries, for now only zod is supported:
+converters are a way to use external schema validation libraries, converters work on forming the given schema object and flattening it and then creating the form fields.
+
+> Zod
 
 ```ts
-import { createForm, cZod } from "@qundus/qform";
+import { form, cZod } from "@qundus/qform";
 import { cZod } from "@qundus/qform/converters";
 import { z } from "zod";
 
-
+// schema data
 enum Questions {
 	first = "are you cool?",
 	second = "why are you gay?",
@@ -149,7 +185,7 @@ const schema = z.object({
 	options: z.array(z.string()),
 });
 
-// console.log(z.array(z.nativeEnum(Wow).and(z.nativeEnum(No)))._def);
+// now let's make our form fields
 const fields = cZod.schemaToFields(schema, {
 	// override
 	override: {
@@ -165,25 +201,28 @@ const fields = cZod.schemaToFields(schema, {
 	},
 });
 
-export const zodForm = createForm(fields);
+// now pass it and create the form object
+export const zodForm = form(fields);
 ```
 
-and then use it how you would use the loginForm from before
+and then use it how you would use the login from before.
 
-<!--  -->
-<br /><img height="50" src="https://img.shields.io/badge/buttons-gray?style=for-the-badge" />
+<!-- basics: form button -->
+<br />
+<img height="50px" src="https://img.shields.io/badge/basics-buttons-blue?style=for-the-badge" />
 <br />
 
 ```tsx
-import {loginForm} from "../login-form";
+import { login } from "../login-form";
 
+// let's assume you're using preact hook
 export function Page() {
-	const $button = loginForm.button.$hooks.preact() // react, solid...
+	const $button = login.button.$store.hooks.preact();
 	function submit() {
 	e.preventDefault();
-	loginForm.actions.submit({
+	login.actions.submit({
 		runner: async () => {
-			const data = loginForm.actions.getValuesLowercase();
+			const data = login.actions.getValuesLowercase();
 			// if the data was flattened, you can unflatten it
 			const cdata = cObj.unflatten(data);
 		},
@@ -205,16 +244,26 @@ export function Page() {
 ```
 
 
-<!-- Later -->
-<br /><img height="50" src="https://img.shields.io/badge/to_be_continued-gray?style=for-the-badge" />
+<!-- options  -->
+<br />
+<img width="150px" height="50px" src="https://img.shields.io/badge/options-gray?style=for-the-badge" />
+<br />
 <br />
 
-so much more examples and use cases are on the way once i get time, i'll just through in these here randomly till i get back
+TODO: list options
+
+
+<!-- Later -->
+<br />
+<img height="50" src="https://img.shields.io/badge/to_be_continued-gray?style=for-the-badge" />
+<br />
+
+so much more examples and use cases are on the way once i get time, i'll just throw in these here randomly till i get back
 
 ```ts
-import { createForm } from "@qundus/qform";
+import { form } from "@qundus/qform";
 import { vFile } from "@qundus/qform/validators";
-export const loginForm = createForm(
+export const login = form(
 	{
 		name: null,
 		color: "color",
@@ -316,12 +365,12 @@ export const loginForm = createForm(
 	},
 	{
 		// incompleteListCount: 0,
-		onMounted: ({ init }) => {
-			console.log("mounted form loginform :: ", init);
+		onMount: ({ init }) => {
+			console.log("mounted form login :: ", init);
 		},
-		onChange: ({ $next }) => {
-			console.log("changed form loginform :: ");
-			// $next.conditions.phone.hidden = $next.values.name == null || $next.values.name === "";
+		onChange: ({ newValue }) => {
+			console.log("changed form login :: ");
+			// newValue.conditions.phone.hidden = newValue.values.name == null || newValue.values.name === "";
 		},
 	},
 );
@@ -330,4 +379,5 @@ export const loginForm = createForm(
 <!-- refs & thanks -->
 <br /><img height="50" src="https://img.shields.io/badge/references_&_thanks_to-gray?style=for-the-badge" />
 <br />
-- [@qundus/qstate](https://www.npmjs.com/package/@qundus/qstate)
+
+- [@qundus/qstate][qState]

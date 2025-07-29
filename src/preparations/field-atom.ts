@@ -5,11 +5,11 @@ import mergeConditions from "../methods/merge-conditions";
 import prepareFieldElement, { type FieldElement } from "../preparations/field-element";
 import prepareFieldStore, { type FieldStore } from "../preparations/field-store";
 
-export type FieldAtom<F extends Field, O extends Options<any, any>> = {
+export type FieldAtom<F extends Field, O extends Options<any>> = {
 	$store: FieldStore<F, O>;
-	$hooks: FieldStore<F, O>["hooks"];
-	$listen: FieldStore<F, O>["listen"];
-	$subscribe: FieldStore<F, O>["subscribe"];
+	// $hooks: FieldStore<F, O>["hooks"];
+	// $listen: FieldStore<F, O>["listen"];
+	// $subscribe: FieldStore<F, O>["subscribe"];
 	key: string;
 	type: F["type"];
 	label: string;
@@ -26,7 +26,7 @@ export type FieldAtom<F extends Field, O extends Options<any, any>> = {
 		value: Partial<FieldCondition> | ((prev: Partial<FieldCondition>) => Partial<FieldCondition>),
 	) => void;
 };
-export default function prepareAtom<F extends Field, O extends Options<any, any>>(
+export default function prepareAtom<F extends Field, O extends Options<any>>(
 	props: ElementProps<F, O>,
 ): FieldAtom<F, O> {
 	const { key, field, $store } = props;
@@ -37,9 +37,9 @@ export default function prepareAtom<F extends Field, O extends Options<any, any>
 		type: field.type,
 		label: field.label,
 		$store: derived,
-		$hooks: derived.hooks,
-		$subscribe: derived.subscribe,
-		$listen: derived.listen,
+		// $hooks: derived.hooks,
+		// $subscribe: derived.subscribe,
+		// $listen: derived.listen,
 		get element() {
 			return prepareFieldElement<F, O>({ ...props, derived });
 		},
@@ -77,13 +77,13 @@ export default function prepareAtom<F extends Field, O extends Options<any, any>
 		updateValue: (value, configs) => {
 			const prev = $store.get().values[key];
 			const current = typeof value === "function" ? (value as any)(prev) : value;
-			$store.update(($form) => {
+			$store.update(({ $next: $form }) => {
 				onValue({ ...props, $form, event: null, value: current, ...configs });
 				return $form;
 			});
 		},
 		clearValue: () => {
-			$store.update(($form) => {
+			$store.update(({ $next: $form }) => {
 				onValue({ ...props, $form, event: null, value: null, preprocessValue: false });
 				return $form;
 			});
@@ -91,9 +91,9 @@ export default function prepareAtom<F extends Field, O extends Options<any, any>
 		updateCondition: (value) => {
 			const prev = $store.get().values[key];
 			const newCondition = typeof value === "function" ? (value as any)(prev) : value;
-			$store.update(($next) => {
-				$next.conditions[key] = mergeConditions($next.conditions[key], newCondition);
-				return $next;
+			$store.update(({ $next: $form }) => {
+				$form.conditions[key] = mergeConditions($form.conditions[key], newCondition);
+				return $form;
 			});
 		},
 	};

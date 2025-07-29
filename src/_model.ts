@@ -10,7 +10,7 @@ export type * from "./preparations/field-store";
 export type * from "./preparations/form-store";
 
 // internal
-export type _Processors<F extends Field, O extends Options<any, any>> = ReturnType<
+export type _Processors<F extends Field, O extends Options<any>> = ReturnType<
 	typeof createProcessors<F, O>
 >;
 
@@ -117,7 +117,7 @@ export type FieldProcess<F extends Field, Returns> = (props: {
 	$condition: FieldCondition;
 	event: Event;
 	manualUpdate: boolean;
-	processors: _Processors<F, Options<any, any>>;
+	processors: _Processors<F, Options<any>>;
 }) => Returns;
 export type FieldProcessElement<D extends ElementDomType = ElementDomType> = (props: {
 	key: string;
@@ -241,8 +241,12 @@ export type FormObject<F extends Fields> = {
 	: never;
 
 // creator options
-export type Options<F extends Fields, O extends _QSTATE.Options<FormState<F>>> = {
-	state?: _QSTATE.Options<FormState<F>, O>;
+export type Options<F extends Fields> = {
+	//
+	hooks?: _QSTATE.OptionsHooks;
+	// events?: _QSTATE.OptionsEvents;
+	onMount?: (props: { init: FormObject<F>; update: (values: any) => void | Promise<void> }) => void;
+	onChange?: (props: { newValue: FormObject<F>; abort: () => void }) => void;
 	vmcm?: FieldVMCM;
 	/**
 	 * usually all values are immediatly updated in the state,
@@ -335,20 +339,12 @@ export type Options<F extends Fields, O extends _QSTATE.Options<FormState<F>>> =
 	 * @default ' ' or empty spcace
 	 */
 	flatLabelJoinChar?: string;
-	onMount?: (props: {
-		form: FormObject<F>;
-		update: (values: any) => void | Promise<void>;
-	}) => void | Promise<void>;
-	onMountError?: (error: any) => void;
-	onChange?: (props: { $form: FormObject<F>; abort: () => void }) => void;
 };
 
-export type MergedOptions<G extends Options<any, unknown>, D extends Options<any, unknown>> = {
-	state: _QSTATE.OptionsMerged<FormState<any>, G["state"], D["state"]>;
-} & D;
+export type OptionsMerged<G extends Options<any>, D extends Options<any>> = D & G;
 
 // internal props
-export type InteractionProps<F extends Field, O extends Options<any, any>> = {
+export type InteractionProps<F extends Field, O extends Options<any>> = {
 	key: string;
 	field: F;
 	options: O;
@@ -357,19 +353,19 @@ export type InteractionProps<F extends Field, O extends Options<any, any>> = {
 	preprocessValue?: boolean;
 	$form: FormObject<any>;
 };
-export type CreateProcessorProps<F extends Field, O extends Options<any, any>> = {
+export type CreateProcessorProps<F extends Field, O extends Options<any>> = {
 	key: string;
 	field: F;
 	event: Event;
 	manualUpdate: boolean;
 	$form: FormObject<any>;
 };
-export type PluginProps<F extends Fields, O extends Options<F, any>> = {
+export type PluginProps<F extends Fields, O extends Options<F>> = {
 	fields: F;
 	options: O;
 	$store: FormStore<F, O>;
 };
-export type ElementProps<F extends Field, O extends Options<any, any>> = {
+export type ElementProps<F extends Field, O extends Options<any>> = {
 	key: string;
 	field: F;
 	options: O;

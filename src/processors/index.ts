@@ -4,7 +4,7 @@ import { default as file } from "./file";
 import { default as number } from "./number";
 import { default as select } from "./select";
 
-export default function createProcessors<F extends Field, O extends Options<any, any>>(
+export default function createProcessors<F extends Field, O extends Options<any>>(
 	props: CreateProcessorProps<F, O>,
 ) {
 	return {

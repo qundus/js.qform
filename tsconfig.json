@@ -6,10 +6,10 @@
 	"exclude": ["**/node_modules/**", "**/dist/**"],
 	"references": [{ "path": "./tsconfig.node.json" }],
 	"compilerOptions": {
-		"module": "ESNext",
-		"target": "ESNext",
+		"moduleResolution": "bundler",
+		"module": "esnext",
+		"target": "es2017",
 		"lib": ["dom", "dom.iterable", "ESNext"],
-		"moduleResolution": "Bundler",
 		"strict": true,
 		"noEmit": false,
 		"allowJs": false,

@@ -7,20 +7,23 @@ export type FormButtonObject = {
 	canSubmit: boolean;
 	submitting: boolean;
 };
-export type FormButtonStore<F extends Fields, O extends Options<F, any>> = _QSTATE.DerivedStore<
+export type FormButtonStore<F extends Fields, O extends Options<F>> = _QSTATE.StoreDerived<
 	FormButtonObject,
-	O["state"]
+	{
+		hooks: O["hooks"];
+	}
 >;
 export type FormButton<
 	F extends Fields,
-	O extends Options<F, any>,
+	O extends Options<F>,
 	S extends FormButtonStore<F, O> = FormButtonStore<F, O>,
 > = {
-	$hooks: S["hooks"];
-	$listen: S["listen"];
-	$subscribe: S["subscribe"];
+	$store: S;
+	// $hooks: S["hooks"];
+	// $listen: S["listen"];
+	// $subscribe: S["subscribe"];
 };
-export default function formButton<F extends Fields, O extends Options<F, any>>(
+export default function formButton<F extends Fields, O extends Options<F>>(
 	props: PluginProps<F, O>,
 ): FormButton<F, O> {
 	const { $store } = props;
@@ -35,8 +38,9 @@ export default function formButton<F extends Fields, O extends Options<F, any>>(
 	});
 
 	return {
-		$hooks: derived.hooks,
-		$subscribe: derived.subscribe,
-		$listen: derived.listen,
+		$store: derived,
+		// $hooks: derived.hooks,
+		// $subscribe: derived.subscribe,
+		// $listen: derived.listen,
 	};
 }

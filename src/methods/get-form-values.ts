@@ -105,7 +105,7 @@ function getValueCase(key: string, convertCase: FieldKeyCase = "same") {
 
 function _getValues<
 	F extends Fields,
-	L extends Options<F, any>,
+	L extends Options<F>,
 	S extends FormStore<F, L>,
 	D extends FieldKeyCase = FieldKeyCase,
 	O extends FieldsKeysCaseMap<F> = FieldsKeysCaseMap<F>,
@@ -129,7 +129,7 @@ function _getValues<
 	return result as FieldsValues<F, D, O>;
 }
 
-export default function getFormValues<F extends Fields, L extends Options<F, any>>(
+export default function getFormValues<F extends Fields, L extends Options<F>>(
 	props: PluginProps<F, L>,
 ) {
 	const { fields, $store } = props;
