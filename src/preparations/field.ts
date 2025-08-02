@@ -40,9 +40,11 @@ export default function prepareField<B extends Basic, O extends Options<any>>(pr
 	if (field.label == null) {
 		const char = options.flatObjectKeysChar;
 		field.label = key;
-		if (key.includes(char)) {
-			const replacement = options.flatLabelJoinChar;
-			field.label = key.split(char).join(replacement);
+		if (char != null) {
+			if (key.includes(char)) {
+				const replacement = options.flatLabelJoinChar;
+				field.label = key.split(char).join(replacement);
+			}
 		}
 	}
 

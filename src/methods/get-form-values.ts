@@ -47,8 +47,14 @@ type FieldKeyCase =
 // 		| "getValuesLowercase"
 // 	>,
 // ) => void;
-type IsValueKeyOfCase<T extends FieldKeyCase, V extends FieldKeyCase> = V extends T ? true : false;
-type ValueKeyCaseType<K, V extends FieldKeyCase> = IsValueKeyOfCase<"snake", V> extends true
+type IsValueKeyOfCase<
+	T extends FieldKeyCase,
+	V extends FieldKeyCase | undefined,
+> = unknown extends V ? false : V extends T ? true : false;
+type ValueKeyCaseType<K, V extends FieldKeyCase | undefined> = IsValueKeyOfCase<
+	"snake",
+	V
+> extends true
 	? CamelToSnakeCase<string & K>
 	: IsValueKeyOfCase<"snake_aggressive", V> extends true
 		? CamelToSnakeCase<string & K, "_", true>
@@ -64,11 +70,10 @@ type ValueKeyCaseType<K, V extends FieldKeyCase> = IsValueKeyOfCase<"snake", V> 
 							K;
 // : never;
 
-type GetValueKeyCase<V extends FieldKeyCase, Default extends FieldKeyCase> = unknown extends V
-	? Default
-	: FieldKeyCase extends V
-		? Default
-		: V;
+type GetValueKeyCase<
+	V extends FieldKeyCase | undefined,
+	Default extends FieldKeyCase,
+> = unknown extends V ? Default : FieldKeyCase extends V ? Default : V;
 type FieldsValues<T extends Fields, V extends FieldKeyCase, O extends FieldsKeysCaseMap<T>> = {
 	[K in keyof T as ValueKeyCaseType<K, GetValueKeyCase<O[K], V>>]: T[K]["value"];
 };

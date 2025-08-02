@@ -8,7 +8,7 @@ export default function onValueInteraction<S extends Field, O extends Options<an
 ) {
 	const { key, field, options, $form, event } = props;
 	const manual_update = event == null;
-	const vmcm: FieldVMCM = manual_update ? (options.vmcm ?? field.vmcm) : "normal";
+	const vmcm: FieldVMCM = manual_update ? (options.vmcm ?? field.vmcm ?? "normal") : "normal";
 	const condition = $form.conditions[key];
 	const value = processValue(props);
 	// start by notifying modified
@@ -16,7 +16,7 @@ export default function onValueInteraction<S extends Field, O extends Options<an
 	$form.conditions[key].value.lastUpdate = manual_update ? "manual" : "user";
 
 	// start by validating values.
-	let validation_errors = null as string[];
+	let validation_errors = null as string[] | null;
 	if (field.validate != null) {
 		if (!manual_update || (manual_update && vmcm === "normal")) {
 			validation_errors = [];

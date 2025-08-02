@@ -1,7 +1,7 @@
 import type { _QSTATE } from "@qundus/qstate";
 import type createProcessors from "./processors";
 import type { FieldStoreObject } from "./preparations/field-store";
-import type { FormState, FormStore } from "./preparations/form-store";
+import type { FormStore } from "./preparations/form-store";
 // export types
 export type * from "./plugins/form-button";
 export type * from "./preparations/field-atom";
@@ -54,7 +54,7 @@ export type FieldType =
 	| "url"
 	| "week"
 	| "select";
-export type FieldValue<T extends FieldType, D> = unknown extends D
+export type FieldValue<T extends FieldType, D> = D extends unknown | null | undefined
 	? T extends "select"
 		? string[]
 		: T extends "file"
@@ -74,7 +74,7 @@ export type FieldValue<T extends FieldType, D> = unknown extends D
  */
 export type FieldExtras<T extends FieldType> = T extends "file"
 	? {
-			buffer: string | ArrayBuffer;
+			buffer: string | ArrayBuffer | null | undefined;
 			file: File;
 			placeholder: string;
 			name: string;
@@ -95,11 +95,11 @@ export type FieldCondition = {
 		required: boolean;
 	};
 };
-export type FieldErrors = string[];
+export type FieldErrors = string[] | null | undefined;
 export type FieldValidate = (
 	value: any,
 	helpers: { $values: FormObject<any>["values"] },
-) => string | string[] | undefined;
+) => string | string[] | undefined | null;
 /**
  * processor used in case of complex data values
  * need to be extracted from field element and the basic
@@ -108,17 +108,15 @@ export type FieldValidate = (
  * this gives the chance to modify field state like required,
  * disabled..etc, according to specific needs or logic.
  */
-export type FieldProcess<F extends Field, Returns> = (props: {
-	value: any; //S["value"];
-	key: string;
-	field: F;
-	getValueOf: (key: string) => any;
-	getConditionOf: (key: string) => any;
-	$condition: FieldCondition;
-	event: Event;
-	manualUpdate: boolean;
-	processors: _Processors<F, Options<any>>;
-}) => Returns;
+export type FieldProcess<F extends Field, Returns> = (
+	props: Omit<ProcessorProps<F>, "$form"> & {
+		value: any; //S["value"];
+		getValueOf: (key: string) => any;
+		getConditionOf: (key: string) => any;
+		$condition: FieldCondition;
+		processors: _Processors<F, Options<any>>;
+	},
+) => Returns;
 export type FieldProcessElement<D extends ElementDomType = ElementDomType> = (props: {
 	key: string;
 	// element: ElementSelectReturns<D> | ElementInputReturns<D>;
@@ -147,18 +145,17 @@ export type FieldOptions =
 
 // DON'T CHANGE TEMPLATES, IF CHANGED CHECK EVERY FIELD ATTRIBUTES
 export type Field<T extends FieldType = FieldType, V = any> = {
+	// T extends FieldType = FieldType
 	type: T;
 	/** initial value */
-	value?: V | FieldValue<T, V>;
+	value?: FieldValue<T, V> | null;
 	hidden?: boolean;
 	label?: string;
-	processValue?:
-		| FieldProcess<Field<any, FieldValue<T, V>>, any>
-		| FieldProcess<Field<any, FieldValue<T, V>>, any>[];
+	processValue?: FieldProcess<Field<T>, any> | FieldProcess<Field<T>, any>[];
 	/** validate value */
-	validate?: FieldValidate | FieldValidate[]; //| FieldValidate[];
+	validate?: FieldValidate | FieldValidate[] | null; //| FieldValidate[];
 	validateOn?: FieldValidateOn;
-	processCondition?: FieldProcess<Field<any, FieldValue<T, V>>, void>;
+	processCondition?: FieldProcess<Field<T>, void>;
 	onChange?: (props: { $value: FieldStoreObject<Field<T>>; form: FormObject<Fields> }) => void;
 	required?: boolean;
 	disabled?: boolean;
@@ -186,12 +183,12 @@ export type Field<T extends FieldType = FieldType, V = any> = {
 	 */
 	valueNullable?: boolean;
 	//
-	options?: T extends "select" | "radio" ? FieldOptions : never;
-	multiple?: T extends "select" ? boolean : never;
+	options?: T extends "select" | "radio" ? FieldOptions : null;
+	multiple?: T extends "select" ? boolean : false;
 	/**
 	 * for when a checkbox is mandatory daah
 	 */
-	mandatory?: T extends "checkbox" ? boolean : never;
+	mandatory?: T extends "checkbox" ? boolean : false;
 };
 // extends infer G
 // 	? { [K in keyof G as G[K] extends never ? never : K]: G[K] }
@@ -203,11 +200,11 @@ export type Basic = null | undefined | Field | FieldType;
 export type Basics = Record<string, Basic>;
 
 // converters
-export type BasicToField<T extends Basic> = unknown extends T
-	? Field<"text", string> // when key = null without type, defaults to text and string input
-	: T extends Field
-		? Field<T["type"], T["value"]>
-		: Field<Extract<FieldType, T>>; // when basic is a field type
+export type BasicToField<T extends Basic> = T extends Field
+	? Field<T["type"], FieldValue<T["type"], T["value"]>>
+	: T extends FieldType
+		? Field<T> // when basic is a field type
+		: Field<"text", string>;
 export type Fields<B extends Basics = Basics> = {
 	[K in keyof B]: BasicToField<B[K]>;
 };
@@ -348,15 +345,15 @@ export type InteractionProps<F extends Field, O extends Options<any>> = {
 	key: string;
 	field: F;
 	options: O;
-	event: Event;
+	event: Event | undefined | null;
 	value: any; //S["value"];
 	preprocessValue?: boolean;
 	$form: FormObject<any>;
 };
-export type CreateProcessorProps<F extends Field, O extends Options<any>> = {
+export type ProcessorProps<F extends Field, O extends Options<any> = Options<any>> = {
 	key: string;
 	field: F;
-	event: Event;
+	event: Event | undefined | null;
 	manualUpdate: boolean;
 	$form: FormObject<any>;
 };

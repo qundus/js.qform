@@ -42,7 +42,7 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 		//
 		const field = (options.override?.[key as keyof E] ?? {}) as Field;
 		const active = {
-			type: null as "string" | "number" | "boolean" | "date" | "file" | "enum" | "nativeEnum",
+			type: "string" as "string" | "number" | "boolean" | "date" | "file" | "enum" | "nativeEnum",
 			isArray: typeName.startsWith("array"),
 		};
 
@@ -144,18 +144,22 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 		field.required = field.required ?? !schema.isOptional();
 		field.valueNullable = field.valueNullable ?? schema.isNullable();
 
-		// validation
+		// map validation function
 		const validation = (value: any) => {
 			const parse = schema.safeParse(value);
 			if (parse.success) {
 				return null;
 			}
-			const result = [];
+			const result = [] as string[];
 			for (const err of parse.error.errors) {
 				result.push(err.message);
 			}
+			if (result.length <= 0) {
+				return null;
+			}
 			return result;
 		};
+		// add the function to field
 		if (field.validate == null) {
 			field.validate = validation;
 		} else if (typeof field.validate === "function") {

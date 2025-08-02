@@ -30,7 +30,7 @@ export function form<B extends Basics, F extends Fields<B>, O extends Options<F>
 	_options?: O,
 ): Form<B, F, O> {
 	checkBasics(basics);
-	const options = checkOptions<F, O>(_options);
+	const options = checkOptions<F, O>(_options) as O;
 	// necessary preparations
 	const { fields, form_init } = prepareFormFields<B, F, O>({ basics, options });
 	const $store = prepareFormStore<F, O>({ fields, form_init, options });
@@ -44,7 +44,7 @@ export function form<B extends Basics, F extends Fields<B>, O extends Options<F>
 	const derived = $store.derive((value) => value);
 
 	// other helpers
-	let keys = null as (keyof F)[];
+	let keys = null as (keyof F)[] | null;
 	return {
 		// fields, // for tests only, not recommended to export
 		atoms,
@@ -55,16 +55,16 @@ export function form<B extends Basics, F extends Fields<B>, O extends Options<F>
 		get keys() {
 			return () => {
 				if (keys == null) {
-					keys = Object.keys(fields ?? {}) as typeof keys;
+					keys = Object.keys(fields ?? {}) as unknown as typeof keys;
 				}
-				return keys;
+				return keys as (keyof F)[];
 			};
 		},
 		$store: derived,
 	};
 }
 
-export function formSetup<G extends Options<any>>(goptions: G) {
+export function formSetup<G extends Options<any>>(goptions?: G) {
 	return <B extends Basics, F extends Fields<B>, D extends Options<F>>(basics: B, doptions?: D) => {
 		const options = mergeOptions(goptions, doptions) as OptionsMerged<G, D>;
 		return form<B, F, typeof options>(basics, options);

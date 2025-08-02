@@ -49,9 +49,9 @@ export default function makeBaseElement<F extends Field, O extends Options<any>>
 				event.preventDefault();
 				event.stopImmediatePropagation();
 				event.stopPropagation();
-				$store.update((next) => {
-					onFocus({ ...props, $form: next, event, value: null });
-					return next;
+				$store.update(({ $next: $form }) => {
+					onFocus({ ...props, $form, event, value: null });
+					return $form;
 				});
 			},
 			[dType !== "vdom" ? "onblur" : "onBlur"]: (event: Event) => {
@@ -61,9 +61,9 @@ export default function makeBaseElement<F extends Field, O extends Options<any>>
 				// if (field.validateOn === "change") {
 				// 	return;
 				// }
-				$store.update((next) => {
-					onBlur({ ...props, $form: next, event, value: null });
-					return next;
+				$store.update(({ $next: $form }) => {
+					onBlur({ ...props, $form, event, value: null });
+					return $form;
 				});
 			},
 		} as Returns<D>;

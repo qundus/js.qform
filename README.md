@@ -252,6 +252,17 @@ export function Page() {
 
 TODO: list options
 
+<!-- roadmap  -->
+<br />
+<img width="150px" height="50px" src="https://img.shields.io/badge/roadmap-gray?style=for-the-badge" />
+<br />
+<br />
+
+- convert field value to accept primitives and also a function processor, allowing to shape value however user likes
+- reduce number of states used per form
+- optimize apis for processors and wherever possible
+- adopt plugins/addons bahavior to use form actions, form button..etc and
+- reduce main form object size through plugins/addons mentioned above
 
 <!-- Later -->
 <br />

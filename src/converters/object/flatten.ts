@@ -7,7 +7,8 @@ export default function flattenObject<T extends NestedObject>(obj: T): FlatObjec
 	const flatten = (current: unknown, path: string[] = []) => {
 		if (isPlainObject(current)) {
 			for (const key in current) {
-				if (Object.prototype.hasOwnProperty.call(current, key)) {
+				if (Object.hasOwn(current, key)) {
+					// if (Object.prototype.hasOwnProperty.call(current, key)) {
 					flatten(current[key], [...path, key]);
 				}
 			}

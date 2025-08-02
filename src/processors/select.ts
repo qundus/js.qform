@@ -1,9 +1,9 @@
 // https://dev.to/milliemolotov/how-to-retrieve-values-from-all-types-of-html-inputs-in-javascript-3143
-import type { CreateProcessorProps, Field, Options } from "../_model";
+import type { ProcessorProps, Field, Options } from "../_model";
 import { PLACEHOLDERS } from "../const";
 
 export default function createSelectProcessor<F extends Field, O extends Options<any>>(
-	props: CreateProcessorProps<F, O>,
+	props: ProcessorProps<F, O>,
 ) {
 	const { event, field } = props;
 	return (value: any) => {

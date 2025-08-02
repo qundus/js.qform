@@ -50,7 +50,7 @@ export default function makeSelectElement<F extends Field, O extends Options<any
 			if (field.validateOn === "input") {
 				const id = dType ? "oninput" : "onInput";
 				result[id] = (event: Event) => {
-					$store.update(($form) => {
+					$store.update(({ $next: $form }) => {
 						onValue({ ...props, $form, event, value: null });
 						return $form;
 					});
@@ -59,7 +59,7 @@ export default function makeSelectElement<F extends Field, O extends Options<any
 			if (field.validateOn === "change") {
 				const id = dType ? "onchange" : "onChange";
 				result[id] = (event: Event) => {
-					$store.update(($form) => {
+					$store.update(({ $next: $form }) => {
 						onValue({ ...props, $form, event, value: null });
 						return $form;
 					});

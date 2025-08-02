@@ -1,6 +1,6 @@
 import type { Fields, Options } from "../_model";
 
-export default function isKeyInFields<F extends Fields, O extends Options<F, any>>(
+export default function isKeyInFields<F extends Fields, O extends Options<F>>(
 	fields: F,
 	key: string | keyof F,
 	options: O,

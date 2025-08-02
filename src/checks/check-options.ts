@@ -1,6 +1,6 @@
 import type { Fields, Options } from "../_model";
 
-export default function checkOptions<F extends Fields, O extends Options<F, any>>(options?: O) {
+export default function checkOptions<F extends Fields, O extends Options<F>>(options?: O) {
 	const result = { ...options };
 	result.vmcm = result.vmcm ?? "normal";
 	result.preventErroredValues = result.preventErroredValues ?? false;

@@ -1,14 +1,14 @@
-import { form, setupForm } from "../src";
+import { formSetup } from "../src";
 import { vFile } from "../src/validators";
 import { preactHook } from "@qundus/qstate/hooks";
 
-const formSetup = setupForm({
+const form = formSetup({
 	hooks: {
 		preactFromSetup: preactHook,
 	},
 });
 
-export const $form = formSetup(
+export const $form = form(
 	{
 		name: null,
 		color: "color",
@@ -100,7 +100,7 @@ export const $form = formSetup(
 		},
 		gender: {
 			type: "radio",
-			// value: null,
+			value: null,
 			// required: false,
 			options: () => [
 				{ label: "male", value: "male" },
@@ -112,18 +112,23 @@ export const $form = formSetup(
 		hooks: {
 			preact: preactHook,
 		},
-		events: {
-			onMount: ({ init }) => {
-				console.log("mounted form loginform :: ", init);
-			},
-			onChange: ({ $next }) => {
-				console.log("changed form loginform :: ", $next.newValue);
-				// $next.conditions.phone.hidden = $next.values.name == null || $next.values.name === "";
-			},
+		onMount: ({ init }) => {
+			console.log("mounted form loginform :: ", init);
+		},
+		onChange: ($next) => {
+			console.log("changed form loginform :: ", $next.newValue);
+			// $next.conditions.phone.hidden = $next.values.name == null || $next.values.name === "";
 		},
 		// incompleteListCount: 0,
 	},
 );
+
+const name = $form.atoms("name");
+const gender = $form.atoms("gender");
+const single = $form.atoms("picture");
+// if (name.$store.get().value)
+// if (gender.$store.get().value)
+// if (single.$store.get().value)
 // const button = form.button.$store.form.actions.getValues();
 // form.actions.getValuesLowercase();
 // const fo = form.$store..hooks..preact();

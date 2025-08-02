@@ -11,10 +11,10 @@ export default function prepareFormFields<
 	const { basics, options } = props;
 	const fields = {} as F;
 	const form_init = {
-		values: {},
-		conditions: {},
-		errors: null,
-		extras: {},
+		values: {} as any,
+		conditions: {} as any,
+		errors: null as any,
+		extras: {} as any,
 		incomplete: [],
 		// focused: false,
 		status: "valid",

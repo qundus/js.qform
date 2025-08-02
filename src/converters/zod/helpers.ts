@@ -151,6 +151,7 @@ function getEnumValues(schema: any) {
 		if (Array.isArray(def.values)) {
 			return Object.values(def.values).reduce((obj, value) => {
 				if (typeof value === "string") {
+					// @ts-ignore
 					obj[value as string] = value;
 				}
 				return obj;
@@ -162,7 +163,7 @@ function getEnumValues(schema: any) {
 	return {};
 }
 export default {
-	processOptions<Z, E extends SchemaToFieldsExtenders<Z>>(_options: Options<Z, E>) {
+	processOptions<Z, E extends SchemaToFieldsExtenders<Z>>(_options?: Options<Z, E>) {
 		const result = { ..._options };
 		result.verbose = result.verbose ?? false;
 		result.unknownsAsText = result.unknownsAsText ?? false;

@@ -7,7 +7,7 @@ import type {
 	FieldStoreObject,
 	Options,
 } from "../_model";
-import onBlur from "../interactions/on-blur";
+// import onBlur from "../interactions/on-blur";
 import onValue from "../interactions/on-value";
 import makeBaseElement, { type Returns as BaseReturns } from "./element-base";
 
@@ -58,9 +58,9 @@ export default function makeInputElement<F extends Field, O extends Options<any>
 				const id = dType !== "vdom" ? "oninput" : "onInput";
 				result[id] = (event: Event) => {
 					event.preventDefault();
-					$store.update((next) => {
-						onValue({ ...props, $form: next, event, value: null });
-						return next;
+					$store.update(({ $next: $form }) => {
+						onValue({ ...props, $form, event, value: null });
+						return $form;
 					});
 				};
 			}
@@ -68,9 +68,9 @@ export default function makeInputElement<F extends Field, O extends Options<any>
 				const id = dType !== "vdom" ? "onchange" : "onChange";
 				result[id] = (event: Event) => {
 					event.preventDefault();
-					$store.update((next) => {
-						onValue({ ...props, $form: next, event, value: null });
-						return next;
+					$store.update(({ $next: $form }) => {
+						onValue({ ...props, $form, event, value: null });
+						return $form;
 					});
 				};
 			}

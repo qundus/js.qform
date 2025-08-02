@@ -81,8 +81,8 @@ export default function prepareFormStore<F extends Fields, O extends Options<F>>
 	});
 
 	onSet($store, ($next) => {
-		const next = $next.newValue as typeof $store.value;
 		options?.onChange?.($next);
+		const next = $next.newValue as typeof $store.value;
 		// check form status
 		if (next.status === "submit") {
 			return;

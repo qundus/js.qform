@@ -1,7 +1,7 @@
 import type { Field, FieldCondition } from "../_model";
 import isFieldIncomplete from "../checks/is-field-incomplete";
 
-export default function prepareFieldCondition<F extends Field>(props?: { key: string; field: F }) {
+export default function prepareFieldCondition<F extends Field>(props: { key: string; field: F }) {
 	const { field } = props;
 	const condition = {
 		valid: true,

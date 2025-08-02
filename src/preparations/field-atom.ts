@@ -35,7 +35,7 @@ export default function prepareAtom<F extends Field, O extends Options<any>>(
 		// field,
 		key,
 		type: field.type,
-		label: field.label,
+		label: field.label ?? key,
 		$store: derived,
 		// $hooks: derived.hooks,
 		// $subscribe: derived.subscribe,
@@ -66,9 +66,11 @@ export default function prepareAtom<F extends Field, O extends Options<any>>(
 					if (typeof field.validate === "function") {
 						field.validate = null;
 					} else {
-						field.validate = field.validate.filter((item, index) => index !== idx);
-						if (field.validate.length <= 0) {
-							field.validate = null;
+						if (field.validate != null) {
+							field.validate = field.validate.filter((item, index) => index !== idx);
+							if (field.validate.length <= 0) {
+								field.validate = null;
+							}
 						}
 					}
 				};
