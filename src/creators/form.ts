@@ -1,5 +1,5 @@
 import type { _QSTATE } from "@qundus/qstate";
-import type { Basics, Fields, FormObject, FormStore, Options, OptionsMerged } from "../_model";
+import type { Basics, Fields, FormObject, Options } from "../_model";
 // checks
 import checkBasics from "../checks/check-basics";
 import checkOptions from "../checks/check-options";
@@ -35,7 +35,6 @@ export function form<B extends Basics, F extends Fields<B>, O extends Options<F>
 	const { fields, form_init } = prepareFormFields<B, F, O>({ basics, options });
 	const $store = prepareFormStore<F, O>({ fields, form_init, options });
 	const { atoms, elements } = prepareFormAtoms<F, O>({ fields, options, $store });
-
 	// plugins
 	const actions = formActions<F, O>({ fields, options, $store });
 	const button = formButton<F, O>({ fields, options, $store });
@@ -47,6 +46,7 @@ export function form<B extends Basics, F extends Fields<B>, O extends Options<F>
 	let keys = null as (keyof F)[] | null;
 	return {
 		// fields, // for tests only, not recommended to export
+		$store: derived as any,
 		atoms,
 		elements,
 		actions,
@@ -60,13 +60,13 @@ export function form<B extends Basics, F extends Fields<B>, O extends Options<F>
 				return keys as (keyof F)[];
 			};
 		},
-		$store: derived,
 	};
 }
 
-export function formSetup<G extends Options<any>>(goptions?: G) {
+export function formSetup<G extends Options<any>>(base?: G) {
+	const optionsMerger = mergeOptions(base);
 	return <B extends Basics, F extends Fields<B>, D extends Options<F>>(basics: B, doptions?: D) => {
-		const options = mergeOptions(goptions, doptions) as OptionsMerged<G, D>;
+		const options = optionsMerger<D>(doptions);
 		return form<B, F, typeof options>(basics, options);
 	};
 }

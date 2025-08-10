@@ -14,7 +14,17 @@ import { defineConfig } from "tsup";
 export default defineConfig((options) => {
 	return {
 		entry: ["src/index.ts", "src/converters/index.ts", "src/validators/index.ts"],
-		external: ["@qundus/qstate"],
+		external: [
+			"@qundus/qstate",
+			"astro",
+			"preact",
+			"react",
+			"react-dom",
+			"solid-js",
+			"svelte",
+			"zod",
+			"vue",
+		],
 		format: ["esm", "cjs"],
 		outDir: "./dist",
 		clean: true, // Clean dist folder

@@ -13,12 +13,11 @@ export type FormState<F extends Fields> = _QSTATE.NanoMap<FormObject<F>>;
 export type FormStore<F extends Fields, O extends Options<any>> = _QSTATE.Store<
 	FormState<F>,
 	{
+		hooks: O["hooks"];
 		addons: {
 			derive: typeof deriveAddon;
 			update: typeof updateAddon;
 		};
-		hooks: O["hooks"];
-		// events: O["events"]; // no need
 	}
 >;
 export default function prepareFormStore<F extends Fields, O extends Options<F>>(props: {
@@ -28,7 +27,7 @@ export default function prepareFormStore<F extends Fields, O extends Options<F>>
 }) {
 	const { fields, form_init, options } = props;
 	const $store = map(form_init, {
-		hooks: options.hooks,
+		hooks: options.hooks, //as O["hooks"],
 		addons: {
 			derive: deriveAddon,
 			update: updateAddon,
@@ -42,7 +41,7 @@ export default function prepareFormStore<F extends Fields, O extends Options<F>>
 				return;
 			}
 			const ureturns =
-				options?.onMount?.({
+				(await options?.onMount?.({
 					...props,
 					init: form_init,
 					update: (values) => {
@@ -68,7 +67,7 @@ export default function prepareFormStore<F extends Fields, O extends Options<F>>
 						}
 						$store.set($form);
 					},
-				}) ?? null;
+				})) ?? null;
 			return ureturns;
 		});
 
@@ -82,7 +81,7 @@ export default function prepareFormStore<F extends Fields, O extends Options<F>>
 
 	onSet($store, ($next) => {
 		options?.onChange?.($next);
-		const next = $next.newValue as typeof $store.value;
+		const next = $next.newValue; //as typeof $store.value;
 		// check form status
 		if (next.status === "submit") {
 			return;

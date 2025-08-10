@@ -18,7 +18,7 @@ export default function prepareFormAtoms<F extends Fields, O extends Options<F>>
 		let atom = atoms[key];
 		if (atom == null) {
 			const field = fields[key];
-			atom = prepareAtom({ key: key as string, field, options, $store });
+			atom = prepareAtom({ key: key as string, field, options, $store: $store as any });
 			atoms[key] = atom;
 		}
 		return atom;

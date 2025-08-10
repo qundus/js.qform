@@ -35,7 +35,7 @@ export default function formButton<F extends Fields, O extends Options<F>>(
 			canSubmit: status === "valid",
 			submitting: status === "submit",
 		} as FormButtonObject;
-	});
+	}) as FormButtonStore<F, O>;
 
 	return {
 		$store: derived,

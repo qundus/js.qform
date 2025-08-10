@@ -2,6 +2,7 @@ import type { _QSTATE } from "@qundus/qstate";
 import type createProcessors from "./processors";
 import type { FieldStoreObject } from "./preparations/field-store";
 import type { FormStore } from "./preparations/form-store";
+import type { OptionHooksIn } from "@qundus/qstate/hooks";
 // export types
 export type * from "./plugins/form-button";
 export type * from "./preparations/field-atom";
@@ -240,9 +241,11 @@ export type FormObject<F extends Fields> = {
 // creator options
 export type Options<F extends Fields> = {
 	//
-	hooks?: _QSTATE.OptionsHooks;
-	// events?: _QSTATE.OptionsEvents;
-	onMount?: (props: { init: FormObject<F>; update: (values: any) => void | Promise<void> }) => void;
+	hooks?: OptionHooksIn;
+	onMount?: (props: {
+		init: FormObject<F>;
+		update: (values: any) => void | Promise<void>;
+	}) => Promise<void> | void;
 	onChange?: (props: { newValue: FormObject<F>; abort: () => void }) => void;
 	vmcm?: FieldVMCM;
 	/**

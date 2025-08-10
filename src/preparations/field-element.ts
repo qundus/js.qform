@@ -41,7 +41,7 @@ export default function prepareFieldElement<F extends Field, O extends Options<a
 			? makeSelectElement<F, O>({ field, key, $store, options })
 			: makeInputElement<F, O>({ field, key, $store, options });
 	// determine used hooks
-	const { hasHooks, getHook, getHooks, hookNames } = hooksInUse(derived);
+	const { getHook, getHooks, hookNames } = hooksInUse(derived);
 	const preactHook = getHook(hookNames.preact);
 	const reactHook = getHook(hookNames.react);
 	const solidHooks = getHooks(
