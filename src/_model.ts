@@ -55,6 +55,7 @@ export type FieldType =
 	| "url"
 	| "week"
 	| "select";
+// | undefined;
 export type FieldValue<T extends FieldType, D> = D extends unknown | null | undefined
 	? T extends "select"
 		? string[]
@@ -145,7 +146,7 @@ export type FieldOptions =
 	(<G>(props?: G) => { label: string; value: string }[]) | null | undefined;
 
 // DON'T CHANGE TEMPLATES, IF CHANGED CHECK EVERY FIELD ATTRIBUTES
-export type Field<T extends FieldType = FieldType, V = any> = {
+export type Field<T extends FieldType = any, V = any> = {
 	// T extends FieldType = FieldType
 	type: T;
 	/** initial value */

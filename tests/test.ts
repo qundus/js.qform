@@ -1,12 +1,7 @@
-import { formSetup } from "../src";
+import { type _QFORM, formSetup } from "../src";
 import { vFile } from "../src/validators";
-import { preactHook } from "@qundus/qstate/hooks";
 
-const form = formSetup({
-	hooks: {
-		preactFromSetup: preactHook,
-	},
-});
+const form = formSetup({});
 
 export const $form = form(
 	{
@@ -109,9 +104,6 @@ export const $form = form(
 		},
 	},
 	{
-		hooks: {
-			preact: preactHook,
-		},
 		onMount: ({ init }) => {
 			console.log("mounted form loginform :: ", init);
 		},
@@ -123,33 +115,6 @@ export const $form = form(
 	},
 );
 
-const name = $form.atoms("name");
-const gender = $form.atoms("gender");
-const single = $form.atoms("picture");
-// if (name.$store.get().value)
-// if (gender.$store.get().value)
-// if (single.$store.get().value)
-// const button = form.button.$store.form.actions.getValues();
-// form.actions.getValuesLowercase();
-// const fo = form.$store..hooks..preact();
-// form.$listen((value) => {});
-// const name = form.atoms("picture");
-// const $store = name.$store.hooks.preact();
-
-// name.$listen((value) => {});
-// loginForm.fields.picture.$state.value.;
-// loginForm.fields.email.$state.value.;
-//
-// loginForm.fields.name.value;
-// loginForm.fields.section.value;
-// loginForm.fields.email.value;
-// loginForm.fields.email.options;
-// loginForm.fields.picture.value;
-// loginForm.fields.isSingle.value;
-// loginForm.fields.phone.value;
-// loginForm.fields.gender.value;
-// loginForm.elements("cities");
-// loginForm.fields.cities.options();
-//
-// loginForm.state.value.values.
-// loginForm.state.value.extras.;
+interface Props<F extends _QFORM.Field<"email">> {
+	atom: _QFORM.FieldAtom<F, any>;
+}

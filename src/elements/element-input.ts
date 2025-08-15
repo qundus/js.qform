@@ -52,7 +52,7 @@ export default function makeInputElement<F extends Field, O extends Options<any>
 			};
 			const addValue = field.type !== "checkbox" && field.type !== "radio" && field.type !== "file";
 			if (addValue) {
-				result.value = data?.value;
+				result.value = data?.value ?? "";
 			}
 			if (field.validateOn === "input") {
 				const id = dType !== "vdom" ? "oninput" : "onInput";
