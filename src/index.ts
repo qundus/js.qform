@@ -1,2 +1,2 @@
-export type * as _QFORM from "./_model";
-export * from "./creators/form";
+export type * as QformTypes from "./_model";
+export * from "./form";
