@@ -127,12 +127,7 @@ export namespace Field {
 	 * disabled..etc, according to specific needs or logic.
 	 */
 	export type Processor<F extends Options, Returns> = (
-		props: Omit<ProcessorProps<F>, "$form"> & {
-			value: any; //S["value"];
-			getValueOf: (key: string) => any;
-			getConditionOf: (key: string) => any;
-			$condition: Condition;
-		},
+		props: FunctionProps.FieldProcessor<F>,
 	) => Returns;
 	export type ElementProcessor<D extends Element.DomType = Element.DomType> = (props: {
 		key: string;
@@ -470,26 +465,38 @@ export namespace Form {
 	};
 }
 
+// never inherit props, always make independant props
 export namespace FunctionProps {
-	export type Basic<F extends Field.Options, O extends Form.Options<any>> = {
+	export interface Basic<F extends Field.Options, O extends Form.Options<any>> {
 		key: string;
 		field: F;
 		options: O;
 		$store: Form.Store<any, O>;
-	};
+	}
 
-	export interface Interaction<F extends Field.Options, O extends Form.Options<any>>
-		extends Basic<F, O> {
+	export interface Interaction<F extends Field.Options, O extends Form.Options<any>> {
 		event: Event | undefined | null;
 		value: any; // S["value"];
 		$form: Form.StoreObject<any>;
+	}
+
+	export interface Processor<
+		F extends Field.Options,
+		O extends Form.Options<any> = Form.Options<any>,
+	> {
+		manualUpdate?: boolean;
 		preprocessValue?: boolean;
 	}
 
-	export interface ProcessorProps<
+	export interface FieldProcessor<
 		F extends Field.Options,
 		O extends Form.Options<any> = Form.Options<any>,
-	> extends Omit<Interaction<F, O>, "value"> {
+	> {
+		event: Event | undefined | null;
+		value: any; // S["value"];
 		manualUpdate: boolean;
+		getValueOf: (key: string) => any;
+		getConditionOf: (key: string) => any;
+		$condition: Field.Condition;
 	}
 }

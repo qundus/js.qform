@@ -1,25 +1,38 @@
-import type { ProcessorProps, Field, FieldExtras, Options } from "../_model";
-import { getFileString } from "../methods/get-file-string";
+import type { Field, Form, FunctionProps } from "../../../_model";
+import { populateFileReader } from "../../../methods/populate-file-reader";
 
-export default function createFileProcessor<F extends Field, O extends Options<any>>(
-	props: ProcessorProps<F, O>,
+export function processFileValue<F extends Field.Options, O extends Form.Options<any>>(
+	basic: FunctionProps.Basic<F, O>,
+	interaction: FunctionProps.Interaction<F, O>,
+	processor: FunctionProps.Processor<F, O>,
 ) {
-	const { key, $form } = props;
-	return (value: any) => {
-		let in_progress_files = 0;
-		let ready_files = 0;
-		const all_extras = [] as FieldExtras<"file">;
-		for (const file of value) {
-			// if ($state == null) {
-			// 	console.error("form(internal): state wasn't passed down, aborting file extras!");
-			// 	break;
-			// }
+	// setup
+	const { key, field, $store } = basic;
+	const { event } = interaction;
+	const { manualUpdate, preprocessValue } = processor;
+	const el = event?.target as HTMLInputElement;
+	const value = !manualUpdate ? (el?.files as FileList) : interaction.value;
+	if (!preprocessValue) {
+		return value;
+	}
 
-			in_progress_files++;
-			if (!(file instanceof File)) {
-				continue;
-			}
-			getFileString(file, (buffer) => {
+	//
+	const result = value;
+	let in_progress_files = 0;
+	let ready_files = 0;
+	const all_extras = [] as Field.Extras<"file">;
+	for (const file of value) {
+		// if ($state == null) {
+		// 	console.error("form(internal): state wasn't passed down, aborting file extras!");
+		// 	break;
+		// }
+
+		in_progress_files++;
+		if (!(file instanceof File)) {
+			continue;
+		}
+		populateFileReader(file, {
+			onload: (buffer) => {
 				const extras = {
 					buffer,
 					placeholder: typeof buffer === "string" ? buffer : (buffer as any)[0],
@@ -30,13 +43,14 @@ export default function createFileProcessor<F extends Field, O extends Options<a
 				ready_files++;
 
 				if (ready_files === in_progress_files) {
-					$form.extras[key] = all_extras;
-					// state.update((next) => {
-					// 	next.extras[key] = all_extras;
-					// });
+					// $form.extras[key] = all_extras;
+					$store.update(({ $next }) => {
+						$next.extras[key] = all_extras;
+						return $next;
+					});
 				}
-			});
-		}
-		return value;
-	};
+			},
+		});
+	}
+	return result;
 }

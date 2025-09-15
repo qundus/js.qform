@@ -6,10 +6,10 @@ import { fieldElement } from "./element";
 import { fieldStore } from "./store";
 
 export function fieldAtom<F extends Field.Options, O extends Form.Options<any>>(
-	props: FunctionProps.Basic<F, O>,
+	basic: FunctionProps.Basic<F, O>,
 ) {
-	const { key, field, $store } = props;
-	const derived = fieldStore<F, O>(props);
+	const { key, field, $store } = basic;
+	const derived = fieldStore<F, O>(basic);
 	return {
 		// field,
 		key,
@@ -17,7 +17,7 @@ export function fieldAtom<F extends Field.Options, O extends Form.Options<any>>(
 		label: field.label ?? key,
 		$store: derived,
 		get element() {
-			return fieldElement<F, O>(props, derived);
+			return fieldElement<F, O>(basic, derived);
 		},
 		get placeholders() {
 			return PLACEHOLDERS;
@@ -56,13 +56,17 @@ export function fieldAtom<F extends Field.Options, O extends Form.Options<any>>(
 			const prev = $store.get().values[key];
 			const current = typeof value === "function" ? (value as any)(prev) : value;
 			$store.update(({ $next: $form }) => {
-				valueInteraction({ ...props, $form, event: null, value: current, ...configs });
+				valueInteraction(basic, { $form, event: null, value: current, ...configs });
 				return $form;
 			});
 		},
 		clearValue: () => {
 			$store.update(({ $next: $form }) => {
-				valueInteraction({ ...props, $form, event: null, value: null, preprocessValue: false });
+				valueInteraction(
+					basic,
+					{ $form, event: null, value: null },
+					{ manualUpdate: true, preprocessValue: false },
+				);
 				return $form;
 			});
 		},

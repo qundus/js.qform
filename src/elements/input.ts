@@ -1,41 +1,39 @@
-import type {
-	ElementDomType,
-	ElementKeysType,
-	ElementProps,
-	ElementReturns,
-	Field,
-	FieldStoreObject,
-	Options,
-} from "../_model";
-import onValue from "../interactions/on-value";
-import makeBaseElement, { type Returns as BaseReturns } from "./element-base";
+import { valueInteraction } from "../interactions/value";
+import { baseElement, type BaseElementFactory } from "./base";
+import type { Element, Field, Form, FunctionProps } from "../_model";
 
 //
 type OnInput = (event: Event) => void;
-export type Returns<T extends ElementDomType> = ElementReturns<
+export type InputElementFactory<T extends Element.DomType> = Element.Factory<
 	T,
 	{
 		type: string;
 		name: string;
 		value: any;
 	},
-	BaseReturns<"dom"> & {
+	BaseElementFactory<"dom"> & {
 		oninput: OnInput;
 	},
-	BaseReturns<"vdom"> & {
+	BaseElementFactory<"vdom"> & {
 		onInput: OnInput;
 	}
 >;
-export function inputElement<F extends Field, O extends Options<any>>(props: ElementProps<F, O>) {
-	const { key, field, $store, options } = props;
+export function inputElement<F extends Field.Options, O extends Form.Options<any>>(
+	basic: FunctionProps.Basic<F, O>,
+) {
+	const { key, field, $store, options } = basic;
 	const key_str = String(key);
-	const baseEl = makeBaseElement(props);
-	return <D extends ElementDomType, K extends ElementKeysType>(
+	const baseEl = baseElement(basic);
+	return <D extends Element.DomType, K extends Element.KeysType>(
 		dType: D,
 		kType: K,
-		reactive: FieldStoreObject<Field> | (() => FieldStoreObject<Field>),
+		reactive: Field.StoreObject<Field.Options> | (() => Field.StoreObject<Field.Options>),
 	) => {
 		const data = typeof reactive === "function" ? reactive() : reactive;
+		const processorProps: FunctionProps.Processor<F, O> = {
+			manualUpdate: false,
+			preprocessValue: options.preprocessValues ?? field.preprocessValue,
+		};
 		let result = {} as any;
 		if (kType !== "special") {
 			result = baseEl(dType, kType, data);
@@ -56,7 +54,7 @@ export function inputElement<F extends Field, O extends Options<any>>(props: Ele
 				result[id] = (event: Event) => {
 					event.preventDefault();
 					$store.update(({ $next: $form }) => {
-						onValue({ ...props, $form, event, value: null });
+						valueInteraction(basic, { $form, event, value: null }, processorProps);
 						return $form;
 					});
 				};
@@ -66,7 +64,7 @@ export function inputElement<F extends Field, O extends Options<any>>(props: Ele
 				result[id] = (event: Event) => {
 					event.preventDefault();
 					$store.update(({ $next: $form }) => {
-						onValue({ ...props, $form, event, value: null });
+						valueInteraction(basic, { $form, event, value: null }, processorProps);
 						return $form;
 					});
 				};
@@ -84,6 +82,6 @@ export function inputElement<F extends Field, O extends Options<any>>(props: Ele
 		}
 
 		// console.log("element input :: ", key, " :: ", result.value);
-		return result as Returns<D>;
+		return result as InputElementFactory<D>;
 	};
 }

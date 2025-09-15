@@ -1,26 +1,21 @@
-import type { Field, InteractionProps, Options } from "../_model";
-import createProcessors from "../processors";
-
-type Props<S extends Field, O extends Options<any>> = InteractionProps<S, O>;
-export function focusInteraction<S extends Field, O extends Options<any>>(props: Props<S, O>) {
-	const { key, field, $form, event } = props;
+import type { Field, Form, FunctionProps } from "../_model";
+export function focusInteraction<S extends Field.Options, O extends Form.Options<any>>(
+	basic: FunctionProps.Basic<S, O>,
+	interaction: FunctionProps.Interaction<S, O>,
+) {
+	const { key, field } = basic;
+	const { $form, event } = interaction;
 	$form.conditions[key].element.state = "focus";
 	$form.conditions[key].element.visited = true;
 	const value = $form.values[key];
-	const processorProps = {
-		key,
-		field,
+
+	// call user processor
+	field.processCondition?.({
 		event,
 		value,
-		manualUpdate: false,
 		$condition: $form.conditions[key],
+		manualUpdate: false,
 		getValueOf: (key: string) => $form.values[key],
 		getConditionOf: (key: string) => $form.conditions[key],
-	};
-	field.processCondition?.({
-		...processorProps,
-		get processors() {
-			return createProcessors({ ...processorProps, $form });
-		},
 	});
 }

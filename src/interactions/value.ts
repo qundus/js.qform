@@ -1,22 +1,32 @@
-import type { Field, FieldVMCM, FormStore, InteractionProps, Options } from "../_model";
-import isFieldIncomplete from "../checks/is-field-incomplete";
-import processValue from "./on-value-process";
+import type { Field, Form, FunctionProps } from "../_model";
+import { isFieldIncomplete } from "../field/checks/is-field-incomplete";
+import { processValue } from "./processors/value";
 
-type Props<S extends Field, O extends Options<any>> = InteractionProps<S, O>;
-export function valueInteraction<S extends Field, O extends Options<any>>(props: Props<S, O>) {
-	const { key, field, options, $form, event } = props;
-	const manual_update = event == null;
-	const vmcm: FieldVMCM = manual_update ? (options.vmcm ?? field.vmcm ?? "normal") : "normal";
+export function valueInteraction<S extends Field.Options, O extends Form.Options<any>>(
+	basic: FunctionProps.Basic<S, O>,
+	interaction: FunctionProps.Interaction<S, O>,
+	processor: FunctionProps.Processor<S, O>,
+) {
+	const { key, field, options } = basic;
+	const { $form, event } = interaction;
+
+	// override any if undefined
+	processor.manualUpdate = processor.manualUpdate ?? event == null;
+	processor.preprocessValue = processor.preprocessValue ?? basic.field.preprocessValue;
+
+	// logic
+	const manualUpdate = processor.manualUpdate;
+	const vmcm: Field.VMCM = manualUpdate ? (options.vmcm ?? field.vmcm ?? "normal") : "normal";
 	const condition = $form.conditions[key];
-	const value = processValue(props);
+	const value = processValue(basic, interaction, processor);
 	// start by notifying modified
 	$form.conditions[key].value.updated = true;
-	$form.conditions[key].value.lastUpdate = manual_update ? "manual" : "user";
+	$form.conditions[key].value.lastUpdate = manualUpdate ? "manual" : "user";
 
 	// start by validating values.
 	let validation_errors = null as string[] | null;
 	if (field.validate != null) {
-		if (!manual_update || (manual_update && vmcm === "normal")) {
+		if (!manualUpdate || (manualUpdate && vmcm === "normal")) {
 			validation_errors = [];
 			const validations = Array.isArray(field.validate) ? field.validate : [field.validate];
 			for (const validation of validations) {
@@ -65,7 +75,7 @@ export function valueInteraction<S extends Field, O extends Options<any>>(props:
 			if (vmcm === "force-valid") {
 				condition.value.error = false;
 			} else {
-				const incomplete = isFieldIncomplete({ value, condition, field });
+				const incomplete = isFieldIncomplete(field, condition, value);
 				condition.value.error = incomplete ? "incomplete" : false;
 			}
 		} else {

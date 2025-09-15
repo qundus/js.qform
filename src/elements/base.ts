@@ -1,11 +1,11 @@
-import type { Element, Field, Form } from "../_model";
+import type { Element, Field, Form, FunctionProps } from "../_model";
 import { blurInteraction } from "../interactions/blur";
 import { focusInteraction } from "../interactions/focus";
 
 //
 type OnFocus = (event: FocusEvent) => void;
 type OnBlur = (event: FocusEvent) => void;
-export type ElementFactory<T extends Element.DomType> = Element.Factory<
+export type BaseElementFactory<T extends Element.DomType> = Element.Factory<
 	T,
 	{
 		required: boolean;
@@ -23,11 +23,9 @@ export type ElementFactory<T extends Element.DomType> = Element.Factory<
 	}
 >;
 export function baseElement<F extends Field.Options, O extends Form.Options<any>>(
-	key: string,
-	field: F,
-	options: O,
-	$store: Form.Store<any, O>,
+	basic: FunctionProps.Basic<F, O>,
 ) {
+	const { field, $store } = basic;
 	return <D extends Element.DomType, K extends Element.KeysType>(
 		dType: D,
 		_kType: K,
@@ -44,7 +42,7 @@ export function baseElement<F extends Field.Options, O extends Form.Options<any>
 				event.stopImmediatePropagation();
 				event.stopPropagation();
 				$store.update(({ $next: $form }) => {
-					focusInteraction({ ...props, $form, event, value: null });
+					focusInteraction(basic, { $form, event, value: null });
 					return $form;
 				});
 			},
@@ -56,10 +54,10 @@ export function baseElement<F extends Field.Options, O extends Form.Options<any>
 				// 	return;
 				// }
 				$store.update(({ $next: $form }) => {
-					onBlur({ ...props, $form, event, value: null });
+					blurInteraction(basic, { $form, event, value: null });
 					return $form;
 				});
 			},
-		} as ElementFactory<D>;
+		} as BaseElementFactory<D>;
 	};
 }

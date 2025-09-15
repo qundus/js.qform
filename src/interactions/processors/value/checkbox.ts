@@ -1,25 +1,36 @@
-import type { ProcessorProps, Field, Options } from "../_model";
+import type { Field, Form, FunctionProps } from "../../../_model";
 
-export default function createCheckboxProcessor<F extends Field, O extends Options<any>>(
-	_props: ProcessorProps<F, O>,
+export function processCheckboxValue<F extends Field.Options, O extends Form.Options<any>>(
+	basic: FunctionProps.Basic<F, O>,
+	interaction: FunctionProps.Interaction<F, O>,
+	processor: FunctionProps.Processor<F, O>,
 ) {
-	// const { field } = props;
-	return (checked: any, value: any) => {
-		let result = value;
-		try {
-			const c = Boolean(checked);
-			if (value == null || value === "on") {
-				result = c;
+	// setup
+	const { field } = basic;
+	const { event } = interaction;
+	const { manualUpdate, preprocessValue } = processor;
+	const el = event?.target as HTMLInputElement;
+	const value = !manualUpdate ? el?.value : interaction.value;
+	if (!preprocessValue) {
+		return value;
+	}
+
+	//
+	let result = value;
+	const checked = !manualUpdate ? el?.checked : true;
+	try {
+		const c = Boolean(checked);
+		if (value == null || value === "on") {
+			result = c;
+		} else {
+			if (c) {
+				result = value ?? c;
 			} else {
-				if (c) {
-					result = value ?? c;
-				} else {
-					result = null;
-				}
+				result = null;
 			}
-		} catch (e) {
-			result = null;
 		}
-		return result;
-	};
+	} catch (e) {
+		result = null;
+	}
+	return result;
 }
