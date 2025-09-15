@@ -1,5 +1,5 @@
 // thanks for the idea -> https://github.com/paxcode-it/zod-to-fields
-import type { Field, FieldProcess } from "../../_model";
+import type { Field } from "../../_model";
 import type { Options, SchemaToFields, SchemaToFieldsExtenders } from "./_model";
 import checks from "./checks";
 
@@ -40,7 +40,7 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 		}
 
 		//
-		const field = (options.override?.[key as keyof E] ?? {}) as Field;
+		const field = (options.override?.[key as keyof E] ?? {}) as Field.Options;
 		const active = {
 			type: "string" as "string" | "number" | "boolean" | "date" | "file" | "enum" | "nativeEnum",
 			isArray: typeName.startsWith("array"),
@@ -88,7 +88,7 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 			case "file":
 				{
 					field.multiple = field.multiple ?? active.isArray ?? false;
-					const processValue: FieldProcess<any, any> = ({ value, field }) => {
+					const processValue: Field.Processor<any, any> = ({ value, field }) => {
 						if (value == null) {
 							return null;
 						}

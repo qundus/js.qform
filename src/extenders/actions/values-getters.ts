@@ -1,5 +1,5 @@
-import type { Form } from "../../../_model";
-import { PLACEHOLDERS } from "../../../const";
+import type { Form, FunctionProps } from "../../_model";
+import { PLACEHOLDERS } from "../../const";
 
 // basics
 export type CamelToSnakeCase<
@@ -135,7 +135,7 @@ function _getValues<
 }
 
 export function valuesGetters<F extends Form.Fields, L extends Form.Options<F>>(
-	props: Form.ExtenderProps<F, L>,
+	props: FunctionProps.Extender<F, L>,
 ) {
 	const { fields, $store } = props;
 	return {

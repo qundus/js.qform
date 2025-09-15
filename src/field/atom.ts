@@ -55,8 +55,13 @@ export function fieldAtom<F extends Field.Options, O extends Form.Options<any>>(
 		updateValue: (value, configs) => {
 			const prev = $store.get().values[key];
 			const current = typeof value === "function" ? (value as any)(prev) : value;
+
 			$store.update(({ $next: $form }) => {
-				valueInteraction(basic, { $form, event: null, value: current, ...configs });
+				valueInteraction(
+					basic,
+					{ $form, event: null, value: current },
+					{ ...configs, manualUpdate: true },
+				);
 				return $form;
 			});
 		},

@@ -4,15 +4,15 @@ import type { OptionHooksIn } from "@qundus/qstate/hooks";
 import type { PLACEHOLDERS } from "./const";
 import type { updateAddon, deriveAddon } from "@qundus/qstate/addons";
 import type { formAtoms } from "./form/atoms";
-import type { FormActionsExtender } from "./form/extenders/actions";
-import type { FormButtonExtender } from "./form/extenders/button";
+import type { ExtenderFormActions } from "./extenders/actions";
+import type { ExtenderFormButton } from "./extenders/button";
 
 // export types
-export type * from "./plugins/form-button";
-export type * from "./preparations/field-atom";
-export type * from "./preparations/form-atoms";
-export type * from "./preparations/field-store";
-export type * from "./preparations/form-store";
+// export type * from "./plugins/form-button";
+// export type * from "./preparations/field-atom";
+// export type * from "./preparations/form-atoms";
+// export type * from "./preparations/field-store";
+// export type * from "./preparations/form-store";
 
 // checkers
 export namespace Check {
@@ -90,14 +90,22 @@ export namespace Field {
 	 * the standard field "value", this offers that through value processing
 	 * and places it under FieldState or State
 	 */
-	export type Extras<T extends Type> = T extends "file"
+	export type Extras<
+		F extends Options,
+		T extends F["type"] = F["type"],
+		S extends F["selections"] = F["selections"],
+	> = T extends "file"
 		? {
 				buffer: string | ArrayBuffer | null | undefined;
 				file: File;
 				placeholder: string;
 				name: string;
 			}[]
-		: never;
+		: T extends "select" | "radio"
+			? {
+					wow: string;
+				}
+			: never;
 	export type Condition = {
 		valid: boolean;
 		hidden: boolean;
@@ -151,38 +159,40 @@ export namespace Field {
 	 */
 	export type VMCM = "normal" | "bypass" | "force-valid";
 	export type ValidateOn = "input" | "change";
-	// export type FieldOptions =
-	// 	// | { label: string; value: string }[]
-	// 	(<G>(props?: G) => { label: string; value: string }[]) | null | undefined;
+	export type Selections = string[] | Record<string, unknown>[];
 
 	// DON'T CHANGE TEMPLATES, IF CHANGED CHECK EVERY FIELD ATTRIBUTES
-	export type Options<T extends Type = Type, V = any> = {
-		// T extends FieldType = FieldType
+	export type Options<T extends Type = Type, V = any, S extends Selections = Selections> = {
+		//## essentials
 		type: T;
 		/** initial value */
 		value?: V;
-		hidden?: boolean;
 		label?: string;
-		// keep any for sub types that use Field to avoid type issues in outer projects
-		processValue?: Processor<Options<any>, any> | Processor<Options<any>, any>[];
-		/** validate value */
+		//## validations
+		/** validate value function or array of functions */
 		validate?: Validate | Validate[] | null; //| FieldValidate[];
 		validateOn?: ValidateOn;
+		//## processors
+		// keep any for sub types that use Field to avoid type issues in outer projects
+		processValue?: Processor<Options<any>, any> | Processor<Options<any>, any>[];
 		processCondition?: Processor<Options<any>, void>;
-		onChange?: (props: {
-			$value: Field.StoreObject<Options<any>>;
+		processState?: (props: {
+			$value: Field.StoreObject<Field.Options<any>>;
 			form: Form.StoreObject<Form.Fields>;
-		}) => void;
-		required?: boolean;
-		disabled?: boolean;
-		//
-		/** supercedes global options */
-		vmcm?: VMCM;
+		}) => StoreObject<Options<T, V>>;
 		/**
 		 * html bare element props passed, this is so preliminary right
 		 * now and requires extra work for vdom, expect breaking changes here.
 		 */
 		processElement?: ElementProcessor;
+		//## conditions
+		hidden?: boolean;
+		required?: boolean;
+		disabled?: boolean;
+
+		//## value effects
+		/** supercedes global options */
+		vmcm?: VMCM;
 		/**
 		 * all values go through preprocessing phase, use this to prevent that
 		 * @default true
@@ -198,8 +208,9 @@ export namespace Field {
 		 * allowing the field value to be null
 		 */
 		valueNullable?: boolean;
-		//
-		// options?: T extends "select" | "radio" ? FieldOptions : null;
+
+		//## type specific
+		selections?: S; // T extends "select" | "radio" ? S : null;
 		multiple?: T extends "select" ? boolean : false;
 		/**
 		 * for when a checkbox is mandatory daah
@@ -215,7 +226,7 @@ export namespace Field {
 		value: F["value"] | undefined;
 		condition: Field.Condition;
 		errors?: string[];
-		extras?: Field.Extras<F["type"]>;
+		extras?: Field.Extras<F>;
 	};
 	export type Store<F extends Options, O extends Form.Options<any>> = _QSTATE.StoreDerived<
 		Field.StoreObject<F>,
@@ -223,7 +234,7 @@ export namespace Field {
 	>;
 
 	// element
-	export type Element<F extends Options, O extends Options<any>> = ReturnType<
+	export type Element<F extends Options, O extends Form.Options<any>> = ReturnType<
 		typeof fieldElement<F, O>
 	>;
 
@@ -238,14 +249,14 @@ export namespace Field {
 				type: type;
 				label: string;
 				// getOptions?: F["options"];
-				get element(): Element<F, O>;
 				placeholders: typeof PLACEHOLDERS;
-				get addValidation(): (func: Field.Validate) => (() => void) | null;
+				clearValue: () => void;
+				element(): Element<F, O>;
+				addValidation(): (func: Field.Validate) => (() => void) | null;
 				updateValue: (
 					value: value | ((prev: value) => void),
-					configs?: { preprocessValue?: boolean },
+					configs?: Pick<FunctionProps.Processor<F, O>, "preprocessValue">,
 				) => void;
-				clearValue: () => void;
 				updateCondition: (
 					value:
 						| Partial<Field.Condition>
@@ -298,27 +309,49 @@ export namespace Form {
 		[K in keyof T]: Field.Condition;
 	};
 	export type Extras<T extends Fields> = {
-		[K in keyof T as Field.Extras<T[K]["type"]> extends never ? never : K]: Field.Extras<
-			T[K]["type"]
-		>;
+		[K in keyof T as Field.Extras<T[K]> extends never ? never : K]: Field.Extras<T[K]>;
 	};
 
 	// creator options
 	export type Options<F extends Fields> = {
-		//
-		hooks?: OptionHooksIn;
-		onMount?: (props: {
-			init: StoreObject<F>;
-			update: (values: any) => void | Promise<void>;
-		}) => Promise<void> | void;
-		onChange?: (props: { newValue: StoreObject<F>; abort: () => void }) => void;
+		//## value effects
 		vmcm?: Field.VMCM;
+
+		/**
+		 * global options to optin or out of values preprocessing based on field type.
+		 * this option precedes individual ones
+		 */
+		preprocessValues?: boolean;
+
 		/**
 		 * usually all values are immediatly updated in the state,
 		 * by setting this to true, only valid values will be commited.
 		 * @default false
 		 */
 		preventErroredValues?: boolean;
+
+		/**
+		 * wheather the preferred method of checking values
+		 * is ran oninput or onchange, oninput checks for validation
+		 * for every change happens, onchange checks once there's a
+		 * state change like blur or focus.
+		 * field specific validateOn takes precedence here.
+		 * @default input
+		 */
+		validateOn?: Field.ValidateOn;
+
+		//## store
+		hooks?: OptionHooksIn;
+		onMount?: (
+			init: StoreObject<F>,
+			props: {
+				updateValues: (values: any) => void | Promise<void>;
+				updateOptions: (obj: Record<keyof F, Partial<Field.Options>>) => void | Promise<void>;
+			},
+		) => Promise<void> | void;
+		onChange?: (props: { newValue: StoreObject<F>; abort: () => void }) => void;
+
+		//## conditions
 		/**
 		 * normal behavior of form is to consider all fields required
 		 * and mark optional ones through "require" setting,
@@ -329,54 +362,8 @@ export namespace Form {
 		 */
 		allFieldsRequired?: boolean;
 		allFieldsDisabled?: boolean;
-		/**
-		 * global options to optin or out of values preprocessing based on field type.
-		 * this option precedes individual ones
-		 */
-		preprocessValues?: boolean;
-		/**
-		 * how should the form react to updating values using form.actions.update
-		 * @default "silent"
-		 */
-		onUpdateKeyNotFound?: "silent" | "warn"; // | "error" | "errorWithProcessExit" // default to warn, add extra options here
-		// /**
-		//  * checks for missing/required fields results in condition.incomplete = true,
-		//  * this option alters the behavior of the entire form state
-		//  * @option "onsubmit": check for all missing/incomplete fields onsubmit, called when actions.canSubmit or actions.submit is used
-		//  * @option "onblur": check for each particular field's value onblur, meaning after field input has been left
-		//  * @option 'onanychange': check for incomplete fields on any change that occurs like: focus, blur, value change...etc
-		//  * @option false: stop/don't check for incomplete fields;
-		//  * @default 'onblur'
-		//  * @deprecated
-		//  */
-		// incompleteBehavior?: boolean | "onsubmit" | "onanychange";
-		/**
-		 * the last step of checking for form validity is to check for
-		 * required fields' values and add them to the incompleteList,
-		 * this option allows for choosing how big or small this list goes.
-		 * @option true collect all incomplete fields
-		 * @option false don't collect any incomplete fields
-		 * @option number collect this many of incomplete fields
-		 * @default false
-		 */
-		incompleteListCount?: boolean | number;
-		// /**
-		//  * reflecting last form validity checks on the condition of
-		//  * the field itself, this is benefitial when the form wanted
-		//  * behavior is to highlight incomplete fields
-		//  * @default false
-		//  * @deprecated
-		//  */
-		// incompleteAffectsCondition?: boolean | "value"; //| "state";
-		/**
-		 * wheather the preferred method of checking values
-		 * is ran oninput or onchange, oninput checks for validation
-		 * for every change happens, onchange checks once there's a
-		 * state change like blur or focus.
-		 * field specific validateOn takes precedence here.
-		 * @default input
-		 */
-		validateOn?: Field.ValidateOn;
+
+		//## processors
 		/**
 		 * global element processor, gets called before or after field's specific processElement
 		 * based on processElementOrder option.
@@ -388,6 +375,23 @@ export namespace Form {
 		 * @default "after"
 		 */
 		processElementOrder?: "before" | "after";
+
+		//## exportation and usage
+		/**
+		 * the last step of checking for form validity is to check for
+		 * required fields' values and add them to the incompleteList,
+		 * this option allows for choosing how big or small this list goes.
+		 * @option true collect all incomplete fields
+		 * @option false don't collect any incomplete fields
+		 * @option number collect this many of incomplete fields
+		 * @default false
+		 */
+		incompleteListCount?: boolean | number;
+		/**
+		 * how should the form react to updating values using form.actions.update
+		 * @default "silent"
+		 */
+		onUpdateKeyNotFound?: "silent" | "warn"; // | "error" | "errorWithProcessExit" // default to warn, add extra options here
 		/**
 		 * if the desired data extracted from the form is in the
 		 * shape of a nested object, then this splitter is used
@@ -404,6 +408,27 @@ export namespace Form {
 		 * @default ' ' or empty spcace
 		 */
 		flatLabelJoinChar?: string;
+
+		//## old ideas
+		// /**
+		//  * checks for missing/required fields results in condition.incomplete = true,
+		//  * this option alters the behavior of the entire form state
+		//  * @option "onsubmit": check for all missing/incomplete fields onsubmit, called when actions.canSubmit or actions.submit is used
+		//  * @option "onblur": check for each particular field's value onblur, meaning after field input has been left
+		//  * @option 'onanychange': check for incomplete fields on any change that occurs like: focus, blur, value change...etc
+		//  * @option false: stop/don't check for incomplete fields;
+		//  * @default 'onblur'
+		//  * @deprecated
+		//  */
+		// incompleteBehavior?: boolean | "onsubmit" | "onanychange";
+		// /**
+		//  * reflecting last form validity checks on the condition of
+		//  * the field itself, this is benefitial when the form wanted
+		//  * behavior is to highlight incomplete fields
+		//  * @default false
+		//  * @deprecated
+		//  */
+		// incompleteAffectsCondition?: boolean | "value"; //| "state";
 	};
 	export type OptionsMerged<G extends Options<any>, D extends Options<any>> = D & G;
 
@@ -415,9 +440,7 @@ export namespace Form {
 		extras: Extras<F>;
 		incomplete: string[];
 		status: Status;
-	} extends infer G
-		? { [K in keyof G]: G[K] }
-		: never;
+	};
 	export type StoreState<F extends Fields> = _QSTATE.NanoMap<StoreObject<F>>;
 	export type Store<F extends Fields, O extends Options<any>> = _QSTATE.Store<
 		StoreState<F>,
@@ -438,20 +461,13 @@ export namespace Form {
 		typeof formAtoms<S, O>
 	>;
 
-	// extenders
-	export type ExtenderProps<F extends Form.Fields, O extends Form.Options<F>> = {
-		fields: F;
-		options: O;
-		$store: Form.Store<F, O>;
-	};
-
 	// factory/result
 	export type Factory<B extends Basics, F extends Fields<B>, O extends Options<F>> = AtomsPrepared<
 		F,
 		O
 	> & {
-		actions: FormActionsExtender<F, O>;
-		button: FormButtonExtender<F, O>;
+		actions: ExtenderFormActions<F, O>;
+		button: ExtenderFormButton<F, O>;
 		placeholders: typeof PLACEHOLDERS;
 		get keys(): () => (keyof F)[];
 		/**
@@ -460,8 +476,6 @@ export namespace Form {
 		 * directly but use form.actions or atom.<method-name>
 		 */
 		$store: Store<F, O>;
-		// $store: _QSTATE.StoreDerived<FormObject<F>, { hooks: O["hooks"] }>;
-		// $store: Pick<FormStore<F, O>, "get" | "derive" | "subscribe" | "listen">;
 	};
 }
 
@@ -488,6 +502,7 @@ export namespace FunctionProps {
 		preprocessValue?: boolean;
 	}
 
+	//
 	export interface FieldProcessor<
 		F extends Field.Options,
 		O extends Form.Options<any> = Form.Options<any>,
@@ -499,4 +514,11 @@ export namespace FunctionProps {
 		getConditionOf: (key: string) => any;
 		$condition: Field.Condition;
 	}
+
+	//
+	export type Extender<F extends Form.Fields, O extends Form.Options<F>> = {
+		fields: F;
+		options: O;
+		$store: Form.Store<F, O>;
+	};
 }

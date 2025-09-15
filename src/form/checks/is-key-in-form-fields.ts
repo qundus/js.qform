@@ -2,8 +2,8 @@ import type { Form } from "../../_model";
 
 export function isKeyInFormFields<F extends Form.Fields, O extends Form.Options<F>>(
 	fields: F,
-	key: string | keyof F,
 	options: O,
+	key: string | keyof F,
 ) {
 	if (!(key in fields)) {
 		if (options.onUpdateKeyNotFound === "warn") {

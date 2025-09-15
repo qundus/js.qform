@@ -1,19 +1,16 @@
 import { type _QSTATE, map, onMount, task, onSet } from "@qundus/qstate";
 import { isServerSide } from "@qundus/qstate/checks";
-import type { Field } from "../_model";
-import isFieldIncomplete from "../checks/is-field-incomplete";
-import isKeyInFields from "../checks/is-key-in-fields";
-import onValue from "../interactions/on-value";
+import type { Field, Form } from "../_model";
+import { isFieldIncomplete } from "../field/checks/is-field-incomplete";
+import { isKeyInFormFields } from "./checks/is-key-in-form-fields";
+import { valueInteraction } from "../interactions/value";
 import { updateAddon, deriveAddon } from "@qundus/qstate/addons";
 
-// types
-
-export default function prepareFormStore<F extends Fields, O extends Options<F>>(props: {
-	fields: F;
-	options: O;
-	form_init: FormObject<F>;
-}) {
-	const { fields, form_init, options } = props;
+export function formStore<F extends Form.Fields, O extends Form.Options<F>>(
+	fields: F,
+	options: O,
+	form_init: Form.StoreObject<F>,
+) {
 	const $store = map(form_init, {
 		hooks: options.hooks, //as O["hooks"],
 		addons: {
@@ -36,16 +33,16 @@ export default function prepareFormStore<F extends Fields, O extends Options<F>>
 				break;
 			}
 		}
+		//
 		const ureturns = task(async () => {
 			const serverSide = isServerSide();
 			if (serverSide) {
 				return;
 			}
-			const ureturns =
-				(await options?.onMount?.({
-					...props,
-					init: form_init,
-					update: (values) => {
+			//
+			const voidOrFunc =
+				(await options?.onMount?.(form_init, {
+					updateValues: (values) => {
 						//
 						if (typeof values === "undefined") {
 							return;
@@ -53,23 +50,31 @@ export default function prepareFormStore<F extends Fields, O extends Options<F>>
 						const $form = { ...$store.get() };
 						for (const key in values) {
 							const value = values[key];
-							const field = fields[key as keyof typeof fields] as Field;
-							if (!isKeyInFields(fields, key, options)) {
+							const field = fields[key as keyof typeof fields] as Field.Options;
+							if (!isKeyInFormFields(fields, options, key)) {
 								continue;
 							}
-							onValue({
-								key,
-								field,
-								options,
-								$form,
-								value,
-								event: null,
-							});
+							const preprocessValue = options.preprocessValues ?? field.preprocessValue;
+							valueInteraction(
+								{
+									key,
+									field,
+									options,
+									$store: $store as any,
+								},
+								{
+									$form,
+									value,
+									event: null,
+								},
+								{ manualUpdate: true, preprocessValue },
+							);
 						}
 						$store.set($form);
 					},
+					updateOptions(obj) {},
 				})) ?? null;
-			return ureturns;
+			return voidOrFunc;
 		});
 
 		return () => {
@@ -95,7 +100,7 @@ export default function prepareFormStore<F extends Fields, O extends Options<F>>
 		// global incompletes do not affect individual's
 		for (const key in fields) {
 			const value = next.values[key];
-			const field = fields[key] as Fields[number];
+			const field = fields[key] as Form.Fields[number];
 			const condition = next.conditions[key];
 			const error = next.errors?.[key];
 			let incomplete = false;
@@ -115,9 +120,7 @@ export default function prepareFormStore<F extends Fields, O extends Options<F>>
 			} else if (condition.value.error === "incomplete") {
 				incomplete = true;
 			} else {
-				incomplete = field.incompleteStatus
-					? isFieldIncomplete({ value, condition, field })
-					: false;
+				incomplete = field.incompleteStatus ? isFieldIncomplete(field, condition, value) : false;
 			}
 
 			// if any field triggers incomplete form status, update it
@@ -149,5 +152,5 @@ export default function prepareFormStore<F extends Fields, O extends Options<F>>
 		// console.log("form status :: ", next);
 	});
 
-	return $store as FormStore<F, O>;
+	return $store as Form.Store<F, O>;
 }

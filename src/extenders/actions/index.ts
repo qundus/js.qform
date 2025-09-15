@@ -1,8 +1,8 @@
-import type { Field, Form } from "../../../_model";
-import { isKeyInFormFields } from "../../checks/is-key-in-fields";
-import { valueInteraction } from "../../../interactions/value";
+import type { Field, Form, FunctionProps } from "../../_model";
+import { isKeyInFormFields } from "../../form/checks/is-key-in-form-fields";
+import { valueInteraction } from "../../interactions/value";
 import { valuesGetters } from "./values-getters";
-import { mergeFieldConditions } from "../../../methods/merge-field-conditions";
+import { mergeFieldConditions } from "../../methods/merge-field-conditions";
 
 function getDeepPath(obj: any, _path: string) {
 	const path = _path.split(".");
@@ -14,11 +14,11 @@ function getDeepPath(obj: any, _path: string) {
 	return obj;
 }
 
-export type FormActionsExtender<F extends Form.Fields, O extends Form.Options<F>> = ReturnType<
+export type ExtenderFormActions<F extends Form.Fields, O extends Form.Options<F>> = ReturnType<
 	typeof formActionsExtender<F, O>
 >;
 export function formActionsExtender<F extends Form.Fields, O extends Form.Options<F>>(
-	props: Form.ExtenderProps<F, O>,
+	props: FunctionProps.Extender<F, O>,
 ) {
 	const { fields, $store, options } = props;
 	function canSubmit() {
@@ -95,20 +95,28 @@ export function formActionsExtender<F extends Form.Fields, O extends Form.Option
 							path = path.value;
 						}
 					}
-					if (!isKeyInFormFields(fields, key, options)) {
+					if (!isKeyInFormFields(fields, options, key)) {
 						continue;
 					}
 					const field = fields[key as keyof typeof fields] as Field.Options<Field.Type>;
 					const value = path == null ? values[key] : getDeepPath(values, path as string);
-					valueInteraction({
-						key,
-						field,
-						options,
-						// $store,
-						$form: $next,
-						event: null,
-						value,
-					});
+					valueInteraction(
+						{
+							key,
+							field,
+							options,
+							$store,
+						},
+						{
+							$form: $next,
+							event: null,
+							value,
+						},
+						{
+							manualUpdate: true,
+							preprocessValue: options?.preprocessValues ?? field.preprocessValue,
+						},
+					);
 					// TODO: check if vanilla elements are updating properly
 					// if (typeof document !== "undefined") {
 					// 	const el = document.getElementsByName(key);
@@ -127,7 +135,7 @@ export function formActionsExtender<F extends Form.Fields, O extends Form.Option
 			$store.update(({ $next }) => {
 				for (const key in conditions) {
 					const condition = conditions[key];
-					if (!isKeyInFormFields(fields, key, options) || condition == null) {
+					if (!isKeyInFormFields(fields, options, key) || condition == null) {
 						continue;
 					}
 					$next.conditions[key] = mergeFieldConditions($next.conditions[key], condition);

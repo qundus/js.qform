@@ -1,10 +1,11 @@
 import type { _QSTATE } from "@qundus/qstate";
-import type { Basics, Fields, FormObject, FormStore, Options } from "../_model";
-// checks
-import checkBasics from "../checks/check-basics";
-import checkOptions from "../checks/check-options";
+import type {} from "../_model";
 import { PLACEHOLDERS } from "../const";
-import mergeOptions from "../methods/merge-options";
+// checks
+import { checkFormBasics } from "./checks/check-form-basics";
+import { processFormOptions } from "./processors/form-options";
+import { mergeFieldConditions } from "../methods/merge-field-conditions";
+
 // methods
 import formActions, { type FormActions } from "../plugins/form-actions";
 import formButton, { type FormButton } from "../plugins/form-button";

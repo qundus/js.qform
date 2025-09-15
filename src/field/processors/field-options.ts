@@ -1,12 +1,11 @@
 import type { Field, Form } from "../../_model";
 import { PLACEHOLDERS } from "../../const";
 
-export function fieldOptionsProcessor<B extends Form.Basic, O extends Form.Options<any>>(props: {
-	key: string;
-	basic: B;
-	options: O;
-}) {
-	const { key, basic, options } = props;
+export function processFieldOptions<B extends Form.Basic, O extends Form.Options<any>>(
+	basic: B,
+	options: O,
+	key: string,
+) {
 	let field = {} as Partial<Form.BasicToField<B>>;
 	// formulate the basic to setup object
 	if (basic == null) {

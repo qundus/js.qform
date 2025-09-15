@@ -1,5 +1,5 @@
 import type { Form } from "../_model";
-import { fieldOptionsProcessor } from "../field/processors/options-processor";
+import { processFieldOptions } from "../field/processors/field-options";
 import { fieldCondition } from "../field/condition";
 
 export function formFields<
@@ -20,8 +20,8 @@ export function formFields<
 	} as Form.StoreObject<F>;
 	for (const key in basics) {
 		const basic = basics[key];
-		const field = fieldOptionsProcessor({ key, basic, options });
-		const condition = fieldCondition({ key, field });
+		const field = processFieldOptions(basic, options, key);
+		const condition = fieldCondition(key, field);
 		// @ts-ignore
 		fields[key] = field;
 		form_init.values[key as any] = field.value as any;

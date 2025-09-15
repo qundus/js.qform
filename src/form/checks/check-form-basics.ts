@@ -1,4 +1,4 @@
-export default function checkFormBasics(basics: any) {
+export function checkFormBasics(basics: any) {
 	const err = new Error("form: fields is not in proper format");
 	if (basics == null) {
 		throw err;

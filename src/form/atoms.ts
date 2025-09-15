@@ -1,5 +1,5 @@
 import { onMount } from "@qundus/qstate";
-import type { Field, Form } from "../_model";
+import type { Form } from "../_model";
 import { fieldAtom } from "../field/atom";
 
 export function formAtoms<F extends Form.Fields, O extends Form.Options<F>>(props: {

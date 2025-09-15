@@ -1,5 +1,5 @@
-import type { Form } from "../../../_model";
-import { onMount, type _QSTATE } from "@qundus/qstate";
+import type { Form, FunctionProps } from "../../_model";
+import type { _QSTATE } from "@qundus/qstate";
 
 type FormButtonObject = {
 	status: Form.Status;
@@ -13,7 +13,7 @@ type FormButtonStore<F extends Form.Fields, O extends Form.Options<F>> = _QSTATE
 		hooks: O["hooks"];
 	}
 >;
-export type FormButtonExtender<
+export type ExtenderFormButton<
 	F extends Form.Fields,
 	O extends Form.Options<F>,
 	S extends FormButtonStore<F, O> = FormButtonStore<F, O>,
@@ -21,8 +21,8 @@ export type FormButtonExtender<
 	$store: S;
 };
 export function formButtonExtender<F extends Form.Fields, O extends Form.Options<F>>(
-	props: Form.ExtenderProps<F, O>,
-): FormButtonExtender<F, O> {
+	props: FunctionProps.Extender<F, O>,
+): ExtenderFormButton<F, O> {
 	const { $store } = props;
 	const derived = $store.derive((state) => {
 		const status = state.status;

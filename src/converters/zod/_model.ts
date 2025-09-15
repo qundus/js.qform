@@ -15,7 +15,7 @@
 // 	ZodTypeAny,
 // } from "zod";
 // import type { ZodTypeAny } from "zod";
-import type { Field, FieldType } from "../../_model";
+import type { Field } from "../../_model";
 
 // base
 // export type UnwrapZodType<T> = T extends {
@@ -59,21 +59,21 @@ export type SchemaToFields<Z> = FlatObject<Z> extends infer G
 		}
 	: never;
 export type ZodTypeNameToField<T> = T extends "boolean" | "nullable:boolean"
-	? Field<"checkbox">
+	? Field.Options<"checkbox">
 	: T extends "string" | "nullable:string"
-		? Field<"text">
+		? Field.Options<"text">
 		: T extends "number" | "nullable:number"
-			? Field<"number">
+			? Field.Options<"number">
 			: T extends "enum" | "nullable:enum" | "nativeEnum" | "nullable:nativeEnum"
-				? Field<"select" | "radio">
+				? Field.Options<"select" | "radio">
 				: T extends "date" | "nullable:date"
-					? Field<"date" | "datetime-local">
+					? Field.Options<"date" | "datetime-local">
 					: T extends "file"
-						? Field<"file">
-						: Field;
+						? Field.Options<"file">
+						: Field.Options;
 export type SchemaToFieldsExtenders<Z> = FlatObject<Z> extends infer G
 	? {
-			[K in keyof G]?: FieldType | Partial<Omit<Field, "options">>;
+			[K in keyof G]?: Field.Type | Partial<Omit<Field.Options, "options">>;
 		}
 	: never;
 
