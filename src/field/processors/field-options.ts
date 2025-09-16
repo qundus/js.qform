@@ -26,6 +26,7 @@ export function processFieldOptions<B extends Form.Basic, O extends Form.Options
 	}
 
 	// manage general and field specific options
+	field.vmcm = field.vmcm ?? options.vmcm ?? "normal";
 	field.required = field.required ?? options.allFieldsRequired;
 	field.disabled = field.disabled ?? options.allFieldsDisabled;
 	field.valueNullable = field.valueNullable ?? false;

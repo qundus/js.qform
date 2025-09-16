@@ -1,4 +1,4 @@
-import { type _QFORM, formSetup } from "../src";
+import { formSetup } from "../src";
 import { vFile } from "../src/validators";
 
 const form = formSetup({});
@@ -61,7 +61,7 @@ export const $form = form(
 			// validate(value) {
 			// 	return null;
 			// },
-			options: () => [
+			selections: [
 				{ label: "saudi", value: "sa" },
 				{ label: "kuwait", value: "kw" },
 			],
@@ -95,26 +95,36 @@ export const $form = form(
 		},
 		gender: {
 			type: "radio",
-			value: null,
+			value: null as { wow: string } | null,
 			// required: false,
-			options: () => [
-				{ label: "male", value: "male" },
-				{ label: "female", value: "female" },
+			// hidden: true,
+			selections: [
+				{ label: "male", value: "male", garage: "wow" },
+				{ label: "female", value: "female", garage: "wow" },
 			],
 		},
 	},
 	{
-		onMount: ({ init }) => {
+		onMount: (init) => {
+			// init.extras.gender?.[0].
 			console.log("mounted form loginform :: ", init);
 		},
 		onChange: ($next) => {
-			console.log("changed form loginform :: ", $next.newValue);
+			console.log("changed form loginform :: ", $next);
 			// $next.conditions.phone.hidden = $next.values.name == null || $next.values.name === "";
 		},
 		// incompleteListCount: 0,
 	},
 );
 
-interface Props<F extends _QFORM.Field<"email">> {
-	atom: _QFORM.FieldAtom<F, any>;
-}
+const gender = $form.atoms("gender");
+const name = $form.atoms("name");
+
+// name.$store.value?.
+// gender.$store.value?.
+
+const result = $form.values.get();
+
+result.gender;
+result.color;
+result.email;

@@ -5,6 +5,7 @@ import { isFieldIncomplete } from "../field/checks/is-field-incomplete";
 import { isKeyInFormFields } from "./checks/is-key-in-form-fields";
 import { valueInteraction } from "../interactions/value";
 import { updateAddon, deriveAddon } from "@qundus/qstate/addons";
+import { updateAddon as formUpdateAddon } from "../addons/update";
 
 export function formStore<F extends Form.Fields, O extends Form.Options<F>>(
 	fields: F,
@@ -40,40 +41,10 @@ export function formStore<F extends Form.Fields, O extends Form.Options<F>>(
 				return;
 			}
 			//
-			const voidOrFunc =
-				(await options?.onMount?.(form_init, {
-					updateValues: (values) => {
-						//
-						if (typeof values === "undefined") {
-							return;
-						}
-						const $form = { ...$store.get() };
-						for (const key in values) {
-							const value = values[key];
-							const field = fields[key as keyof typeof fields] as Field.Options;
-							if (!isKeyInFormFields(fields, options, key)) {
-								continue;
-							}
-							const preprocessValue = options.preprocessValues ?? field.preprocessValue;
-							valueInteraction(
-								{
-									key,
-									field,
-									options,
-									$store: $store as any,
-								},
-								{
-									$form,
-									value,
-									event: null,
-								},
-								{ manualUpdate: true, preprocessValue },
-							);
-						}
-						$store.set($form);
-					},
-					updateOptions(obj) {},
-				})) ?? null;
+			const voidOrFunc = await options?.onMount?.(
+				form_init,
+				formUpdateAddon({ fields, options, $store: $store as any }),
+			);
 			return voidOrFunc;
 		});
 
@@ -87,7 +58,7 @@ export function formStore<F extends Form.Fields, O extends Form.Options<F>>(
 	});
 
 	onSet($store, ($next) => {
-		options?.onChange?.($next);
+		options?.onChange?.($next.newValue, { abort: $next.abort });
 		const next = $next.newValue; //as typeof $store.value;
 		// check form status
 		if (next.status === "submit") {

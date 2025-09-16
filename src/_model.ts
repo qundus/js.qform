@@ -4,8 +4,10 @@ import type { OptionHooksIn } from "@qundus/qstate/hooks";
 import type { PLACEHOLDERS } from "./const";
 import type { updateAddon, deriveAddon } from "@qundus/qstate/addons";
 import type { formAtoms } from "./form/atoms";
-import type { ExtenderFormActions } from "./extenders/actions";
-import type { ExtenderFormButton } from "./extenders/button";
+import type { AddonSubmit } from "./addons/submit";
+import type { AddonUpdate } from "./addons/update";
+import type { AddonValues } from "./addons/values";
+import type { AddonButton } from "./addons/button";
 
 // export types
 // export type * from "./plugins/form-button";
@@ -17,9 +19,9 @@ import type { ExtenderFormButton } from "./extenders/button";
 // checkers
 export namespace Check {
 	export type IsUnknown<T> = unknown extends T ? true : false;
-	export type IsUndefined<T> = unknown extends T ? never : undefined extends T ? true : false;
-	export type IsNull<T> = unknown extends T ? never : null extends T ? true : false;
-	export type IsEmpty<T> = unknown extends T ? never : {} extends T ? true : false;
+	export type IsUndefined<T> = Exclude<T, undefined> extends never ? true : false;
+	export type IsNull<T> = Exclude<T, null> extends never ? true : false;
+	export type IsEmpty<T> = {} extends T ? true : false;
 }
 
 export namespace Element {
@@ -67,45 +69,31 @@ export namespace Field {
 		| "select";
 	// | undefined;
 
-	// note: this affects many derivatives, plz keep same
-	export type Value<T extends Type, D> = true extends
-		| Check.IsUnknown<D>
-		| Check.IsUndefined<D>
-		| Check.IsNull<D>
-		? T extends "select"
-			? string[]
-			: T extends "file"
-				? FileList
-				: T extends "checkbox"
-					? boolean
-					: T extends "radio"
-						? string
-						: T extends "tel"
-							? number | string
-							: string // default\fallback data type
-		: D;
-
-	/**
-	 * sometimes some field types require additional information beyond the
-	 * the standard field "value", this offers that through value processing
-	 * and places it under FieldState or State
-	 */
-	export type Extras<
-		F extends Options,
-		T extends F["type"] = F["type"],
-		S extends F["selections"] = F["selections"],
-	> = T extends "file"
+	export type ValueFromType<T extends Type> = T extends "select"
+		? string[]
+		: T extends "file"
+			? FileList
+			: T extends "checkbox"
+				? boolean
+				: T extends "radio"
+					? string
+					: T extends "tel"
+						? number | string
+						: string; // default/fallback data type
+	export type ValueFromOptions<F extends Options, V extends F["value"] = F["value"]> = (
+		true extends Check.IsUnknown<V> | Check.IsUndefined<V> | Check.IsNull<V>
+			? { value: ValueFromType<F["type"]> }
+			: { value: V }
+	) extends infer G
 		? {
-				buffer: string | ArrayBuffer | null | undefined;
-				file: File;
-				placeholder: string;
-				name: string;
-			}[]
-		: T extends "select" | "radio"
-			? {
-					wow: string;
-				}
-			: never;
+				[K in keyof G]: F["required"] extends false
+					? G[K] | undefined
+					: F["hidden"] extends true
+						? G[K] | undefined
+						: G[K];
+			}
+		: never;
+
 	export type Condition = {
 		valid: boolean;
 		hidden: boolean;
@@ -134,8 +122,8 @@ export namespace Field {
 	 * this gives the chance to modify field state like required,
 	 * disabled..etc, according to specific needs or logic.
 	 */
-	export type Processor<F extends Options, Returns> = (
-		props: FunctionProps.FieldProcessor<F>,
+	export type Processor<T extends Type, V, Returns> = (
+		props: FunctionProps.FieldProcessor<Options<T, V>>,
 	) => Returns;
 	export type ElementProcessor<D extends Element.DomType = Element.DomType> = (props: {
 		key: string;
@@ -159,10 +147,18 @@ export namespace Field {
 	 */
 	export type VMCM = "normal" | "bypass" | "force-valid";
 	export type ValidateOn = "input" | "change";
-	export type Selections = string[] | Record<string, unknown>[];
+	export type Selections =
+		| string[]
+		| number[]
+		| Record<string, unknown>[]
+		| { label: string; value: string }[];
 
 	// DON'T CHANGE TEMPLATES, IF CHANGED CHECK EVERY FIELD ATTRIBUTES
-	export type Options<T extends Type = Type, V = any, S extends Selections = Selections> = {
+	export type Options<
+		T extends Type = Type,
+		V = any, //ValueFromType<T>,
+		// S extends Selections | undefined = Selections | undefined,
+	> = {
 		//## essentials
 		type: T;
 		/** initial value */
@@ -174,10 +170,10 @@ export namespace Field {
 		validateOn?: ValidateOn;
 		//## processors
 		// keep any for sub types that use Field to avoid type issues in outer projects
-		processValue?: Processor<Options<any>, any> | Processor<Options<any>, any>[];
-		processCondition?: Processor<Options<any>, void>;
+		processValue?: Processor<T, V, V> | Processor<T, V, V>[];
+		processCondition?: Processor<T, V, void>;
 		processState?: (props: {
-			$value: Field.StoreObject<Field.Options<any>>;
+			$value: StoreObject<Options>;
 			form: Form.StoreObject<Form.Fields>;
 		}) => StoreObject<Options<T, V>>;
 		/**
@@ -210,7 +206,7 @@ export namespace Field {
 		valueNullable?: boolean;
 
 		//## type specific
-		selections?: S; // T extends "select" | "radio" ? S : null;
+		selections?: Selections; // T extends "select" | "radio" ? S : null;
 		multiple?: T extends "select" ? boolean : false;
 		/**
 		 * for when a checkbox is mandatory daah
@@ -221,12 +217,29 @@ export namespace Field {
 	// 	? { [K in keyof G as G[K] extends never ? never : K]: G[K] }
 	// 	: never;
 
+	// extras
+	/**
+	 * sometimes some field types require additional information beyond the
+	 * the standard field "value", this offers that through value processing
+	 * and places it under FieldState or State
+	 */
+	export type Extras<F extends Options, T extends F["type"] = F["type"]> = T extends "file"
+		? {
+				buffer: string | ArrayBuffer | null | undefined;
+				file: File;
+				placeholder: string;
+				name: string;
+			}[]
+		: T extends "select" | "radio"
+			? F["selections"]
+			: never;
+
 	// store
 	export type StoreObject<F extends Options> = {
 		value: F["value"] | undefined;
 		condition: Field.Condition;
 		errors?: string[];
-		extras?: Field.Extras<F>;
+		extras?: Field.Extras<F, F["type"]>;
 	};
 	export type Store<F extends Options, O extends Form.Options<any>> = _QSTATE.StoreDerived<
 		Field.StoreObject<F>,
@@ -239,22 +252,19 @@ export namespace Field {
 	>;
 
 	// atom
-	export type Atom<F extends Options, O extends Form.Options<any>> = F extends Options<
-		infer type,
-		infer value
-	>
+	export type Atom<F extends Options, O extends Form.Options<any>> = F extends Options
 		? {
 				$store: Store<F, O>;
 				key: string;
-				type: type;
+				type: F["type"];
 				label: string;
-				// getOptions?: F["options"];
+				// getSelections?: selections;
 				placeholders: typeof PLACEHOLDERS;
 				clearValue: () => void;
 				element(): Element<F, O>;
 				addValidation(): (func: Field.Validate) => (() => void) | null;
 				updateValue: (
-					value: value | ((prev: value) => void),
+					value: F["value"] | ((prev: F["value"]) => void),
 					configs?: Pick<FunctionProps.Processor<F, O>, "preprocessValue">,
 				) => void;
 				updateCondition: (
@@ -267,34 +277,7 @@ export namespace Field {
 }
 
 export namespace Form {
-	// basics
-	export type Basic = null | undefined | Field.Options | Field.Type;
-	// export type BasicOptional = null | undefined | Partial<Field> | FieldType;
-	export type Basics = Record<string, Basic>;
-
-	// converters
-	// note: this affects many derivatives, plz keep same
-	// note: this is connected to FieldValue above, plz keep same
-	export type BasicToField<T extends Basic> = true extends
-		| Check.IsUnknown<T>
-		| Check.IsUndefined<T>
-		| Check.IsNull<T>
-		| Check.IsEmpty<T>
-		? Field.Options<Field.Type, string> // if caused issues change to FieldType
-		: T extends Field.Type
-			? Field.Options<T, Field.Value<T, undefined>> // when basic is a field type
-			: T extends Field.Options
-				? Field.Options<T["type"], Field.Value<T["type"], T["value"]>>
-				: never;
-	export type Fields<B extends Basics = Basics> = {
-		[K in keyof B]: BasicToField<B[K]>;
-	} extends infer G
-		? { [K in keyof G]: G[K] }
-		: never;
-
-	//
-
-	// form
+	// attributes
 	export type Status = "idle" | "incomplete" | "error" | "valid" | "submit";
 	export type Values<T extends Fields> = {
 		[K in keyof T]: T[K]["value"];
@@ -309,10 +292,44 @@ export namespace Form {
 		[K in keyof T]: Field.Condition;
 	};
 	export type Extras<T extends Fields> = {
-		[K in keyof T as Field.Extras<T[K]> extends never ? never : K]: Field.Extras<T[K]>;
+		[K in keyof T as Field.Extras<T[K]> extends never ? never : K]: Field.Extras<
+			T[K],
+			T[K]["type"]
+		>;
 	};
 
-	// creator options
+	// basics
+	export type Basic = null | undefined | Field.Options | Field.Type;
+	// export type BasicOptional = null | undefined | Partial<Field> | FieldType;
+	export type Basics = Record<string, Basic>;
+
+	// converters
+	// note: this affects many derivatives, plz keep same
+	// note: this is connected to FieldValue above, plz keep same
+	export type BasicToField<T extends Basic> = true extends
+		| Check.IsUnknown<T>
+		| Check.IsUndefined<T>
+		| Check.IsNull<T>
+		| Check.IsEmpty<T>
+		? Field.ValueFromOptions<Field.Options<Field.Type, string>, string> &
+				Omit<Field.Options<Field.Type, string>, "value"> // if caused issues change to FieldType
+		: T extends Field.Type
+			? //Field.Options<T, Field.ValueFromType<T>>
+				Field.ValueFromOptions<Field.Options<T, unknown>, unknown> &
+					Omit<Field.Options<T, unknown>, "value"> // when basic is a field type
+			: T extends Field.Options<infer type, infer value>
+				? Field.ValueFromOptions<T, value> &
+						// Omit<Field.Options<type, value>, "value">
+						Omit<T, "value">
+				: never;
+
+	export type Fields<B extends Basics = Basics> = {
+		[K in keyof B]: BasicToField<B[K]>;
+	} extends infer G
+		? { [K in keyof G]: G[K] }
+		: never;
+
+	// options
 	export type Options<F extends Fields> = {
 		//## value effects
 		vmcm?: Field.VMCM;
@@ -343,13 +360,10 @@ export namespace Form {
 		//## store
 		hooks?: OptionHooksIn;
 		onMount?: (
-			init: StoreObject<F>,
-			props: {
-				updateValues: (values: any) => void | Promise<void>;
-				updateOptions: (obj: Record<keyof F, Partial<Field.Options>>) => void | Promise<void>;
-			},
+			form: StoreObject<F>,
+			update: AddonUpdate<F, Options<F>>["update"],
 		) => Promise<void> | void;
-		onChange?: (props: { newValue: StoreObject<F>; abort: () => void }) => void;
+		onChange?: ($next: StoreObject<F>, helpers: { abort: () => void }) => void;
 
 		//## conditions
 		/**
@@ -454,29 +468,29 @@ export namespace Form {
 	>;
 
 	// atoms
-	export type Atoms<S extends Form.Fields, O extends Form.Options<S>> = {
-		[K in keyof S]: Field.Atom<S[K], O>;
+	export type Atoms<F extends Form.Fields, O extends Form.Options<F>> = {
+		[K in keyof F]: Field.Atom<F[K], O>;
 	};
-	export type AtomsPrepared<S extends Fields, O extends Options<S>> = ReturnType<
-		typeof formAtoms<S, O>
+	export type AtomsPrepared<F extends Fields, O extends Options<F>> = ReturnType<
+		typeof formAtoms<F, O>
 	>;
 
 	// factory/result
-	export type Factory<B extends Basics, F extends Fields<B>, O extends Options<F>> = AtomsPrepared<
-		F,
-		O
-	> & {
-		actions: ExtenderFormActions<F, O>;
-		button: ExtenderFormButton<F, O>;
-		placeholders: typeof PLACEHOLDERS;
-		get keys(): () => (keyof F)[];
+	export type Factory<F extends Fields, O extends Options<F>> = {
+		fieldsType?: F; // for tests only, not recommended to export
 		/**
 		 * extreme low-level control of form, use setters with extreme care as this affects
 		 * the core logic of the form, it's advised to not modify form atoms/elements
 		 * directly but use form.actions or atom.<method-name>
 		 */
 		$store: Store<F, O>;
-	};
+		placeholders: typeof PLACEHOLDERS;
+		get keys(): () => (keyof F)[];
+	} & AtomsPrepared<F, O> &
+		AddonSubmit<F, O> &
+		AddonUpdate<F, O> &
+		AddonValues<F, O> &
+		AddonButton<F, O>;
 }
 
 // never inherit props, always make independant props
@@ -505,9 +519,10 @@ export namespace FunctionProps {
 	//
 	export interface FieldProcessor<
 		F extends Field.Options,
-		O extends Form.Options<any> = Form.Options<any>,
+		// O extends Form.Fields,
 	> {
 		event: Event | undefined | null;
+		field: F;
 		value: any; // S["value"];
 		manualUpdate: boolean;
 		getValueOf: (key: string) => any;
@@ -516,7 +531,7 @@ export namespace FunctionProps {
 	}
 
 	//
-	export type Extender<F extends Form.Fields, O extends Form.Options<F>> = {
+	export type Addon<F extends Form.Fields, O extends Form.Options<F>> = {
 		fields: F;
 		options: O;
 		$store: Form.Store<F, O>;

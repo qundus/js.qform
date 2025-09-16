@@ -2,12 +2,11 @@ import { onMount } from "@qundus/qstate";
 import type { Form } from "../_model";
 import { fieldAtom } from "../field/atom";
 
-export function formAtoms<F extends Form.Fields, O extends Form.Options<F>>(props: {
-	fields: F;
-	options: O;
-	$store: Form.Store<F, O>;
-}) {
-	const { fields, $store, options } = props;
+export function formAtoms<F extends Form.Fields, O extends Form.Options<F>>(
+	fields: F,
+	options: O,
+	$store: Form.Store<F, O>,
+) {
 	let atoms = {} as Form.Atoms<F, O>;
 	function getAtom<G extends keyof F>(key: G) {
 		let atom = atoms[key];

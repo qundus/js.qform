@@ -18,9 +18,9 @@ export function setupOptionsMerger<G extends Form.Options<any>>(_base?: G) {
 		}
 
 		if (base?.onMount != null || target?.onMount != null) {
-			merged.onMount = async (props) => {
-				const breturns = (await base?.onMount?.(props)) ?? undefined;
-				const ureturns = (await target?.onMount?.(props)) ?? undefined;
+			merged.onMount = async (form, update) => {
+				const breturns = (await base?.onMount?.(form, update)) ?? undefined;
+				const ureturns = (await target?.onMount?.(form, update)) ?? undefined;
 				// // priority to children
 				if (ureturns) {
 					return ureturns;
@@ -30,9 +30,9 @@ export function setupOptionsMerger<G extends Form.Options<any>>(_base?: G) {
 		}
 
 		if (base?.onChange != null || target?.onChange != null) {
-			merged.onChange = (props) => {
-				base?.onChange?.(props);
-				target?.onChange?.(props);
+			merged.onChange = ($next, helpers) => {
+				base?.onChange?.($next, helpers);
+				target?.onChange?.($next, helpers);
 			};
 		}
 

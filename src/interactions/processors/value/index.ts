@@ -44,6 +44,7 @@ export function processValue<F extends Field.Options, O extends Form.Options<any
 			value = pro({
 				event,
 				value,
+				field,
 				$condition: $form.conditions[key],
 				manualUpdate: manualUpdate == null ? false : manualUpdate,
 				getValueOf: (key: string) => $form.values[key],

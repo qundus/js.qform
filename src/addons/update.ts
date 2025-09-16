@@ -1,8 +1,7 @@
-import type { Field, Form, FunctionProps } from "../../_model";
-import { isKeyInFormFields } from "../../form/checks/is-key-in-form-fields";
-import { valueInteraction } from "../../interactions/value";
-import { valuesGetters } from "./values-getters";
-import { mergeFieldConditions } from "../../methods/merge-field-conditions";
+import type { Field, Form, FunctionProps } from "../_model";
+import { isKeyInFormFields } from "../form/checks/is-key-in-form-fields";
+import { valueInteraction } from "../interactions/value";
+import { mergeFieldConditions } from "../methods/merge-field-conditions";
 
 function getDeepPath(obj: any, _path: string) {
 	const path = _path.split(".");
@@ -14,70 +13,15 @@ function getDeepPath(obj: any, _path: string) {
 	return obj;
 }
 
-export type ExtenderFormActions<F extends Form.Fields, O extends Form.Options<F>> = ReturnType<
-	typeof formActionsExtender<F, O>
->;
-export function formActionsExtender<F extends Form.Fields, O extends Form.Options<F>>(
-	props: FunctionProps.Extender<F, O>,
+export type AddonUpdate<F extends Form.Fields, O extends Form.Options<F>> = {
+	update: ReturnType<typeof updateAddon<F, O>>;
+};
+export function updateAddon<F extends Form.Fields, O extends Form.Options<F>>(
+	props: FunctionProps.Addon<F, O>,
 ) {
 	const { fields, $store, options } = props;
-	function canSubmit() {
-		const status = $store.get().status;
-		if (status === "submit") {
-			return false;
-		}
-		return status === "valid"; // || status === "submitting";
-	}
-
 	return {
-		...valuesGetters(props),
-		canSubmit,
-		startSubmitting: () => {
-			if (!canSubmit()) {
-				return null;
-			}
-			$store.update(({ $next }) => {
-				$next.status = "submit";
-				return $next;
-			});
-			return () => {
-				if ($store.get().status !== "submit") {
-					return;
-				}
-				$store.update(({ $next }) => {
-					$next.status = "valid";
-					return $next;
-				});
-			};
-		},
-		submit: async (props: {
-			runner: () => Promise<void>;
-			// submitOptions?: SubmitOptions;
-			cannotSubmit?: <G>() => void;
-			error?: <G>(e: G) => void;
-		}) => {
-			const { runner, cannotSubmit, error } = props;
-			if (!canSubmit()) {
-				// console.log("form: cannot submit form!");
-				cannotSubmit?.();
-				return;
-			}
-			try {
-				$store.update(({ $next }) => {
-					$next.status = "submit";
-					return $next;
-				});
-				await runner?.();
-			} catch (e: any) {
-				error?.(e);
-			} finally {
-				$store.update(({ $next }) => {
-					$next.status = "valid";
-					return $next;
-				});
-			}
-		},
-		updateValues: <G extends Object>(
+		values: <G extends Object>(
 			values: G,
 			paths?: Record<string, string | { value: string; key?: string }>,
 		) => {
@@ -128,7 +72,7 @@ export function formActionsExtender<F extends Form.Fields, O extends Form.Option
 				return $next;
 			});
 		},
-		updateConditions: <G extends Record<keyof F, Partial<Field.Condition>>>(conditions: G) => {
+		conditions: <G extends Record<keyof F, Partial<Field.Condition>>>(conditions: G) => {
 			if (conditions == null) {
 				return;
 			}
@@ -145,3 +89,34 @@ export function formActionsExtender<F extends Form.Fields, O extends Form.Option
 		},
 	};
 }
+
+// updateValues: (values) => {
+// 	//
+// 	if (typeof values === "undefined") {
+// 		return;
+// 	}
+// 	const $form = { ...$store.get() };
+// 	for (const key in values) {
+// 		const value = values[key];
+// 		const field = fields[key as keyof typeof fields] as Field.Options;
+// 		if (!isKeyInFormFields(fields, options, key)) {
+// 			continue;
+// 		}
+// 		const preprocessValue = options.preprocessValues ?? field.preprocessValue;
+// 		valueInteraction(
+// 			{
+// 				key,
+// 				field,
+// 				options,
+// 				$store: $store as any,
+// 			},
+// 			{
+// 				$form,
+// 				value,
+// 				event: null,
+// 			},
+// 			{ manualUpdate: true, preprocessValue },
+// 		);
+// 	}
+// 	$store.set($form);
+// },

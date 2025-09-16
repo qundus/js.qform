@@ -77,12 +77,12 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 				{
 					field.multiple = field.multiple ?? active.isArray ?? false;
 					const obj = helpers.getEnumValues(schema);
-					const options = [] as { label: string; value: string }[]; // maybe shift this logic to inside of the field.options function for performance??!
+					const selections = [] as { label: string; value: string }[]; // maybe shift this logic to inside of the field.options function for performance??!
 					for (const key in obj) {
 						const value = obj[key];
-						options.push({ label: key, value });
+						selections.push({ label: key, value });
 					}
-					field.options = () => options;
+					field.selections = selections;
 				}
 				break;
 			case "file":

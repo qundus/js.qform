@@ -1,46 +1,45 @@
-import type { _QSTATE } from "@qundus/qstate";
-import type {} from "../_model";
+import type { Form } from "../_model";
 import { PLACEHOLDERS } from "../const";
+
 // checks
 import { checkFormBasics } from "./checks/check-form-basics";
 import { processFormOptions } from "./processors/form-options";
-import { mergeFieldConditions } from "../methods/merge-field-conditions";
 
-// methods
-import formActions, { type FormActions } from "../plugins/form-actions";
-import formButton, { type FormButton } from "../plugins/form-button";
-import prepareFormAtoms, { type AtomsPrepared } from "../preparations/form-atoms";
+// addons
+import { submitAddon } from "../addons/submit";
+import { updateAddon } from "../addons/update";
+import { valuesAddon } from "../addons/values";
+import { buttonAddon } from "../addons/button";
 
-// preparations
-import prepareFormFields from "../preparations/form-fields";
-import prepareFormStore from "../preparations/form-store";
+// form
+import { formAtoms } from "./atoms";
+import { formFields } from "./fields";
+import { formStore } from "./store";
+import { setupOptionsMerger } from "../methods/setup-options-merger";
 
-export function form<B extends Basics, F extends Fields<B>, O extends Options<F>>(
+export function form<B extends Form.Basics, F extends Form.Fields<B>, O extends Form.Options<F>>(
 	basics: B,
 	_options?: O,
-): Form<B, F, O> {
-	checkBasics(basics);
-	const options = checkOptions<F, O>(_options) as O;
-	// necessary preparations
-	const { fields, form_init } = prepareFormFields<B, F, O>({ basics, options });
-	const $store = prepareFormStore<F, O>({ fields, form_init, options });
-	const { atoms, elements } = prepareFormAtoms<F, O>({ fields, options, $store });
-	// plugins
-	const actions = formActions<F, O>({ fields, options, $store });
-	const button = formButton<F, O>({ fields, options, $store });
+): Form.Factory<F, O> {
+	checkFormBasics(basics);
+	const options = processFormOptions<F, O>(_options) as O;
+	// essentials
+	const { fields, form_init } = formFields<B, F, O>(basics, options);
+	const $store = formStore<F, O>(fields, options, form_init);
+	const { atoms, elements } = formAtoms<F, O>(fields, options, $store);
 
-	// TODO: find a better solution for this if it affects performance
-	// const derived = $store.derive((value) => value);
+	// addons (forced for now)
+	const addonProps = { fields, options, $store };
+	const submit = submitAddon<F, O>(addonProps);
+	const update = updateAddon<F, O>(addonProps);
+	const values = valuesAddon<F, O>(addonProps);
+	const button = buttonAddon<F, O>(addonProps);
 
 	// other helpers
 	let keys = null as (keyof F)[] | null;
 	return {
 		// fields, // for tests only, not recommended to export
 		$store,
-		atoms,
-		elements,
-		actions,
-		button,
 		placeholders: PLACEHOLDERS,
 		get keys() {
 			return () => {
@@ -50,12 +49,23 @@ export function form<B extends Basics, F extends Fields<B>, O extends Options<F>
 				return keys as (keyof F)[];
 			};
 		},
+		// atoms
+		atoms,
+		elements,
+		// addons
+		submit,
+		update,
+		values,
+		button,
 	};
 }
 
-export function formSetup<G extends Options<any>>(base?: G) {
-	const optionsMerger = mergeOptions(base);
-	return <B extends Basics, F extends Fields<B>, D extends Options<F>>(basics: B, doptions?: D) => {
+export function formSetup<G extends Form.Options<any>>(base?: G) {
+	const optionsMerger = setupOptionsMerger(base);
+	return <B extends Form.Basics, F extends Form.Fields<B>, D extends Form.Options<F>>(
+		basics: B,
+		doptions?: D,
+	) => {
 		const options = optionsMerger<D>(doptions);
 		return form<B, F, typeof options>(basics, options);
 	};

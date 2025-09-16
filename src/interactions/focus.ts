@@ -13,6 +13,7 @@ export function focusInteraction<S extends Field.Options, O extends Form.Options
 	field.processCondition?.({
 		event,
 		value,
+		field,
 		$condition: $form.conditions[key],
 		manualUpdate: false,
 		getValueOf: (key: string) => $form.values[key],

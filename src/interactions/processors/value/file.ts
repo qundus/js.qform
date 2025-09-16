@@ -20,7 +20,7 @@ export function processFileValue<F extends Field.Options, O extends Form.Options
 	const result = value;
 	let in_progress_files = 0;
 	let ready_files = 0;
-	const all_extras = [] as Field.Extras<"file">;
+	const all_extras = [] as Field.Extras<F, "file">;
 	for (const file of value) {
 		// if ($state == null) {
 		// 	console.error("form(internal): state wasn't passed down, aborting file extras!");
