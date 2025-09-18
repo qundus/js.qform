@@ -5,13 +5,14 @@ import { processFileValue } from "./file";
 import { processNumberValue } from "./number";
 import { processSelectValue } from "./select";
 
-export function processValue<F extends Field.Options, O extends Form.Options<any>>(
+export function processValue<F extends Field.Setup, O extends Form.Options<any>>(
 	basic: FunctionProps.Basic<F, O>,
 	interaction: FunctionProps.Interaction<F, O>,
 	processor: FunctionProps.Processor<F, O>,
+	form: Form.StoreObject<any>,
 ) {
-	const { key, field } = basic;
-	const { event, $form } = interaction;
+	const { key, setup: field } = basic;
+	const { event } = interaction;
 	const { manualUpdate } = processor;
 
 	//
@@ -22,7 +23,7 @@ export function processValue<F extends Field.Options, O extends Form.Options<any
 	} else if (field.type === "checkbox") {
 		value = processCheckboxValue(basic, interaction, processor);
 	} else if (field.type === "file") {
-		value = processFileValue(basic, interaction, processor);
+		value = processFileValue(basic, interaction, processor, form);
 	} else if (field.type === "number" || field.type === "tel") {
 		value = processNumberValue(basic, interaction, processor);
 	} else {
@@ -37,20 +38,22 @@ export function processValue<F extends Field.Options, O extends Form.Options<any
 	}
 
 	////// try to keep this as the only place to processValues from user
+	const $next = {
+		value: value,
+		condition: { ...form.conditions[key] },
+	};
 	if (field.processValue != null) {
 		const funcs =
 			typeof field.processValue === "function" ? [field.processValue] : field.processValue;
 		for (const pro of funcs) {
-			value = pro({
+			pro({
 				event,
-				value,
-				field,
-				$condition: $form.conditions[key],
+				setup: field,
+				form,
+				$next,
 				manualUpdate: manualUpdate == null ? false : manualUpdate,
-				getValueOf: (key: string) => $form.values[key],
-				getConditionOf: (key: string) => $form.conditions[key],
 			});
 		}
 	}
-	return value;
+	return $next;
 }

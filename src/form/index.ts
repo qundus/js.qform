@@ -3,7 +3,6 @@ import { PLACEHOLDERS } from "../const";
 
 // checks
 import { checkFormBasics } from "./checks/check-form-basics";
-import { processFormOptions } from "./processors/form-options";
 
 // addons
 import { submitAddon } from "../addons/submit";
@@ -16,16 +15,17 @@ import { formAtoms } from "./atoms";
 import { formFields } from "./fields";
 import { formStore } from "./store";
 import { setupOptionsMerger } from "../methods/setup-options-merger";
+import { prepareOptions } from "./preparations/options";
 
 export function form<B extends Form.Basics, F extends Form.Fields<B>, O extends Form.Options<F>>(
 	basics: B,
 	_options?: O,
 ): Form.Factory<F, O> {
-	checkFormBasics(basics);
-	const options = processFormOptions<F, O>(_options) as O;
+	// checkFormBasics(basics);
+	const options = prepareOptions<F, O>(_options) as O;
+	const $store = formStore<F, O>(fields, options, form_init);
 	// essentials
 	const { fields, form_init } = formFields<B, F, O>(basics, options);
-	const $store = formStore<F, O>(fields, options, form_init);
 	const { atoms, elements } = formAtoms<F, O>(fields, options, $store);
 
 	// addons (forced for now)
@@ -39,7 +39,7 @@ export function form<B extends Form.Basics, F extends Form.Fields<B>, O extends 
 	let keys = null as (keyof F)[] | null;
 	return {
 		// fields, // for tests only, not recommended to export
-		$store,
+		store: $store,
 		placeholders: PLACEHOLDERS,
 		get keys() {
 			return () => {

@@ -1,6 +1,10 @@
 import type { Form } from "../../_model";
 
-export function processFormOptions<F extends Form.Fields, O extends Form.Options<F>>(options?: O) {
+export function prepareOptions<F extends Form.Fields, O extends Form.Options<F>>(options?: O) {
+	// @ts-expect-error
+	if (options?.__PROCESSED) {
+		return options;
+	}
 	const result = { ...options };
 	result.vmcm = result.vmcm ?? "normal";
 	result.preventErroredValues = result.preventErroredValues ?? false;
@@ -18,5 +22,10 @@ export function processFormOptions<F extends Form.Fields, O extends Form.Options
 	result.processElementOrder = result.processElementOrder ?? "after";
 	result.flatObjectKeysChar = ".";
 	result.flatLabelJoinChar = result.flatLabelJoinChar ?? " ";
+	result.abortOnChangeException = result.abortOnChangeException ?? false;
+
+	// mark processed
+	//@ts-expect-error
+	result.__PROCESSED = true;
 	return result;
 }

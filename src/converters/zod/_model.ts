@@ -59,21 +59,21 @@ export type SchemaToFields<Z> = FlatObject<Z> extends infer G
 		}
 	: never;
 export type ZodTypeNameToField<T> = T extends "boolean" | "nullable:boolean"
-	? Field.Options<"checkbox">
+	? Field.Setup<"checkbox">
 	: T extends "string" | "nullable:string"
-		? Field.Options<"text">
+		? Field.Setup<"text">
 		: T extends "number" | "nullable:number"
-			? Field.Options<"number">
+			? Field.Setup<"number">
 			: T extends "enum" | "nullable:enum" | "nativeEnum" | "nullable:nativeEnum"
-				? Field.Options<"select" | "radio">
+				? Field.Setup<"select" | "radio">
 				: T extends "date" | "nullable:date"
-					? Field.Options<"date" | "datetime-local">
+					? Field.Setup<"date" | "datetime-local">
 					: T extends "file"
-						? Field.Options<"file">
-						: Field.Options;
+						? Field.Setup<"file">
+						: Field.Setup;
 export type SchemaToFieldsExtenders<Z> = FlatObject<Z> extends infer G
 	? {
-			[K in keyof G]?: Field.Type | Partial<Omit<Field.Options, "options">>;
+			[K in keyof G]?: Field.Type | Partial<Omit<Field.Setup, "options">>;
 		}
 	: never;
 

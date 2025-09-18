@@ -1,6 +1,6 @@
 import type { Field } from "../../_model";
-export function isFieldIncomplete<T extends Field.Type, F extends Field.Options<T>>(
-	field: F,
+export function isFieldIncomplete<T extends Field.Type, F extends Field.Setup<T>>(
+	setup: F,
 	condition: Field.Condition,
 	value: any,
 ) {
@@ -11,8 +11,8 @@ export function isFieldIncomplete<T extends Field.Type, F extends Field.Options<
 			//
 			// (field.type === "checkbox" && value === "") ||
 			value === "" ||
-			(!field.valueNullable && (typeof value === "undefined" || value == null)) ||
-			(field.mandatory && (value == null || !value)) // for mandatory checkboxes
+			(!setup.valueNullable && (typeof value === "undefined" || value == null)) ||
+			(setup.mandatory && (value == null || !value)) // for mandatory checkboxes
 		) {
 			result = true;
 		}

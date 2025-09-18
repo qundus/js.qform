@@ -19,104 +19,73 @@ export type AddonUpdate<F extends Form.Fields, O extends Form.Options<F>> = {
 export function updateAddon<F extends Form.Fields, O extends Form.Options<F>>(
 	props: FunctionProps.Addon<F, O>,
 ) {
-	const { fields, $store, options } = props;
+	const { setups: fields, $store, options } = props;
 	return {
 		values: <G extends Object>(
 			values: G,
 			paths?: Record<string, string | { value: string; key?: string }>,
+			configs?: { preprocess?: boolean },
 		) => {
 			if (values == null) {
 				return;
 			}
-			$store.update(({ $next }) => {
-				for (const _key in values) {
-					let path = paths?.[_key];
-					let key = _key;
-					if (path != null) {
-						if (typeof path !== "string") {
-							// @ts-ignore
-							key = (path.key ?? _key) as string;
-							path = path.value;
-						}
+			// const form = $store.get();
+			for (const _key in values) {
+				let path = paths?.[_key];
+				let key = _key;
+				if (path != null) {
+					if (typeof path !== "string") {
+						// @ts-ignore
+						key = (path.key ?? _key) as string;
+						path = path.value;
 					}
-					if (!isKeyInFormFields(fields, options, key)) {
-						continue;
-					}
-					const field = fields[key as keyof typeof fields] as Field.Options<Field.Type>;
-					const value = path == null ? values[key] : getDeepPath(values, path as string);
-					valueInteraction(
-						{
-							key,
-							field,
-							options,
-							$store,
-						},
-						{
-							$form: $next,
-							event: null,
-							value,
-						},
-						{
-							manualUpdate: true,
-							preprocessValue: options?.preprocessValues ?? field.preprocessValue,
-						},
-					);
-					// TODO: check if vanilla elements are updating properly
-					// if (typeof document !== "undefined") {
-					// 	const el = document.getElementsByName(key);
-					// 	if (el != null) {
-					// 		// el.value = next.values[key];
-					// 	}
-					// }
 				}
-				return $next;
-			});
+				if (!isKeyInFormFields(fields, options, key)) {
+					continue;
+				}
+				const field = fields[key as keyof typeof fields] as Field.Setup<Field.Type>;
+				const value = path == null ? values[key] : getDeepPath(values, path as string);
+				const preprocessValue =
+					configs?.preprocess ?? options?.preprocessValues ?? field.preprocessValue;
+				valueInteraction(
+					{
+						key,
+						setup: field,
+						options,
+						$store,
+					},
+					{
+						event: null,
+						value,
+					},
+					{
+						preprocessValue,
+						manualUpdate: true,
+					},
+				);
+				// TODO: check if vanilla elements are updating properly
+				// if (typeof document !== "undefined") {
+				// 	const el = document.getElementsByName(key);
+				// 	if (el != null) {
+				// 		// el.value = next.values[key];
+				// 	}
+				// }
+			}
 		},
 		conditions: <G extends Record<keyof F, Partial<Field.Condition>>>(conditions: G) => {
 			if (conditions == null) {
 				return;
 			}
-			$store.update(({ $next }) => {
-				for (const key in conditions) {
-					const condition = conditions[key];
-					if (!isKeyInFormFields(fields, options, key) || condition == null) {
-						continue;
-					}
-					$next.conditions[key] = mergeFieldConditions($next.conditions[key], condition);
+			const form = $store.get();
+			for (const key in conditions) {
+				const prevCondition = form.conditions[key];
+				const userCondition = conditions[key];
+				if (!isKeyInFormFields(fields, options, key) || userCondition == null) {
+					continue;
 				}
-				return $next;
-			});
+				const next = mergeFieldConditions(prevCondition, userCondition);
+				$store.setKey(`conditions[${key}]`, next as any);
+			}
 		},
 	};
 }
-
-// updateValues: (values) => {
-// 	//
-// 	if (typeof values === "undefined") {
-// 		return;
-// 	}
-// 	const $form = { ...$store.get() };
-// 	for (const key in values) {
-// 		const value = values[key];
-// 		const field = fields[key as keyof typeof fields] as Field.Options;
-// 		if (!isKeyInFormFields(fields, options, key)) {
-// 			continue;
-// 		}
-// 		const preprocessValue = options.preprocessValues ?? field.preprocessValue;
-// 		valueInteraction(
-// 			{
-// 				key,
-// 				field,
-// 				options,
-// 				$store: $store as any,
-// 			},
-// 			{
-// 				$form,
-// 				value,
-// 				event: null,
-// 			},
-// 			{ manualUpdate: true, preprocessValue },
-// 		);
-// 	}
-// 	$store.set($form);
-// },

@@ -7,7 +7,7 @@ export type AddonValues<F extends Form.Fields, O extends Form.Options<F>> = {
 export function valuesAddon<F extends Form.Fields, O extends Form.Options<F>>(
 	props: FunctionProps.Addon<F, O>,
 ) {
-	const { fields, $store } = props;
+	const { setups: fields, $store } = props;
 	return {
 		get<KC extends FieldsKeysCaseMap<F>>(special?: KC) {
 			return _getValues({ fields, $store, defaultCase: "same", special });

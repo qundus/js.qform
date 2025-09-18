@@ -1,7 +1,7 @@
-import type { Field, Form, Element, FunctionProps } from "../_model";
+import type { Field, Form, Element, FunctionProps } from "../../_model";
 import { hooksInUse } from "@qundus/qstate/hooks";
-import { inputElement } from "../elements/input";
-import { selectElement } from "../elements/select";
+import { inputElement } from "./input";
+import { selectElement } from "./select";
 
 type ElementCustomProps<D extends Element.DomType, K extends Element.KeysType> = {
 	dType?: D;
@@ -17,18 +17,15 @@ function getElementCustomProps<D extends Element.DomType, K extends Element.Keys
 	];
 }
 
-export function fieldElement<F extends Field.Options, O extends Form.Options<any>>(
-	props: FunctionProps.Basic<F, O>,
-	derived: Field.Store<F, O>,
+export function createElement<S extends Field.Setup, O extends Form.Options<any>>(
+	props: FunctionProps.Element<S, O>,
 ) {
-	const { key, field, $store, options } = props;
+	const { key, setup, options, store } = props;
+
 	// const baseEl = makeBaseElement({ field, key, $state, options });
-	const element =
-		"select" === field.type
-			? selectElement<F, O>({ field, key, $store, options })
-			: inputElement<F, O>({ field, key, $store, options });
+	const element = "select" === setup.type ? selectElement<S, O>(props) : inputElement<S, O>(props);
 	// determine used hooks
-	const { getHook, getHooks, hookNames } = hooksInUse(derived);
+	const { getHook, getHooks, hookNames } = hooksInUse(store);
 	const preactHook = getHook(hookNames.preact);
 	const reactHook = getHook(hookNames.react);
 	const solidHooks = getHooks(
@@ -46,7 +43,7 @@ export function fieldElement<F extends Field.Options, O extends Form.Options<any
 			return <D extends Element.DomType, K extends Element.KeysType>(
 				props?: ElementCustomProps<D, K>,
 			) => {
-				const data = derived.get();
+				const data = store.get();
 				const [dType, kType] = getElementCustomProps("dom", props);
 				return element(dType, kType, data);
 			};
@@ -100,7 +97,7 @@ export function fieldElement<F extends Field.Options, O extends Form.Options<any
 			};
 		},
 		get svelte() {
-			const data = derived.get();
+			const data = store.get();
 			const [dType, kType] = getElementCustomProps("dom");
 			return element(dType, kType, data);
 		},
@@ -111,7 +108,7 @@ export function fieldElement<F extends Field.Options, O extends Form.Options<any
 				return;
 			}
 			// console.log("ref is initialized for :: ", key);
-			const data = derived.get();
+			const data = store.get();
 			const [dType, kType] = getElementCustomProps("dom", props);
 			const el = element(dType, kType, data);
 			for (const k in el) {

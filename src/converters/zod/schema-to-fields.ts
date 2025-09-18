@@ -40,7 +40,7 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 		}
 
 		//
-		const field = (options.override?.[key as keyof E] ?? {}) as Field.Options;
+		const field = (options.override?.[key as keyof E] ?? {}) as Field.Setup;
 		const active = {
 			type: "string" as "string" | "number" | "boolean" | "date" | "file" | "enum" | "nativeEnum",
 			isArray: typeName.startsWith("array"),
@@ -88,17 +88,17 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 			case "file":
 				{
 					field.multiple = field.multiple ?? active.isArray ?? false;
-					const processValue: Field.Processor<any, any> = ({ value, field }) => {
-						if (value == null) {
+					const processValue: Field.Processor<any, any> = ({ $next, setup: field }) => {
+						if ($next.value == null) {
 							return null;
 						}
-						if (value instanceof FileList) {
+						if ($next.value instanceof FileList) {
 							if (field.multiple) {
-								return Array.from(value);
+								return Array.from($next.value);
 							}
-							return value[0];
+							return $next.value[0];
 						}
-						return value;
+						return $next.value;
 					};
 					if (field.processValue == null) {
 						field.processValue = processValue;

@@ -16,48 +16,50 @@ export function submitAddon<F extends Form.Fields, O extends Form.Options<F>>(
 	}
 
 	return {
+		/**
+		 * check if it's possible to submit or not, this checks if all required
+		 * non-hidden fields have been fulfilled.
+		 */
 		possible: canSubmit,
+		/**
+		 * you can start submission by calling this function and control it's end
+		 * with the returned function, as opposed to task which controls
+		 * everything internally.
+		 * @returns a function to end submission, must be called
+		 */
 		start: () => {
 			if (!canSubmit()) {
 				return null;
 			}
-			$store.update(({ $next }) => {
-				$next.status = "submit";
-				return $next;
-			});
+			$store.setKey("status", "submit");
 			return () => {
 				if ($store.get().status !== "submit") {
 					return;
 				}
-				$store.update(({ $next }) => {
-					$next.status = "valid";
-					return $next;
-				});
+				$store.setKey("status", "valid");
 			};
 		},
-		task: async <W>(
-			runner: () => Promise<W>,
-		): Promise<[W, null] | [null, { message: string } | Record<string, any>]> => {
+		/**
+		 * a submission cycle internally controlled and allows access to
+		 * result after it's fulfillment, as opposed to start function which
+		 * gives total freedom.
+		 * @param runner the method to run for submission, maybe an api call or something.
+		 * @returns
+		 */
+		task: async <W, E = Record<string, any>>(
+			runner: () => W | Promise<W>,
+		): Promise<[W, null] | [null, { message: string } | E]> => {
 			if (!canSubmit()) {
 				// console.log("form: cannot submit form!");
-				return [null, { message: "form: cannot submit form!" }];
+				return [null, { message: "qform: cannot submit form!" }];
 			}
 			try {
-				$store.update(({ $next }) => {
-					$next.status = "submit";
-					return $next;
-				});
+				$store.setKey("status", "submit");
 				const w = await runner?.();
-				$store.update(({ $next }) => {
-					$next.status = "valid";
-					return $next;
-				});
+				$store.setKey("status", "valid");
 				return [w, null];
 			} catch (e: any) {
-				$store.update(({ $next }) => {
-					$next.status = "valid";
-					return $next;
-				});
+				$store.setKey("status", "valid");
 				// error?.(e);
 				return [null, e];
 			}

@@ -11,11 +11,11 @@ export function formFields<
 	const form_init = {
 		values: {} as any,
 		conditions: {} as any,
-		errors: null as any,
+		errors: {} as any,
 		extras: {} as any,
 		incomplete: [],
-		// focused: false,
 		status: "valid",
+		changed: undefined,
 	} as Form.StoreObject<F>;
 	for (const key in basics) {
 		const basic = basics[key];
@@ -25,6 +25,11 @@ export function formFields<
 		fields[key] = field;
 		form_init.values[key as any] = field.value;
 		form_init.conditions[key as any] = condition;
+
+		//
+		if (!condition.valid) {
+			form_init.status = "idle";
+		}
 	}
 
 	return { fields, form_init };

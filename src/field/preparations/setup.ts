@@ -1,48 +1,49 @@
 import type { Field, Form } from "../../_model";
 import { PLACEHOLDERS } from "../../const";
 
-export function processFieldOptions<B extends Form.Basic, O extends Form.Options<any>>(
-	basic: B,
-	options: O,
+export function prepareSetup<F extends Field.FactoryIn, O extends Form.Options<any>>(
 	key: string,
+	inn: F,
+	options?: O,
 ) {
-	let field = {} as Partial<Form.BasicToField<B>>;
+	let field = {} as Partial<Field.FactoryInToSetup<F>>;
 	// formulate the basic to setup object
-	if (basic == null) {
+	if (inn == null) {
 		// default fallback input type
 		field = {
 			type: "text",
 			value: null,
 		} as any;
-	} else if (typeof basic === "string") {
+	} else if (typeof inn === "string") {
 		field = {
-			type: basic,
+			type: inn,
 		} as any;
 	} else {
-		field = basic as any;
+		field = inn as any;
 		if (field.type == null) {
 			field.type = "text";
 		}
 	}
 
 	// manage general and field specific options
-	field.vmcm = field.vmcm ?? options.vmcm ?? "normal";
-	field.required = field.required ?? options.allFieldsRequired;
-	field.disabled = field.disabled ?? options.allFieldsDisabled;
+	field.vmcm = field.vmcm ?? options?.vmcm ?? "normal";
+	field.required = field.required ?? options?.allFieldsRequired;
+	field.disabled = field.disabled ?? options?.allFieldsDisabled;
 	field.valueNullable = field.valueNullable ?? false;
 	field.preprocessValue = field.preprocessValue ?? options?.preprocessValues ?? true;
-	field.validateOn = field.validateOn ?? options.validateOn;
+	field.validateOn = field.validateOn ?? options?.validateOn;
 	field.incompleteStatus = field.incompleteStatus ?? true;
 	field.multiple = field.multiple ?? false;
+	field.abortProcessStateException = field.abortProcessStateException ?? false;
 
 	// SPECIAL ASSIGNMENTS
 	// label
 	if (field.label == null) {
-		const char = options.flatObjectKeysChar;
+		const char = options?.flatObjectKeysChar;
 		field.label = key;
 		if (char != null) {
 			if (key.includes(char)) {
-				const replacement = options.flatLabelJoinChar;
+				const replacement = options?.flatLabelJoinChar;
 				field.label = key.split(char).join(replacement);
 			}
 		}
@@ -67,5 +68,5 @@ export function processFieldOptions<B extends Form.Basic, O extends Form.Options
 	if (typeof field.preprocessValue !== "boolean") {
 		throw new Error("form: preprocessValue of " + key + " must be boolean!");
 	}
-	return field as Field.Options;
+	return field as Field.Setup;
 }

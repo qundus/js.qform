@@ -1,12 +1,12 @@
 import type { Field, Form, FunctionProps } from "../../../_model";
 
-export function processNumberValue<F extends Field.Options, O extends Form.Options<any>>(
+export function processCheckboxValue<F extends Field.Setup, O extends Form.Options<any>>(
 	basic: FunctionProps.Basic<F, O>,
 	interaction: FunctionProps.Interaction<F, O>,
 	processor: FunctionProps.Processor<F, O>,
 ) {
 	// setup
-	// const { key, field, $store } = basic;
+	const { setup: field } = basic;
 	const { event } = interaction;
 	const { manualUpdate, preprocessValue } = processor;
 	const el = event?.target as HTMLInputElement;
@@ -16,14 +16,21 @@ export function processNumberValue<F extends Field.Options, O extends Form.Optio
 	}
 
 	//
-	let result = null as number | null;
+	let result = value;
+	const checked = !manualUpdate ? el?.checked : true;
 	try {
-		result = Number(value);
-		if (Number.isNaN(result)) {
-			result = value;
+		const c = Boolean(checked);
+		if (value == null || value === "on") {
+			result = c;
+		} else {
+			if (c) {
+				result = value ?? c;
+			} else {
+				result = null;
+			}
 		}
 	} catch (e) {
-		result = value;
+		result = null;
 	}
 	return result;
 }

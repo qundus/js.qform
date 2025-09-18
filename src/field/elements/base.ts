@@ -1,6 +1,4 @@
-import type { Element, Field, Form, FunctionProps } from "../_model";
-import { blurInteraction } from "../interactions/blur";
-import { focusInteraction } from "../interactions/focus";
+import type { Element, Field, Form, FunctionProps } from "../../_model";
 
 //
 type OnFocus = (event: FocusEvent) => void;
@@ -22,18 +20,18 @@ export type BaseElementFactory<T extends Element.DomType> = Element.Factory<
 		autoComplete?: "on" | "off";
 	}
 >;
-export function baseElement<F extends Field.Options, O extends Form.Options<any>>(
-	basic: FunctionProps.Basic<F, O>,
+export function baseElement<F extends Field.Setup, O extends Form.Options<any>>(
+	basic: FunctionProps.Element<F, O>,
 ) {
-	const { field, $store } = basic;
+	const { setup, store } = basic;
 	return <D extends Element.DomType, K extends Element.KeysType>(
 		dType: D,
 		_kType: K,
-		reactive: Field.StoreObject<Field.Options> | (() => Field.StoreObject<Field.Options>),
+		reactive: Field.StoreObject<Field.Setup> | (() => Field.StoreObject<Field.Setup>),
 	) => {
 		const data = typeof reactive === "function" ? reactive() : reactive;
 		return {
-			id: field.label,
+			id: setup.label,
 			[dType !== "vdom" ? "autocomplete" : "autoComplete"]: "off",
 			required: data?.condition.element.required,
 			disabled: data?.condition.element.disabled,
@@ -41,9 +39,18 @@ export function baseElement<F extends Field.Options, O extends Form.Options<any>
 				event.preventDefault();
 				event.stopImmediatePropagation();
 				event.stopPropagation();
-				$store.update(({ $next: $form }) => {
-					focusInteraction(basic, { $form, event, value: null });
-					return $form;
+				//
+				const condition = { ...data.condition };
+				condition.element.state = "focus";
+				condition.element.visited = true;
+				store.set({
+					...(data as any),
+					condition,
+					__internal: {
+						update: "focus",
+						event,
+						manual: false,
+					},
 				});
 			},
 			[dType !== "vdom" ? "onblur" : "onBlur"]: (event: Event) => {
@@ -53,9 +60,18 @@ export function baseElement<F extends Field.Options, O extends Form.Options<any>
 				// if (field.validateOn === "change") {
 				// 	return;
 				// }
-				$store.update(({ $next: $form }) => {
-					blurInteraction(basic, { $form, event, value: null });
-					return $form;
+				//
+				const condition = { ...data.condition };
+				condition.element.state = "blur";
+				condition.element.visited = true;
+				store.set({
+					...(data as any),
+					condition,
+					__internal: {
+						update: "blur",
+						event,
+						manual: false,
+					},
 				});
 			},
 		} as BaseElementFactory<D>;

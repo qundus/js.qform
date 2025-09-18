@@ -1,10 +1,10 @@
-import type { Field } from "../_model";
-import { isFieldIncomplete } from "./checks/is-field-incomplete";
+import type { Field } from "../../_model";
+import { isFieldIncomplete } from "../checks/is-field-incomplete";
 
-export function fieldCondition<F extends Field.Options>(key: string, field: F) {
+export function prepareCondition<S extends Field.Setup>(key: string, setup: S) {
 	const condition = {
 		valid: true,
-		hidden: field.hidden === true,
+		hidden: setup.hidden === true,
 		value: {
 			updated: false,
 			error: false,
@@ -13,12 +13,12 @@ export function fieldCondition<F extends Field.Options>(key: string, field: F) {
 		element: {
 			state: false,
 			visited: false,
-			required: field?.required ?? true,
-			disabled: field?.disabled ?? false,
+			required: setup?.required ?? true,
+			disabled: setup?.disabled ?? false,
 		},
 	} as Field.Condition;
 	if (!condition.hidden) {
-		const incomplete = isFieldIncomplete(field, condition, field.value);
+		const incomplete = isFieldIncomplete(setup, condition, setup.value);
 		if (incomplete) {
 			condition.valid = false;
 			// console.log("cc :: ", key, " :: ", JSON.stringify(condition));

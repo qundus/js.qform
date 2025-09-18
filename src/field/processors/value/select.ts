@@ -2,13 +2,13 @@
 import type { Field, Form, FunctionProps } from "../../../_model";
 import { PLACEHOLDERS } from "../../../const";
 
-export function processSelectValue<F extends Field.Options, O extends Form.Options<any>>(
+export function processSelectValue<F extends Field.Setup, O extends Form.Options<any>>(
 	basic: FunctionProps.Basic<F, O>,
 	interaction: FunctionProps.Interaction<F, O>,
 	processor: FunctionProps.Processor<F, O>,
 ) {
 	// setup
-	const { field } = basic;
+	const { setup: field } = basic;
 	const { event } = interaction;
 	const { manualUpdate, preprocessValue } = processor;
 	const el = event?.target as HTMLSelectElement;

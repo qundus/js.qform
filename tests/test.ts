@@ -72,8 +72,9 @@ export const $form = form(
 		},
 		picture: {
 			type: "file",
-			// value: null,
-			validate: (value: FileList) => {
+			value: "",
+			// val
+			validate: (value) => {
 				const range = vFile.Ranges.kilo;
 				const size_limit = 2;
 				const t = vFile.isFileSizeLessThan(value[0], size_limit, range);
@@ -95,7 +96,7 @@ export const $form = form(
 		},
 		gender: {
 			type: "radio",
-			value: null as { wow: string } | null,
+			value: null, //null as { wow: string } | null,
 			// required: false,
 			// hidden: true,
 			selections: [
@@ -103,6 +104,7 @@ export const $form = form(
 				{ label: "female", value: "female", garage: "wow" },
 			],
 		},
+		// wow: {}
 	},
 	{
 		onMount: (init) => {
@@ -119,12 +121,16 @@ export const $form = form(
 
 const gender = $form.atoms("gender");
 const name = $form.atoms("name");
+const color = $form.atoms("color");
 
-// name.$store.value?.
-// gender.$store.value?.
+gender.store.get().extras;
+name.store.get().extras;
+color.store.get().extras;
+color.element;
 
 const result = $form.values.get();
 
+result.picture;
 result.gender;
 result.color;
 result.email;

@@ -12,7 +12,7 @@ export function formAtoms<F extends Form.Fields, O extends Form.Options<F>>(
 		let atom = atoms[key];
 		if (atom == null) {
 			const field = fields[key];
-			atom = fieldAtom({ key: key as string, field, options, $store });
+			atom = fieldAtom({ key: key as string, setup: field, options, $store });
 			atoms[key] = atom;
 		}
 		return atom;
