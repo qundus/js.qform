@@ -20,8 +20,8 @@ export type BaseElementFactory<T extends Element.DomType> = Element.Factory<
 		autoComplete?: "on" | "off";
 	}
 >;
-export function baseElement<F extends Field.Setup, O extends Form.Options<any>>(
-	basic: FunctionProps.Element<F, O>,
+export function baseElement<F extends Field.Setup, O extends Form.Options>(
+	basic: FunctionProps.Field<F, O>,
 ) {
 	const { setup, store } = basic;
 	return <D extends Element.DomType, K extends Element.KeysType>(

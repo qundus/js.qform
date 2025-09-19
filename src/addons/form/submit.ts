@@ -1,14 +1,14 @@
-import type { Form, FunctionProps } from "../_model";
+import type { Form, FunctionProps } from "../../_model";
 
-export type AddonSubmit<F extends Form.Fields, O extends Form.Options<F>> = {
-	submit: ReturnType<typeof submitAddon<F, O>>;
-};
-export function submitAddon<F extends Form.Fields, O extends Form.Options<F>>(
-	props: FunctionProps.Addon<F, O>,
+export type FormAddonSubmit<F extends Form.Fields, O extends Form.Options<F>> = ReturnType<
+	typeof formSubmitAddon<F, O>
+>;
+export function formSubmitAddon<F extends Form.Fields, O extends Form.Options<F>>(
+	props: FunctionProps.FormAddon<F, O>,
 ) {
-	const { $store } = props;
+	const { store } = props;
 	function canSubmit() {
-		const status = $store.get().status;
+		const status = store.get().status;
 		if (status === "submit") {
 			return false;
 		}
@@ -31,12 +31,12 @@ export function submitAddon<F extends Form.Fields, O extends Form.Options<F>>(
 			if (!canSubmit()) {
 				return null;
 			}
-			$store.setKey("status", "submit");
+			store.set({ ...store.get(), status: "submit" });
 			return () => {
-				if ($store.get().status !== "submit") {
+				if (store.get().status !== "submit") {
 					return;
 				}
-				$store.setKey("status", "valid");
+				store.set({ ...store.get(), status: "valid" });
 			};
 		},
 		/**
@@ -54,12 +54,12 @@ export function submitAddon<F extends Form.Fields, O extends Form.Options<F>>(
 				return [null, { message: "qform: cannot submit form!" }];
 			}
 			try {
-				$store.setKey("status", "submit");
+				store.set({ ...store.get(), status: "submit" });
 				const w = await runner?.();
-				$store.setKey("status", "valid");
+				store.set({ ...store.get(), status: "valid" });
 				return [w, null];
 			} catch (e: any) {
-				$store.setKey("status", "valid");
+				store.set({ ...store.get(), status: "valid" });
 				// error?.(e);
 				return [null, e];
 			}

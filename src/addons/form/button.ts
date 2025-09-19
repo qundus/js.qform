@@ -1,4 +1,4 @@
-import type { Form, FunctionProps } from "../_model";
+import type { Form, FunctionProps } from "../../_model";
 import { type _QSTATE, atom } from "@qundus/qstate";
 
 type ButtonObject = {
@@ -10,19 +10,17 @@ type ButtonObject = {
 type ButtonStore<F extends Form.Fields, O extends Form.Options<F>> = _QSTATE.StoreDerived<
 	ButtonObject,
 	{
-		hooks: O["hooks"];
+		hooks: O["storeHooks"];
 	}
 >;
-export type AddonButton<F extends Form.Fields, O extends Form.Options<F>> = {
-	button: {
-		store: ButtonStore<F, O>;
-	};
+export type FormAddonButton<F extends Form.Fields, O extends Form.Options<F>> = {
+	store: ButtonStore<F, O>;
 };
-export function buttonAddon<F extends Form.Fields, O extends Form.Options<F>>(
-	props: FunctionProps.Addon<F, O>,
-) {
-	const { $store, options } = props;
-	const form = $store.get();
+export function formButtonAddon<F extends Form.Fields, O extends Form.Options<F>>(
+	props: FunctionProps.FormAddon<F, O>,
+): FormAddonButton<F, O> {
+	const { store, options } = props;
+	const form = store.get();
 	const status = form.status;
 	const derived = atom(
 		{
@@ -32,11 +30,11 @@ export function buttonAddon<F extends Form.Fields, O extends Form.Options<F>>(
 			submitting: status === "submit",
 		} as ButtonObject,
 		{
-			hooks: options.hooks,
+			hooks: options?.storeHooks,
 		},
 	);
 
-	$store.listen((form) => {
+	store.listen((form) => {
 		// const changed = form.changed;
 		const status = form.status;
 		const prevValue = derived.get();
@@ -53,26 +51,6 @@ export function buttonAddon<F extends Form.Fields, O extends Form.Options<F>>(
 		} as ButtonObject;
 
 		// TODO: add button status processor
-		// try {
-		// 	const nextUser = await field?.processState?.({
-		// 		form,
-		// 		prevForm,
-		// 		prevValue,
-		// 		$next: nextValue,
-		// 	});
-
-		// 	if (nextUser != null) {
-		// 		nextValue = nextUser as any;
-		// 	}
-		// } catch (err: any) {
-		// 	console.error(
-		// 		`qform: fatal error occured in fild.processState :: abort set to <${field.abortProcessStateException}> :: exception :: `,
-		// 		err,
-		// 	);
-		// 	if (field.abortProcessStateException) {
-		// 		return;
-		// 	}
-		// }
 
 		derived.set(nextValue);
 	});

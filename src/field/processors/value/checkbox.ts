@@ -1,16 +1,14 @@
 import type { Field, Form, FunctionProps } from "../../../_model";
 
-export function processCheckboxValue<F extends Field.Setup, O extends Form.Options<any>>(
-	basic: FunctionProps.Basic<F, O>,
-	interaction: FunctionProps.Interaction<F, O>,
-	processor: FunctionProps.Processor<F, O>,
+export function processCheckboxValue<S extends Field.Setup, O extends Form.Options>(
+	_props: FunctionProps.Field<S, O>,
+	processor: FunctionProps.FieldProcessor<S, O>,
 ) {
 	// setup
-	const { setup: field } = basic;
-	const { event } = interaction;
-	const { manualUpdate, preprocessValue } = processor;
+	// const { setup } = props;
+	const { event, manualUpdate, preprocessValue } = processor;
 	const el = event?.target as HTMLInputElement;
-	const value = !manualUpdate ? el?.value : interaction.value;
+	const value = !manualUpdate ? el?.value : processor.value;
 	if (!preprocessValue) {
 		return value;
 	}

@@ -1,46 +1,52 @@
-import type { Form } from "../_model";
+import type { Form, FunctionProps } from "../_model";
 import { PLACEHOLDERS } from "../const";
 
 // checks
 import { checkFormBasics } from "./checks/check-form-basics";
 
 // addons
-import { submitAddon } from "../addons/submit";
-import { updateAddon } from "../addons/update";
-import { valuesAddon } from "../addons/values";
-import { buttonAddon } from "../addons/button";
+import { formSubmitAddon } from "../addons/form/submit";
+import { formUpdateAddon } from "../addons/form/update";
+import { formValuesAddon } from "../addons/form/values";
+import { formButtonAddon } from "../addons/form/button";
 
 // form
 import { formAtoms } from "./atoms";
-import { formFields } from "./fields";
-import { formStore } from "./store";
+import { prepareFields } from "./preparations/fields";
+import { prepareStore } from "./preparations/store";
 import { setupOptionsMerger } from "../methods/setup-options-merger";
 import { prepareOptions } from "./preparations/options";
+import { mountCycle } from "./cycles/mount";
+import { changeCycle } from "./cycles/change";
 
-export function form<B extends Form.Basics, F extends Form.Fields<B>, O extends Form.Options<F>>(
-	basics: B,
-	_options?: O,
-): Form.Factory<F, O> {
-	// checkFormBasics(basics);
-	const options = prepareOptions<F, O>(_options) as O;
-	const $store = formStore<F, O>(fields, options, form_init);
-	// essentials
-	const { fields, form_init } = formFields<B, F, O>(basics, options);
-	const { atoms, elements } = formAtoms<F, O>(fields, options, $store);
+export function createForm<
+	I extends Form.FieldsIn,
+	F extends Form.Fields<I>,
+	O extends Form.Options<F>,
+>(inn?: I, _options?: O): Form.Factory<I, F, O> {
+	// preparations
+	const options = prepareOptions<O>(_options);
+	const store = prepareStore<F, O>(options as any);
+	const fields = prepareFields<I, F, O>(inn, options as any);
 
 	// addons (forced for now)
-	const addonProps = { fields, options, $store };
-	const submit = submitAddon<F, O>(addonProps);
-	const update = updateAddon<F, O>(addonProps);
-	const values = valuesAddon<F, O>(addonProps);
-	const button = buttonAddon<F, O>(addonProps);
+	const addonProps = { fields, options, store } as FunctionProps.FormAddon<F, O>;
+	const submit = formSubmitAddon<F, O>(addonProps);
+	const update = formUpdateAddon<F, O>(addonProps);
+	const values = formValuesAddon<F, O>(addonProps);
+	const button = formButtonAddon<F, O>(addonProps);
+
+	// cycles
+	mountCycle(addonProps, update);
+	changeCycle(addonProps);
 
 	// other helpers
 	let keys = null as (keyof F)[] | null;
 	return {
-		// fields, // for tests only, not recommended to export
-		store: $store,
+		store,
+		fields: fields as any,
 		placeholders: PLACEHOLDERS,
+		options: options as any,
 		get keys() {
 			return () => {
 				if (keys == null) {
@@ -49,9 +55,6 @@ export function form<B extends Form.Basics, F extends Form.Fields<B>, O extends 
 				return keys as (keyof F)[];
 			};
 		},
-		// atoms
-		atoms,
-		elements,
 		// addons
 		submit,
 		update,
@@ -60,16 +63,16 @@ export function form<B extends Form.Basics, F extends Form.Fields<B>, O extends 
 	};
 }
 
-export function formSetup<G extends Form.Options<any>>(base?: G) {
-	const optionsMerger = setupOptionsMerger(base);
-	return <B extends Form.Basics, F extends Form.Fields<B>, D extends Form.Options<F>>(
-		basics: B,
-		doptions?: D,
-	) => {
-		const options = optionsMerger<D>(doptions);
-		return form<B, F, typeof options>(basics, options);
-	};
-}
+// export function formSetup<G extends Form.Options>(base?: G) {
+// 	const optionsMerger = setupOptionsMerger(base);
+// 	return <B extends Form.Basics, F extends Form.Fields<B>, D extends Form.Options<F>>(
+// 		basics: B,
+// 		doptions?: D,
+// 	) => {
+// 		const options = optionsMerger<D>(doptions);
+// 		return form<B, F, typeof options>(basics, options);
+// 	};
+// }
 
 // test types
 // const form = createForm()

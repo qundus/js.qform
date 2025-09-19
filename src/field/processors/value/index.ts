@@ -5,55 +5,34 @@ import { processFileValue } from "./file";
 import { processNumberValue } from "./number";
 import { processSelectValue } from "./select";
 
-export function processValue<F extends Field.Setup, O extends Form.Options<any>>(
-	basic: FunctionProps.Basic<F, O>,
-	interaction: FunctionProps.Interaction<F, O>,
-	processor: FunctionProps.Processor<F, O>,
-	form: Form.StoreObject<any>,
+export function processValue<S extends Field.Setup, O extends Form.Options>(
+	props: FunctionProps.Field<S, O>,
+	processor: FunctionProps.FieldProcessor<S, O>,
 ) {
-	const { key, setup: field } = basic;
-	const { event } = interaction;
-	const { manualUpdate } = processor;
+	const { setup } = props;
+	const { event, manualUpdate } = processor;
 
 	//
-	const el = event?.target as any;
-	let value = interaction.value;
-	if (field.type === "select") {
-		value = processSelectValue(basic, interaction, processor);
-	} else if (field.type === "checkbox") {
-		value = processCheckboxValue(basic, interaction, processor);
-	} else if (field.type === "file") {
-		value = processFileValue(basic, interaction, processor, form);
-	} else if (field.type === "number" || field.type === "tel") {
-		value = processNumberValue(basic, interaction, processor);
+	let value = processor.value;
+	if (setup.type === "select") {
+		value = processSelectValue(props, processor);
+	} else if (setup.type === "checkbox") {
+		value = processCheckboxValue(props, processor);
+	} else if (setup.type === "file") {
+		value = processFileValue(props as any, processor as any);
+	} else if (setup.type === "number" || setup.type === "tel") {
+		value = processNumberValue(props, processor);
 	} else {
+		const el = event?.target as any;
 		value = !manualUpdate ? el?.value : value;
 	}
 
 	// check empty strings
 	if (value === "") {
-		if (field.type !== "checkbox") {
+		if (setup.type !== "checkbox") {
 			value = null;
 		}
 	}
 
-	////// try to keep this as the only place to processValues from user
-	const $next = {
-		value: value,
-		condition: { ...form.conditions[key] },
-	};
-	if (field.processValue != null) {
-		const funcs =
-			typeof field.processValue === "function" ? [field.processValue] : field.processValue;
-		for (const pro of funcs) {
-			pro({
-				event,
-				setup: field,
-				form,
-				$next,
-				manualUpdate: manualUpdate == null ? false : manualUpdate,
-			});
-		}
-	}
-	return $next;
+	return value;
 }

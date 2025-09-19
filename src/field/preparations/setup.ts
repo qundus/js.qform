@@ -1,12 +1,12 @@
 import type { Field, Form } from "../../_model";
 import { PLACEHOLDERS } from "../../const";
 
-export function prepareSetup<F extends Field.FactoryIn, O extends Form.Options<any>>(
+export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToSetup<F>>(
 	key: string,
-	inn: F,
-	options?: O,
+	inn?: F,
+	options?: Form.Options,
 ) {
-	let field = {} as Partial<Field.FactoryInToSetup<F>>;
+	let field = {} as Partial<S>;
 	// formulate the basic to setup object
 	if (inn == null) {
 		// default fallback input type
@@ -26,9 +26,10 @@ export function prepareSetup<F extends Field.FactoryIn, O extends Form.Options<a
 	}
 
 	// manage general and field specific options
+	field.label = field.label ?? key;
 	field.vmcm = field.vmcm ?? options?.vmcm ?? "normal";
-	field.required = field.required ?? options?.allFieldsRequired;
-	field.disabled = field.disabled ?? options?.allFieldsDisabled;
+	field.required = field.required ?? options?.allFieldsRequired ?? true;
+	field.disabled = field.disabled ?? options?.allFieldsDisabled ?? false;
 	field.valueNullable = field.valueNullable ?? false;
 	field.preprocessValue = field.preprocessValue ?? options?.preprocessValues ?? true;
 	field.validateOn = field.validateOn ?? options?.validateOn;

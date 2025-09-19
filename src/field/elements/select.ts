@@ -16,8 +16,8 @@ export type SelectElementFactory<T extends Element.DomType> = Element.Factory<
 		onInput: OnInput;
 	}
 >;
-export function selectElement<F extends Field.Setup, O extends Form.Options<any>>(
-	props: FunctionProps.Element<F, O>,
+export function selectElement<F extends Field.Setup, O extends Form.Options>(
+	props: FunctionProps.Field<F, O>,
 ) {
 	const { key, setup, options, store } = props;
 	const key_str = String(key);
@@ -50,7 +50,14 @@ export function selectElement<F extends Field.Setup, O extends Form.Options<any>
 			}
 			result[listenerId] = (event: Event) => {
 				event.preventDefault();
-				// valueInteraction(basic, { event, value: null }, interactionProcessorProps);
+				store.set({
+					...(data as any),
+					__internal: {
+						event,
+						manual: false,
+						update: "value",
+					},
+				});
 			};
 		}
 
@@ -58,11 +65,11 @@ export function selectElement<F extends Field.Setup, O extends Form.Options<any>
 		// check user process
 		const processProps = { key, isVdom: dType === "vdom", kType, value: data, element: result };
 		if (options?.processElementOrder === "before") {
-			options?.processElement?.(processProps);
+			options?.onRenderField?.(processProps);
 		}
-		setup.processElement?.(processProps);
+		setup.onRender?.(processProps);
 		if (options?.processElementOrder === "after") {
-			options?.processElement?.(processProps);
+			options?.onRenderField?.(processProps);
 		}
 		return result as SelectElementFactory<D>;
 	};

@@ -1,6 +1,5 @@
-import { type Field, type Form, FunctionProps } from "../_model";
+import type { Field, Form } from "../_model";
 import { prepareOptions } from "../form/preparations/options";
-import { prepareSetup } from "./preparations/setup";
 import { prepareStore } from "./preparations/store";
 
 //
@@ -8,118 +7,45 @@ import { changeCycle } from "./cycles/change";
 import { createElement } from "./elements";
 import { PLACEHOLDERS } from "../const";
 import { mergeFieldConditions } from "../methods/merge-field-conditions";
+import { prepareSetup } from "./preparations/setup";
+import { mountCycle } from "./cycles/mount";
+import { fieldAddAddon } from "../addons/field/add";
+import { fieldClearAddon } from "../addons/field/clear";
+import { fieldUpdateAddon } from "../addons/field/update";
 
 //
-export function createField<F extends Field.FactoryIn, O extends Form.Options<any>>(
-	key: string,
-	inn: F,
-	_formOptions?: O,
-	formActions?: Form.StoreObject<Form.Fields<any>>,
-) {
-	type S = typeof setup;
+export function createField<
+	F extends Field.SetupIn,
+	S extends Field.SetupInToSetup<F>,
+	O extends Form.Options,
+>(key: string, inn?: F, formOptions?: O): Field.Factory<S, O> {
 	// preparation
-	const options = prepareOptions(_formOptions) as any;
-	const setup = prepareSetup<F, O>(key, inn, options);
-	const store = prepareStore<S, O>(key, setup, options);
+	const options = prepareOptions<O>(formOptions);
+	const setup = prepareSetup<F, S>(key, inn, options);
+	const store = prepareStore(key, setup, options);
+
+	const fieldProps = { key, setup, options, store };
 
 	// elements
-	const element = createElement({ key, setup, options, store });
+	const element = createElement(fieldProps);
+
+	// addons
+	const add = fieldAddAddon(fieldProps);
+	const clear = fieldClearAddon(fieldProps);
+	const update = fieldUpdateAddon(fieldProps);
 
 	// cycles
-	changeCycle(key, setup, options, formActions, store);
-
-	//
+	mountCycle(fieldProps, update);
+	changeCycle(fieldProps);
 
 	return {
 		key,
-		type: setup.type,
-		label: setup.label ?? key,
-		store: { ...store, set: null } as Omit<typeof store, "set">,
-		get element() {
-			return element;
-		},
-		get placeholders() {
-			return PLACEHOLDERS;
-		},
-		// getOptions: field.options ?? null,
-		add: {
-			validation() {
-				return (func: Field.Validate) => {
-					if (func == null || typeof func !== "function") {
-						return null;
-					}
-					let idx = null as number | null;
-					if (setup.validate == null) {
-						setup.validate = func;
-					} else if (Array.isArray(setup.validate)) {
-						idx = setup.validate.push(func);
-						idx--;
-					} else {
-						setup.validate = [setup.validate, func];
-						idx = 1;
-					}
-					return () => {
-						if (typeof setup.validate === "function") {
-							setup.validate = null;
-						} else {
-							if (setup.validate != null) {
-								setup.validate = setup.validate.filter((_item, index) => index !== idx);
-								if (setup.validate.length <= 0) {
-									setup.validate = null;
-								}
-							}
-						}
-					};
-				};
-			},
-		},
-		update: {
-			value: (_value, configs) => {
-				const state = { ...store.get() };
-				const prev = state.value;
-				const value = typeof _value === "function" ? _value(prev) : _value;
-				store.set({
-					...state,
-					value,
-					__internal: {
-						update: "value",
-						manual: true,
-						preprocess: configs?.preprocess,
-						event: undefined,
-					},
-				});
-			},
-			condition: (value, configs) => {
-				const state = { ...store.get() };
-				const prev = state.condition;
-				const userCondition = typeof value === "function" ? value(prev) : value;
-				const condition = mergeFieldConditions(prev, userCondition);
-				store.set({
-					...state,
-					condition,
-					__internal: {
-						update: "value",
-						manual: true,
-						preprocess: configs?.preprocess,
-						event: undefined,
-					},
-				});
-			},
-		},
-		clear: {
-			value: () => {
-				const state = { ...store.get() };
-				store.set({
-					...state,
-					value: null,
-					__internal: {
-						update: "value",
-						manual: true,
-						preprocess: true,
-						event: undefined,
-					},
-				});
-			},
-		},
+		setup: setup as any,
+		store: store as any,
+		element,
+		placeholders: PLACEHOLDERS,
+		add,
+		update,
+		clear,
 	};
 }

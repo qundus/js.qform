@@ -2,24 +2,22 @@
 import type { Field, Form, FunctionProps } from "../../../_model";
 import { PLACEHOLDERS } from "../../../const";
 
-export function processSelectValue<F extends Field.Setup, O extends Form.Options<any>>(
-	basic: FunctionProps.Basic<F, O>,
-	interaction: FunctionProps.Interaction<F, O>,
-	processor: FunctionProps.Processor<F, O>,
+export function processSelectValue<S extends Field.Setup, O extends Form.Options>(
+	props: FunctionProps.Field<S, O>,
+	processor: FunctionProps.FieldProcessor<S, O>,
 ) {
 	// setup
-	const { setup: field } = basic;
-	const { event } = interaction;
-	const { manualUpdate, preprocessValue } = processor;
+	const { setup } = props;
+	const { event, manualUpdate, preprocessValue } = processor;
 	const el = event?.target as HTMLSelectElement;
-	const value = !manualUpdate ? el?.value : interaction.value;
+	const value = !manualUpdate ? el?.value : processor.value;
 	if (!preprocessValue) {
 		return value;
 	}
 
 	//
 	let result: any = null;
-	const multiple = field.multiple ?? false;
+	const multiple = setup.multiple ?? false;
 	if (!multiple) {
 		// const prev_value = next.values[key] as string;
 		if (value !== PLACEHOLDERS.selectButton.value && value !== PLACEHOLDERS.select.value) {

@@ -1,9 +1,9 @@
 import type { Form } from "../_model";
 
-export function setupOptionsMerger<G extends Form.Options<any>>(_base?: G) {
+export function setupOptionsMerger<G extends Form.Options>(_base?: G) {
 	const base = Object.assign({}, _base ?? {}) as G;
 	// console.log("onmount copied is :: ", onMount);
-	return <D extends Form.Options<any>>(target?: D): Form.OptionsMerged<G, D> => {
+	return <D extends Form.Options>(target?: D): Form.OptionsMerged<G, D> => {
 		if (target == null) {
 			if (base == null) {
 				return null as any;
@@ -13,8 +13,8 @@ export function setupOptionsMerger<G extends Form.Options<any>>(_base?: G) {
 		const merged = { ...base, ...target };
 
 		// special handling
-		if (base?.hooks) {
-			merged.hooks = { ...base.hooks, ...target.hooks };
+		if (base?.storeHooks) {
+			merged.storeHooks = { ...base.storeHooks, ...target.storeHooks };
 		}
 
 		if (base?.onMount != null || target?.onMount != null) {

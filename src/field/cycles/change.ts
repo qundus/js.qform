@@ -1,29 +1,33 @@
 import { onSet } from "@qundus/qstate";
-import type { Field, Form } from "../../_model";
+import type { Field, Form, FunctionProps } from "../../_model";
 import { isFieldIncomplete } from "../checks/is-field-incomplete";
+import { processValue } from "../processors/value";
 
-export function changeCycle<S extends Field.Setup, O extends Form.Options<any>>(
-	key: string,
-	setup: S,
-	options: O | undefined,
-	formActions: Form.StoreObject<Form.Fields<any>> | undefined,
-	state: Field.Store<S, O>,
+export function changeCycle<S extends Field.Setup, O extends Form.Options>(
+	props: FunctionProps.Field<S, O>,
 ) {
+	const { key, setup, options, store } = props;
 	// do startup checks for input types like file
 	//
 
-	onSet(state, async (payload) => {
+	onSet(store, async (payload) => {
 		// console.log("called :: ", key, " :: ", form.changed);
 		const $next = payload.newValue;
 		const internal = $next.__internal;
+		const event = internal.event;
 		const manualUpdate = internal.manual;
-		const preprocess = internal.preprocess ?? options?.preprocessValues ?? setup?.preprocessValue;
+		const preprocessValue =
+			internal.preprocess ?? options?.preprocessValues ?? (setup.preprocessValue as boolean);
 		const update = internal.update;
 		const vmcm: Field.VMCM = manualUpdate ? (options?.vmcm ?? setup?.vmcm ?? "normal") : "normal";
+		const prev = store.value;
 
-		const prev = state.value;
+		// first fix key if it's not there
+		// @ts-expect-error
+		$next.__key = key;
+
 		try {
-			await setup?.processState?.({
+			await setup?.onChange?.({
 				// form,
 				// prevForm,
 				prev,
@@ -42,13 +46,20 @@ export function changeCycle<S extends Field.Setup, O extends Form.Options<any>>(
 
 		// validate on update of type value
 		if (update === "value") {
-			const value = asd;
+			const oldValue = store.value.value;
+			const value = processValue(props, {
+				$next,
+				event,
+				manualUpdate,
+				preprocessValue,
+				value: $next.value,
+			});
 			if (setup.validate != null) {
 				if (!manualUpdate || (manualUpdate && vmcm === "normal")) {
 					const validations = Array.isArray(setup.validate) ? setup.validate : [setup.validate];
 					$next.errors = [];
 					for (const validation of validations) {
-						const err = validation({ value: $next.value, prev });
+						const err = validation({ value, prev });
 						if (Array.isArray(err)) {
 							if (err.length < 0) {
 								continue;
@@ -94,13 +105,16 @@ export function changeCycle<S extends Field.Setup, O extends Form.Options<any>>(
 			}
 
 			// then update value if everything is ok
-			if (options.preventErroredValues) {
-				if ($next.errors == null) {
-					$store.setKey(`values[${key}]`, $next.value);
-				}
+			if ($next.errors == null) {
+				$next.value = value;
 			} else {
-				$store.setKey(`values[${key}]`, $next.value);
+				if (options?.preventErroredValues) {
+					$next.value = oldValue;
+				} else {
+					$next.value = value;
+				}
 			}
 		}
+		//
 	});
 }

@@ -21,8 +21,8 @@ export function prepareCondition<S extends Field.Setup>(key: string, setup: S) {
 		const incomplete = isFieldIncomplete(setup, condition, setup.value);
 		if (incomplete) {
 			condition.valid = false;
+			condition.value.error = "incomplete"; // TODO: make this an config option
 			// console.log("cc :: ", key, " :: ", JSON.stringify(condition));
-			// condition.value.error = "incomplete"; // TODO: make this an config option
 		}
 	}
 

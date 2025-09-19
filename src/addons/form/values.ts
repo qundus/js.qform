@@ -1,41 +1,41 @@
-import type { Check, Field, Form, FunctionProps } from "../_model";
-import { PLACEHOLDERS } from "../const";
+import type { Check, Field, Form, FunctionProps } from "../../_model";
+import { PLACEHOLDERS } from "../../const";
 
-export type AddonValues<F extends Form.Fields, O extends Form.Options<F>> = {
-	values: ReturnType<typeof valuesAddon<F, O>>;
-};
-export function valuesAddon<F extends Form.Fields, O extends Form.Options<F>>(
-	props: FunctionProps.Addon<F, O>,
+export type FormAddonValues<F extends Form.Fields, O extends Form.Options<F>> = ReturnType<
+	typeof formValuesAddon<F, O>
+>;
+export function formValuesAddon<F extends Form.Fields, O extends Form.Options<F>>(
+	props: FunctionProps.FormAddon<F, O>,
 ) {
-	const { setups: fields, $store } = props;
+	const { fields, store } = props;
 	return {
 		get<KC extends FieldsKeysCaseMap<F>>(special?: KC) {
-			return _getValues({ fields, $store, defaultCase: "same", special });
+			return _getValues({ fields, store, defaultCase: "same", special });
 		},
 		getLowercase<KC extends FieldsKeysCaseMap<F>>(special?: KC) {
-			return _getValues({ fields, $store, defaultCase: "lowercase", special });
+			return _getValues({ fields, store, defaultCase: "lowercase", special });
 		},
 		getUppercase<KC extends FieldsKeysCaseMap<F>>(special?: KC) {
-			return _getValues({ fields, $store, defaultCase: "uppercase", special });
+			return _getValues({ fields, store, defaultCase: "uppercase", special });
 		},
 		getSnakecase<KC extends FieldsKeysCaseMap<F>>(special?: KC) {
-			return _getValues({ fields, $store, defaultCase: "snake", special });
+			return _getValues({ fields, store, defaultCase: "snake", special });
 		},
 		getSnakecaseAggressive<KC extends FieldsKeysCaseMap<F>>(special?: KC) {
 			return _getValues({
 				fields,
-				$store,
+				store,
 				defaultCase: "snake_aggressive",
 				special,
 			});
 		},
 		getKebabcase<KC extends FieldsKeysCaseMap<F>>(special?: KC) {
-			return _getValues({ fields, $store, defaultCase: "kebab", special });
+			return _getValues({ fields, store, defaultCase: "kebab", special });
 		},
 		getKebabcaseAggressive<KC extends FieldsKeysCaseMap<F>>(special?: KC) {
 			return _getValues({
 				fields,
-				$store,
+				store,
 				defaultCase: "kebab_aggressive",
 				special,
 			});
@@ -49,15 +49,15 @@ function _getValues<
 	S extends Form.Store<F, L>,
 	D extends FieldKeyCase,
 	O extends FieldsKeysCaseMap<F> = FieldsKeysCaseMap<F>,
->(props: { fields: F; $store: S; defaultCase: D; special?: O }) {
+>(props: { fields: F; store: S; defaultCase: D; special?: O }) {
 	const result = {} as any;
-	const values = props.$store.get().values;
+	const values = props.store.get().values;
 	for (const key in props.fields) {
 		const field = props.fields[key];
 		const key_case = _getValueCase(key, props.special?.[key] ?? props.defaultCase);
 		let value = values[key];
 		// postprocess values
-		if (field.type === "select") {
+		if (field.setup.type === "select") {
 			if (value === PLACEHOLDERS.select.value) {
 				value = null as any;
 			}
@@ -151,7 +151,7 @@ type GetValueKeyCase<
 		? Default
 		: V;
 type FieldsValues<T extends Form.Fields, V extends FieldKeyCase, O extends FieldsKeysCaseMap<T>> = {
-	[K in keyof T as ValueKeyCaseType<K, GetValueKeyCase<O[K], V>>]: T[K]["value"];
+	[K in keyof T as ValueKeyCaseType<K, GetValueKeyCase<O[K], V>>]: T[K]["setup"]["value"];
 };
 
 function _camelToSnakeCase(str: string, joiner = "_", uppercaseIsNewWord = false): string {

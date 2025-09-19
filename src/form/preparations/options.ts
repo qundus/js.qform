@@ -1,8 +1,8 @@
 import type { Form } from "../../_model";
 
-export function prepareOptions<F extends Form.Fields, O extends Form.Options<F>>(options?: O) {
-	// @ts-expect-error
-	if (options?.__PROCESSED) {
+const PROCESSED = "__PROCESSED";
+export function prepareOptions<O extends Form.Options>(options?: O) {
+	if (options?.[PROCESSED]) {
 		return options;
 	}
 	const result = { ...options };
@@ -25,7 +25,6 @@ export function prepareOptions<F extends Form.Fields, O extends Form.Options<F>>
 	result.abortOnChangeException = result.abortOnChangeException ?? false;
 
 	// mark processed
-	//@ts-expect-error
-	result.__PROCESSED = true;
+	result[PROCESSED] = true;
 	return result;
 }

@@ -17,8 +17,8 @@ function getElementCustomProps<D extends Element.DomType, K extends Element.Keys
 	];
 }
 
-export function createElement<S extends Field.Setup, O extends Form.Options<any>>(
-	props: FunctionProps.Element<S, O>,
+export function createElement<S extends Field.Setup, O extends Form.Options>(
+	props: FunctionProps.Field<S, O>,
 ) {
 	const { key, setup, options, store } = props;
 

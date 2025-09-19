@@ -1,16 +1,22 @@
-import { formSetup } from "../src";
+import { createForm, createField } from "../src";
 import { vFile } from "../src/validators";
+import { preactHook } from "@qundus/qstate/preact";
 
-const form = formSetup({});
+// const form = formSetup();
+export const name = createField("name", "text");
+export const goal = createField("goal", "file");
+export const picture = createField("picture", "file");
 
-export const $form = form(
+name.setup;
+goal.setup;
+export const form = createForm(
 	{
 		name: null,
 		color: "color",
 		email: {
 			type: "email",
 			// value: "wow@gmail.com",
-			validate: (value) => {
+			validate: ({ value }) => {
 				if (value == null) {
 					return "email is required";
 				}
@@ -25,7 +31,7 @@ export const $form = form(
 			hidden: true,
 			// value: 5004625,
 			// validateOn: "change",
-			validate: (value) => {
+			validate: ({ value }) => {
 				if (typeof value === "number") {
 					if (value < 3) {
 						return "phone number must be at least 3";
@@ -50,7 +56,7 @@ export const $form = form(
 			// 	// 	$condition.hidden = false;
 			// 	// }
 			// },
-			processElement: ({ key, isVdom, element }) => {
+			onRender: ({ key, isVdom, element }) => {
 				console.log("process element :: ", key);
 			},
 		},
@@ -116,21 +122,26 @@ export const $form = form(
 			// $next.conditions.phone.hidden = $next.values.name == null || $next.values.name === "";
 		},
 		// incompleteListCount: 0,
+		storeHooks: {
+			useStore: preactHook,
+		},
 	},
 );
 
-const gender = $form.atoms("gender");
-const name = $form.atoms("name");
-const color = $form.atoms("color");
+form;
 
-gender.store.get().extras;
-name.store.get().extras;
-color.store.get().extras;
-color.element;
+// const gender = $form.atoms("gender");
+// const name = $form.atoms("name");
+// const color = $form.atoms("color");
 
-const result = $form.values.get();
+// gender.store.get().extras;
+// name.store.get().extras;
+// color.store.get().extras;
+// color.element;
 
-result.picture;
-result.gender;
-result.color;
-result.email;
+// const result = $form.values.get();
+
+// result.picture;
+// result.gender;
+// result.color;
+// result.email;
