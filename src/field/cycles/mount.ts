@@ -41,7 +41,7 @@ export function mountCycle<S extends Field.Setup, O extends Form.Options>(
 
 		let ureturns = null as null | void | (() => void);
 		task(async () => {
-			ureturns = await setup?.onMount?.({ update: update as any });
+			ureturns = await setup?.onMount?.({ setup, update: update as any });
 		});
 		return () => {
 			if (ureturns != null && typeof ureturns === "function") {

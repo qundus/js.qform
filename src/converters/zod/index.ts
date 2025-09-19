@@ -1,2 +1,2 @@
 export type * from "./_model";
-export { default as schemaToFields } from "./schema-to-fields";
+export { default as schemaToSetups } from "./schema-to-setups";

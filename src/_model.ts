@@ -102,10 +102,12 @@ export namespace Field {
 	// events
 	export type OnMount<T extends Type, V> = (props: {
 		update: Addon.FieldUpdate<Setup<T, V>, Form.Options>;
+		setup: Setup<T, V>;
 	}) => void | (() => void) | Promise<void | (() => void)>;
 	export type OnChange<T extends Type, V, S extends Setup<T, V> = Setup<T, V>> = (props: {
 		$next: StoreObject<Setup>;
 		prev: StoreObject<Setup>;
+		setup: Setup<T, V>;
 		// form: Form.StoreObject<Form.Fields>;
 		// prevForm: Form.StoreObject<Form.Fields>;
 	}) => void | StoreObject<S> | Promise<void | StoreObject<S>>;
@@ -143,7 +145,7 @@ export namespace Field {
 		 * this gives the chance to modify field state like required,
 		 * disabled..etc, according to specific needs or logic.
 		 */
-		onChange?: OnChange<T, V>;
+		onChange?: OnChange<T, V> | OnChange<T, V>[];
 		/**
 		 * html bare element props passed, this is so preliminary right
 		 * now and requires extra work for vdom, expect breaking changes here.

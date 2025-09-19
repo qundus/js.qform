@@ -27,12 +27,27 @@ export function changeCycle<S extends Field.Setup, O extends Form.Options>(
 		$next.__key = key;
 
 		try {
-			await setup?.onChange?.({
-				// form,
-				// prevForm,
-				prev,
-				$next,
-			});
+			if (typeof setup?.onChange === "function") {
+				await setup?.onChange?.({
+					// form,
+					// prevForm,
+					setup,
+					prev,
+					$next,
+				});
+			} else {
+				if (setup.onChange != null) {
+					for (const processor of setup.onChange) {
+						await processor?.({
+							// form,
+							// prevForm,
+							setup,
+							prev,
+							$next,
+						});
+					}
+				}
+			}
 		} catch (err: any) {
 			console.error(
 				`qform: fatal error occured in field.processState :: abort set to <${setup.abortProcessStateException}> :: exception :: `,

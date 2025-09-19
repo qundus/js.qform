@@ -1,12 +1,12 @@
 // thanks for the idea -> https://github.com/paxcode-it/zod-to-fields
 import type { Field } from "../../_model";
-import type { Options, SchemaToFields, SchemaToFieldsExtenders } from "./_model";
+import type { Options, SchemaToSetups, SchemaToFieldsExtenders } from "./_model";
 import checks from "./checks";
 
 import helpers from "./helpers";
 // import type { ZodTypeAny } from "zod";
 
-export default function schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
+export default function schemaToSetups<Z, E extends SchemaToFieldsExtenders<Z>>(
 	zod: Z,
 	_options?: Options<Z, E>,
 ) {
@@ -24,7 +24,7 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 	options: Options<Z, E>,
 	baseKey = "",
 ) {
-	let result = {} as SchemaToFields<Z>; //MergedFields<Z, O, E>;
+	let result = {} as SchemaToSetups<Z>; //MergedFields<Z, O, E>;
 	// @ts-ignore
 	for (const [_key, _schema] of Object.entries(obj.shape)) {
 		// get the key for flat/nested object
@@ -40,7 +40,7 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 		}
 
 		//
-		const field = (options.override?.[key as keyof E] ?? {}) as Field.Setup;
+		const setup = (options.override?.[key as keyof E] ?? {}) as Field.Setup;
 		const active = {
 			type: "string" as "string" | "number" | "boolean" | "date" | "file" | "enum" | "nativeEnum",
 			isArray: typeName.startsWith("array"),
@@ -48,25 +48,25 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 
 		// determine field type
 		if (typeName.includes("string")) {
-			field.type = field.type ?? "text";
+			setup.type = setup.type ?? "text";
 			active.type = "string";
 		} else if (typeName.includes("number")) {
-			field.type = field.type ?? "number";
+			setup.type = setup.type ?? "number";
 			active.type = "number";
 		} else if (typeName.includes("boolean")) {
-			field.type = field.type ?? "checkbox";
+			setup.type = setup.type ?? "checkbox";
 			active.type = "boolean";
 		} else if (typeName.includes("enum")) {
-			field.type = field.type ?? "select";
+			setup.type = setup.type ?? "select";
 			active.type = "enum";
 		} else if (typeName.includes("nativeEnum")) {
-			field.type = field.type ?? "select";
+			setup.type = setup.type ?? "select";
 			active.type = "nativeEnum";
 		} else if (typeName.includes("file")) {
-			field.type = field.type ?? "file";
+			setup.type = setup.type ?? "file";
 			active.type = "file";
 		} else if (typeName.includes("date")) {
-			field.type = field.type ?? "date";
+			setup.type = setup.type ?? "date";
 			active.type = "date";
 		}
 
@@ -75,47 +75,50 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 			case "nativeEnum":
 			case "enum":
 				{
-					field.multiple = field.multiple ?? active.isArray ?? false;
+					setup.multiple = setup.multiple ?? active.isArray ?? false;
 					const obj = helpers.getEnumValues(schema);
 					const selections = [] as { label: string; value: string }[]; // maybe shift this logic to inside of the field.options function for performance??!
 					for (const key in obj) {
 						const value = obj[key];
 						selections.push({ label: key, value });
 					}
-					field.selections = selections;
+					setup.selections = selections;
 				}
 				break;
 			case "file":
 				{
-					field.multiple = field.multiple ?? active.isArray ?? false;
-					const processValue: Field.Processor<any, any> = ({ $next, setup: field }) => {
-						if ($next.value == null) {
-							return null;
-						}
-						if ($next.value instanceof FileList) {
-							if (field.multiple) {
-								return Array.from($next.value);
-							}
-							return $next.value[0];
-						}
-						return $next.value;
-					};
-					if (field.processValue == null) {
-						field.processValue = processValue;
-					} else if (typeof field.processValue === "function") {
-						field.processValue = [processValue, field.processValue];
-					} else {
-						field.processValue = [processValue, ...field.processValue];
-					}
+					setup.multiple = setup.multiple ?? active.isArray ?? false;
+					// const onChange: Field.OnChange<any, any> = ({ $next, setup }) => {
+					// 	const value = $next.value
+					// 	if ($next.value == null) {
+					// 		return;
+					// 	}
+					// 	if (Array.isArray(value)) {
+					// 		if (setup.multiple) {
+					// 			$next.value = Array.from($next.value);
+					// 		} else {
+
+					// 		}
+					// 		return $next.value[0];
+					// 	}
+					// 	// return $next.value;
+					// };
+					// if (setup.onChange == null) {
+					// 	setup.onChange = onChange;
+					// } else if (typeof setup.onChange === "function") {
+					// 	setup.onChange = [onChange, setup.onChange];
+					// } else {
+					// 	setup.onChange = [onChange, ...setup.onChange];
+					// }
 				}
 				break;
 			default:
 				{
 					// const baseType = helpers.unwrapZodType(schema);
 					let removeKey = false;
-					if (field.type == null && options?.unknownsAsText) {
+					if (setup.type == null && options?.unknownsAsText) {
 						if (checks.isZodTypeNameNull(typeName)) {
-							field.type = "text";
+							setup.type = "text";
 						} else {
 							removeKey = true;
 						}
@@ -141,8 +144,8 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 		}
 
 		// field optional?
-		field.required = field.required ?? !schema.isOptional();
-		field.valueNullable = field.valueNullable ?? schema.isNullable();
+		setup.required = setup.required ?? !schema.isOptional();
+		setup.valueNullable = setup.valueNullable ?? schema.isNullable();
 
 		// map validation function
 		const validation = (value: any) => {
@@ -160,15 +163,15 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 			return result;
 		};
 		// add the function to field
-		if (field.validate == null) {
-			field.validate = validation;
-		} else if (typeof field.validate === "function") {
-			field.validate = [field.validate, validation];
+		if (setup.validate == null) {
+			setup.validate = validation;
+		} else if (typeof setup.validate === "function") {
+			setup.validate = [setup.validate, validation];
 		} else {
-			field.validate.push(validation);
+			setup.validate.push(validation);
 		}
 
-		result[key] = field as any;
+		result[key] = setup as any;
 	}
 
 	return result;

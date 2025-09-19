@@ -128,7 +128,7 @@ export const form = createForm(
 	},
 );
 
-form;
+// const data = form.submit
 
 // const gender = $form.atoms("gender");
 // const name = $form.atoms("name");

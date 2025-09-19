@@ -53,7 +53,7 @@ export type FlatObject<T> = T extends IsZodObject<T>
 	: T;
 
 // conversions
-export type SchemaToFields<Z> = FlatObject<Z> extends infer G
+export type SchemaToSetups<Z> = FlatObject<Z> extends infer G
 	? {
 			[K in keyof G]: ZodTypeNameToField<G[K]>;
 		}
