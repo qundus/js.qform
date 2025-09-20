@@ -6,13 +6,24 @@ export type FormAddonSubmit<F extends Form.Fields, O extends Form.Options<F>> = 
 export function formSubmitAddon<F extends Form.Fields, O extends Form.Options<F>>(
 	props: FunctionProps.FormAddon<F, O>,
 ) {
-	const { store } = props;
+	const { store, fields } = props;
 	function canSubmit() {
 		const status = store.get().status;
 		if (status === "submit") {
 			return false;
 		}
 		return status === "valid"; // || status === "submitting";
+	}
+
+	function markFields(submit: boolean) {
+		for (const key in fields) {
+			const field = fields[key];
+			if (submit) {
+				field.mark.cycle.submit();
+			} else {
+				field.mark.cycle.change();
+			}
+		}
 	}
 
 	return {
@@ -32,10 +43,12 @@ export function formSubmitAddon<F extends Form.Fields, O extends Form.Options<F>
 				return null;
 			}
 			store.set({ ...store.get(), status: "submit" });
+			markFields(true);
 			return () => {
 				if (store.get().status !== "submit") {
 					return;
 				}
+				markFields(false);
 				store.set({ ...store.get(), status: "valid" });
 			};
 		},
@@ -55,11 +68,14 @@ export function formSubmitAddon<F extends Form.Fields, O extends Form.Options<F>
 			}
 			try {
 				store.set({ ...store.get(), status: "submit" });
+				markFields(true);
 				const w = await runner?.();
 				store.set({ ...store.get(), status: "valid" });
+				markFields(false);
 				return [w, null];
 			} catch (e: any) {
 				store.set({ ...store.get(), status: "valid" });
+				markFields(false);
 				// error?.(e);
 				return [null, e];
 			}

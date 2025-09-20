@@ -13,18 +13,18 @@ export function changeCycle<
 	const { key, setup, options, store } = props;
 	// do startup checks for input types like file
 	//
-	formStore?.listen((form) => {
-		const state = store.get();
-		if (form.status === "submit") {
-			if (state.cycle !== "submit") {
-				mark.cycle.submit();
-			}
-		} else {
-			if (state.cycle === "submit") {
-				mark.cycle.change();
-			}
-		}
-	});
+	// formStore?.listen((form) => {
+	// 	const state = store.get();
+	// 	if (form.status === "submit") {
+	// 		if (state.cycle !== "submit") {
+	// 			mark.cycle.submit();
+	// 		}
+	// 	} else {
+	// 		if (state.cycle === "submit") {
+	// 			mark.cycle.change();
+	// 		}
+	// 	}
+	// });
 	onSet(store, async (payload) => {
 		const $next = payload.newValue;
 		if ($next.__internal[REFRESH]) {
