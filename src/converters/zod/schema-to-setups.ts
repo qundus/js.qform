@@ -148,7 +148,7 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 		setup.valueNullable = setup.valueNullable ?? schema.isNullable();
 
 		// map validation function
-		const validation = (value: any) => {
+		const validation: Field.Validate = ({ value }) => {
 			const parse = schema.safeParse(value);
 			if (parse.success) {
 				return null;

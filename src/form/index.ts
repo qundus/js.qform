@@ -1,9 +1,6 @@
 import type { Form, FunctionProps } from "../_model";
 import { PLACEHOLDERS } from "../const";
 
-// checks
-import { checkFormBasics } from "./checks/check-form-basics";
-
 // addons
 import { formSubmitAddon } from "../addons/form/submit";
 import { formUpdateAddon } from "../addons/form/update";
@@ -11,7 +8,6 @@ import { formValuesAddon } from "../addons/form/values";
 import { formButtonAddon } from "../addons/form/button";
 
 // form
-import { formAtoms } from "./atoms";
 import { prepareFields } from "./preparations/fields";
 import { prepareStore } from "./preparations/store";
 import { setupOptionsMerger } from "../methods/setup-options-merger";
@@ -27,7 +23,7 @@ export function createForm<
 	// preparations
 	const options = prepareOptions<O>(_options);
 	const store = prepareStore<F, O>(options as any);
-	const fields = prepareFields<I, F, O>(inn, options as any);
+	const fields = prepareFields<I, F, O, typeof store>(inn, options as any, store);
 
 	// addons (forced for now)
 	const addonProps = { fields, options, store } as FunctionProps.FormAddon<F, O>;
@@ -63,16 +59,16 @@ export function createForm<
 	};
 }
 
-// export function formSetup<G extends Form.Options>(base?: G) {
-// 	const optionsMerger = setupOptionsMerger(base);
-// 	return <B extends Form.Basics, F extends Form.Fields<B>, D extends Form.Options<F>>(
-// 		basics: B,
-// 		doptions?: D,
-// 	) => {
-// 		const options = optionsMerger<D>(doptions);
-// 		return form<B, F, typeof options>(basics, options);
-// 	};
-// }
+export function createFormSetup<G extends Form.Options>(base?: G) {
+	const optionsMerger = setupOptionsMerger(base);
+	return <I extends Form.FieldsIn, F extends Form.Fields<I>, D extends Form.Options<F>>(
+		inn?: I,
+		_options?: D,
+	) => {
+		const options = optionsMerger<D>(_options);
+		return createForm<I, F, typeof options>(inn, options);
+	};
+}
 
 // test types
 // const form = createForm()

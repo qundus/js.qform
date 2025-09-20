@@ -5,11 +5,12 @@ export function prepareFields<
 	I extends Form.FieldsIn,
 	F extends Form.Fields<I>,
 	O extends Form.Options<F> | undefined,
->(inn: I | undefined, options: O | undefined) {
+	G extends Form.Store<any, any>,
+>(inn: I | undefined, options: O | undefined, formStore: G | undefined) {
 	const fields = {} as F;
 	for (const key in inn) {
 		const fieldFactoryIn = inn[key];
-		const field = createField(key, fieldFactoryIn, options);
+		const field = createField(key, fieldFactoryIn, options, formStore);
 		fields[key] = field as any;
 	}
 	return fields;

@@ -78,8 +78,8 @@ export namespace Field {
 	export type Validate = (props: {
 		value: any;
 		prev: any;
-		// form: Form.StoreObject<any>
-	}) => string | string[] | undefined | null;
+		form: Form.StoreObject<Form.Fields> | undefined;
+	}) => string | string[] | undefined | null | void;
 	/**
 	 * Value Manual Change Mechanism (VMCM), happens when values are updated from api
 	 * fetch data or just manual programmatic interferrence.
@@ -101,16 +101,16 @@ export namespace Field {
 
 	// events
 	export type OnMount<T extends Type, V> = (props: {
+		setup: Setup<any, V>;
 		update: Addon.FieldUpdate<Setup<T, V>, Form.Options>;
-		setup: Setup<T, V>;
 	}) => void | (() => void) | Promise<void | (() => void)>;
 	export type OnChange<T extends Type, V, S extends Setup<T, V> = Setup<T, V>> = (props: {
 		$next: StoreObject<Setup>;
 		prev: StoreObject<Setup>;
 		setup: Setup<T, V>;
-		// form: Form.StoreObject<Form.Fields>;
+		form: Form.StoreObject<any> | undefined;
 		// prevForm: Form.StoreObject<Form.Fields>;
-	}) => void | StoreObject<S> | Promise<void | StoreObject<S>>;
+	}) => void | Promise<void>;
 	export type OnRender = <D extends Element.DomType = Element.DomType>(props: {
 		key: string;
 		// element: ElementSelectReturns<D> | ElementInputReturns<D>;
@@ -131,6 +131,11 @@ export namespace Field {
 		/** initial value */
 		value?: V; //| ValueFromType<T>;
 		label?: string;
+		/**
+		 * when labels are taken from key because they're null, this replaces
+		 * certain chars like '_' or '-' with ' '
+		 */
+		labelReplace?: string | string[];
 		//## validations
 		/** validate value function or array of functions */
 		validate?: Validate | Validate[] | null; //| FieldValidate[];
@@ -330,6 +335,12 @@ export namespace Form {
 		vmcm?: Field.VMCM;
 
 		/**
+		 * when labels are taken from key because they're null, this replaces
+		 * certain chars like '_' or '-' with ' '
+		 */
+		labelReplace?: string | string[];
+
+		/**
 		 * global options to optin or out of values preprocessing based on field type.
 		 * this option precedes individual ones
 		 */
@@ -384,6 +395,7 @@ export namespace Form {
 		allFieldsDisabled?: boolean;
 
 		//## field events
+		onChangeField?: Field.OnChange<Field.Type, any>;
 		/**
 		 * global element render listener, gets called before or after field's specific processElement
 		 * based on processElementOrder option.

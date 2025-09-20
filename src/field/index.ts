@@ -18,7 +18,8 @@ export function createField<
 	F extends Field.SetupIn,
 	S extends Field.SetupInToSetup<F>,
 	O extends Form.Options,
->(key: string, inn?: F, formOptions?: O): Field.Factory<S, O> {
+	G extends Form.Store<any, O>,
+>(key: string, inn?: F, formOptions?: O, formStore?: G): Field.Factory<S, O> {
 	// preparation
 	const options = prepareOptions<O>(formOptions);
 	const setup = prepareSetup<F, S>(key, inn, options);
@@ -36,7 +37,7 @@ export function createField<
 
 	// cycles
 	mountCycle(fieldProps, update);
-	changeCycle(fieldProps);
+	changeCycle(fieldProps, formStore);
 
 	return {
 		key,

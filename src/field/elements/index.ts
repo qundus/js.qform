@@ -58,8 +58,7 @@ export function createElement<S extends Field.Setup, O extends Form.Options>(
 						"qform: preact hook does not exist, please add it to options.hooks option!",
 					);
 				}
-				// @ts-ignore
-				const data = derived.hooks[preactHook]();
+				const data = (store as any).hooks[preactHook]();
 				const [dType, kType] = getElementCustomProps("vdom", props);
 				return element(dType, kType, data);
 			};
@@ -74,8 +73,7 @@ export function createElement<S extends Field.Setup, O extends Form.Options>(
 						"qform: react hook does not exist, please add it to options.hooks option!",
 					);
 				}
-				// @ts-ignore
-				const data = derived.hooks[reactHook]();
+				const data = (store as any).hooks[reactHook]();
 				const [dType, kType] = getElementCustomProps("vdom", props);
 				return element(dType, kType, data);
 			};
@@ -90,8 +88,7 @@ export function createElement<S extends Field.Setup, O extends Form.Options>(
 						"qform: solid hook does not exist, please add it to options.hooks option!",
 					);
 				}
-				// @ts-ignore
-				const data = derived.hooks[solidHook]();
+				const data = (store as any).hooks[solidHook]();
 				const [dType, kType] = getElementCustomProps("dom", props);
 				return element(dType, kType, data);
 			};

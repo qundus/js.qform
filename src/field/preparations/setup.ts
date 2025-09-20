@@ -6,68 +6,80 @@ export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToS
 	inn?: F,
 	options?: Form.Options,
 ) {
-	let field = {} as Partial<S>;
+	let setup = {} as Partial<S>;
 	// formulate the basic to setup object
 	if (inn == null) {
 		// default fallback input type
-		field = {
+		setup = {
 			type: "text",
 			value: null,
 		} as any;
 	} else if (typeof inn === "string") {
-		field = {
+		setup = {
 			type: inn,
 		} as any;
 	} else {
-		field = inn as any;
-		if (field.type == null) {
-			field.type = "text";
+		setup = inn as any;
+		if (setup.type == null) {
+			setup.type = "text";
 		}
 	}
 
 	// manage general and field specific options
-	field.label = field.label ?? key;
-	field.vmcm = field.vmcm ?? options?.vmcm ?? "normal";
-	field.required = field.required ?? options?.allFieldsRequired ?? true;
-	field.disabled = field.disabled ?? options?.allFieldsDisabled ?? false;
-	field.valueNullable = field.valueNullable ?? false;
-	field.preprocessValue = field.preprocessValue ?? options?.preprocessValues ?? true;
-	field.validateOn = field.validateOn ?? options?.validateOn;
-	field.incompleteStatus = field.incompleteStatus ?? true;
-	field.multiple = field.multiple ?? false;
-	field.abortProcessStateException = field.abortProcessStateException ?? false;
+	// field.label = field.label ?? key;
+	setup.vmcm = setup.vmcm ?? options?.vmcm ?? "normal";
+	setup.required = setup.required ?? options?.allFieldsRequired ?? true;
+	setup.disabled = setup.disabled ?? options?.allFieldsDisabled ?? false;
+	setup.valueNullable = setup.valueNullable ?? false;
+	setup.preprocessValue = setup.preprocessValue ?? options?.preprocessValues ?? true;
+	setup.validateOn = setup.validateOn ?? options?.validateOn;
+	setup.incompleteStatus = setup.incompleteStatus ?? true;
+	setup.multiple = setup.multiple ?? false;
+	setup.abortProcessStateException = setup.abortProcessStateException ?? false;
 
 	// SPECIAL ASSIGNMENTS
 	// label
-	if (field.label == null) {
+	if (setup.label == null) {
+		setup.label = key;
 		const char = options?.flatObjectKeysChar;
-		field.label = key;
+		const reps = [] as string[];
 		if (char != null) {
-			if (key.includes(char)) {
+			reps.push(char);
+		}
+		if (setup.labelReplace != null || options?.labelReplace != null) {
+			const labelReplace = setup.labelReplace ?? options?.labelReplace;
+			if (typeof labelReplace === "string") {
+				reps.push(labelReplace);
+			} else if (Array.isArray(labelReplace)) {
+				reps.push(...labelReplace);
+			}
+		}
+		for (const char of reps) {
+			if (setup.label?.includes(char)) {
 				const replacement = options?.flatLabelJoinChar;
-				field.label = key.split(char).join(replacement);
+				setup.label = setup.label.split(char).join(replacement);
 			}
 		}
 	}
 
 	// SPECIAL TYPES
 	// some specfic type settings
-	if (field.type === "select") {
-		if (!field.multiple) {
-			field.value = field.value ?? PLACEHOLDERS.select.value;
+	if (setup.type === "select") {
+		if (!setup.multiple) {
+			setup.value = setup.value ?? PLACEHOLDERS.select.value;
 		} else {
-			if (field.value != null) {
-				if (!Array.isArray(field.value)) {
+			if (setup.value != null) {
+				if (!Array.isArray(setup.value)) {
 					// @ts-ignore
-					field.value = [field.value];
+					setup.value = [setup.value];
 				}
 			}
 		}
 	}
 
 	// vital checks
-	if (typeof field.preprocessValue !== "boolean") {
+	if (typeof setup.preprocessValue !== "boolean") {
 		throw new Error("form: preprocessValue of " + key + " must be boolean!");
 	}
-	return field as Field.Setup;
+	return setup as Field.Setup;
 }

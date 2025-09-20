@@ -49,9 +49,4 @@ export function mountCycle<S extends Field.Setup, O extends Form.Options>(
 			}
 		};
 	});
-	// onMount($store, () => {
-	//     return () => {
-	//       atoms = {} as Form.Atoms<F, O>;
-	//     };
-	//   });
 }
