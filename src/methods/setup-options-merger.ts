@@ -18,9 +18,9 @@ export function setupOptionsMerger<G extends Form.Options>(_base?: G) {
 		}
 
 		if (base?.onMount != null || target?.onMount != null) {
-			merged.onMount = async (form, update) => {
-				const breturns = (await base?.onMount?.(form, update)) ?? undefined;
-				const ureturns = (await target?.onMount?.(form, update)) ?? undefined;
+			merged.onMount = async (props) => {
+				const breturns = (await base?.onMount?.(props)) ?? undefined;
+				const ureturns = (await target?.onMount?.(props)) ?? undefined;
 				// // priority to children
 				if (ureturns) {
 					return ureturns;
@@ -29,10 +29,25 @@ export function setupOptionsMerger<G extends Form.Options>(_base?: G) {
 			};
 		}
 
-		if (base?.onChange != null || target?.onChange != null) {
-			merged.onChange = ($next, helpers) => {
-				base?.onChange?.($next, helpers);
-				target?.onChange?.($next, helpers);
+		if (base?.onEffect != null || target?.onEffect != null) {
+			merged.onEffect = (props) => {
+				base?.onEffect?.(props);
+				target?.onEffect?.(props);
+			};
+		}
+
+		// field events
+		if (base?.onFieldChange != null || target?.onFieldChange != null) {
+			merged.onFieldChange = (props) => {
+				base?.onFieldChange?.(props);
+				target?.onFieldChange?.(props);
+			};
+		}
+
+		if (base?.onFieldElement != null || target?.onFieldElement != null) {
+			merged.onFieldElement = (props) => {
+				base?.onFieldElement?.(props);
+				target?.onFieldElement?.(props);
 			};
 		}
 

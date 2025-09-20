@@ -19,7 +19,7 @@ export function prepareOptions<O extends Form.Options>(options?: O) {
 	result.incompleteListCount = result.incompleteListCount ?? false;
 	// result.incompleteAffectsCondition = result.incompleteAffectsCondition ?? false;
 	result.validateOn = result.validateOn ?? "input";
-	result.processElementOrder = result.processElementOrder ?? "after";
+	result.onFieldElementOrder = result.onFieldElementOrder ?? "after";
 	result.flatObjectKeysChar = ".";
 	result.flatLabelJoinChar = result.flatLabelJoinChar ?? " ";
 	result.abortOnChangeException = result.abortOnChangeException ?? false;

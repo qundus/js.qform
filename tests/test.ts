@@ -5,10 +5,16 @@ import { preactHook } from "@qundus/qstate/preact";
 // const form = formSetup();
 export const name = createField("name", "text");
 export const goal = createField("goal", "file");
-export const picture = createField("picture", "file");
+export const picture = createField("picture", {
+	type: "text",
+});
 
-name.setup;
-goal.setup;
+// picture.store.get().element.
+// picture.update.element({
+
+// })
+// name.setup.;
+// goal.setup;
 export const form = createForm(
 	{
 		name: null,
@@ -128,6 +134,7 @@ export const form = createForm(
 	},
 );
 
+form.fields.cities.store.get().element.selections;
 // const data = form.submit
 
 // const gender = $form.atoms("gender");

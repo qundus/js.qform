@@ -35,7 +35,7 @@ export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToS
 	setup.validateOn = setup.validateOn ?? options?.validateOn;
 	setup.incompleteStatus = setup.incompleteStatus ?? true;
 	setup.multiple = setup.multiple ?? false;
-	setup.abortProcessStateException = setup.abortProcessStateException ?? false;
+	setup.onChangeException = setup.onChangeException ?? false;
 
 	// SPECIAL ASSIGNMENTS
 	// label

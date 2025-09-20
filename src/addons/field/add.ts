@@ -6,7 +6,7 @@ export type FieldAddonAdd<_S extends Field.Setup, _O extends Form.Options> = {
 export function fieldAddAddon<S extends Field.Setup, O extends Form.Options>(
 	props: FunctionProps.FieldAddon<S, O>,
 ): FieldAddonAdd<S, O> {
-	const { key, setup, options, store } = props;
+	const { setup } = props;
 	return {
 		validation() {
 			return (func: Field.Validate) => {

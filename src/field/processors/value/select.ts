@@ -7,8 +7,8 @@ export function processSelectValue<S extends Field.Setup, O extends Form.Options
 	processor: FunctionProps.FieldProcessor<S, O>,
 ) {
 	// setup
-	const { setup } = props;
-	const { event, manualUpdate, preprocessValue } = processor;
+	// const { setup } = props;
+	const { event, manualUpdate, preprocessValue, $next } = processor;
 	const el = event?.target as HTMLSelectElement;
 	const value = !manualUpdate ? el?.value : processor.value;
 	if (!preprocessValue) {
@@ -17,7 +17,8 @@ export function processSelectValue<S extends Field.Setup, O extends Form.Options
 
 	//
 	let result: any = null;
-	const multiple = setup.multiple ?? false;
+	const element = $next.element;
+	const multiple = element.multiple ?? false;
 	if (!multiple) {
 		// const prev_value = next.values[key] as string;
 		if (value !== PLACEHOLDERS.selectButton.value && value !== PLACEHOLDERS.select.value) {

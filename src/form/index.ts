@@ -19,7 +19,7 @@ export function createForm<
 	I extends Form.FieldsIn,
 	F extends Form.Fields<I>,
 	O extends Form.Options<F>,
->(inn?: I, _options?: O): Form.Factory<I, F, O> {
+>(inn?: I, _options?: O): Form.Factory<F, O> {
 	// preparations
 	const options = prepareOptions<O>(_options);
 	const store = prepareStore<F, O>(options as any);
@@ -33,8 +33,8 @@ export function createForm<
 	const button = formButtonAddon<F, O>(addonProps);
 
 	// cycles
-	mountCycle(addonProps, update);
-	changeCycle(addonProps);
+	// mountCycle(addonProps, update);
+	changeCycle(addonProps, update);
 
 	// other helpers
 	let keys = null as (keyof F)[] | null;

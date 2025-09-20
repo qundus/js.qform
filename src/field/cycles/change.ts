@@ -1,31 +1,44 @@
 import { onSet } from "@qundus/qstate";
-import type { Field, Form, FunctionProps } from "../../_model";
+import type { Addon, Field, Form, FunctionProps } from "../../_model";
 import { isFieldIncomplete } from "../checks/is-field-incomplete";
 import { processValue } from "../processors/value";
+import { FIELD_CYCLES } from "../../const";
 
+const REFRESH = "__REFRESH";
 export function changeCycle<
 	S extends Field.Setup,
 	O extends Form.Options,
 	G extends Form.Store<any, O>,
->(props: FunctionProps.Field<S, O>, formStore: G | undefined) {
+>(props: FunctionProps.Field<S, O>, formStore: G | undefined, mark: Addon.FieldMark<S, O>) {
 	const { key, setup, options, store } = props;
 	// do startup checks for input types like file
 	//
-	const REFRESH = "__REFRESH";
+	formStore?.listen((form) => {
+		const state = store.get();
+		if (form.status === "submit") {
+			if (state.cycle !== "submit") {
+				mark.cycle.submit();
+			}
+		} else {
+			if (state.cycle === "submit") {
+				mark.cycle.change();
+			}
+		}
+	});
 	onSet(store, async (payload) => {
-		// console.log("called :: ", key, " :: ", form.changed);
 		const $next = payload.newValue;
 		if ($next.__internal[REFRESH]) {
 			delete $next.__internal[REFRESH];
+			return $next;
+		} else if (FIELD_CYCLES[$next.cycle] > FIELD_CYCLES.change) {
 			return $next;
 		}
 		const internal = $next.__internal;
 		const event = internal.event;
 		const manualUpdate = internal.manual;
-		const preprocessValue =
-			internal.preprocess ?? options?.preprocessValues ?? (setup.preprocessValue as boolean);
+		const preprocessValue = (internal.preprocess ?? $next.element.preprocessValue) as boolean;
 		const update = internal.update;
-		const vmcm: Field.VMCM = manualUpdate ? (options?.vmcm ?? setup?.vmcm ?? "normal") : "normal";
+		const vmcm = (manualUpdate ? $next.element.vmcm : "normal") as Field.VMCM;
 		const prev = store.value;
 		const form = formStore?.get();
 		const oldValue = store.value.value;
@@ -46,42 +59,26 @@ export function changeCycle<
 		}
 
 		try {
+			const onchangeprops = { form, setup, prev: prev as any, $next: $next as any, mark };
 			if (typeof setup?.onChange === "function") {
-				await setup?.onChange?.({
-					// prevForm,
-					form,
-					setup,
-					prev,
-					$next,
-				});
+				await setup?.onChange?.(onchangeprops);
 			} else {
 				if (setup.onChange != null) {
 					for (const processor of setup.onChange) {
-						await processor?.({
-							// prevForm,
-							form,
-							setup,
-							prev,
-							$next,
-						});
+						await processor?.(onchangeprops);
 					}
 				}
 			}
 			// global onchange field if any
-			if (options?.onChangeField != null && typeof options?.onChangeField === "function") {
-				await options.onChangeField({
-					form,
-					setup,
-					prev,
-					$next,
-				});
+			if (options?.onFieldChange != null && typeof options?.onFieldChange === "function") {
+				await options.onFieldChange(onchangeprops);
 			}
 		} catch (err: any) {
 			console.error(
-				`qform: fatal error occured in field.processState :: abort set to <${setup.abortProcessStateException}> :: exception :: `,
+				`qform: fatal error occured in field.processState :: abort set to <${setup.onChangeException}> :: exception :: `,
 				err,
 			);
-			if (setup.abortProcessStateException) {
+			if (setup.onChangeException) {
 				payload.abort();
 				return;
 			}
@@ -122,20 +119,20 @@ export function changeCycle<
 			if ($next.errors.length > 0) {
 				// process condition
 				if (vmcm === "force-valid") {
-					$next.condition.value.error = false;
+					$next.condition.error = false;
 					$next.errors = undefined;
-				} else if ($next.condition.element.required) {
-					$next.condition.value.error = "validation";
+				} else if ($next.element.required) {
+					$next.condition.error = "validation";
 				} else {
-					$next.condition.value.error = "optional";
+					$next.condition.error = "optional";
 				}
 
 				// process value
 				if (options?.preventErroredValues) {
 					$next.value = oldValue;
 				} else {
-					$next.condition.value.updated = true;
-					$next.condition.value.lastUpdate = manualUpdate ? "manual" : "user";
+					$next.condition.updated = true;
+					$next.condition.by = manualUpdate ? "manual" : "user";
 				}
 
 				// finally, set validity
@@ -146,27 +143,27 @@ export function changeCycle<
 			// @ts-expect-error
 			if ($next.errors.length <= 0) {
 				// process condition
-				if ($next.condition.element.disabled) {
-					$next.condition.value.error = false;
-				} else if ($next.condition.element.required) {
+				if ($next.element.disabled) {
+					$next.condition.error = false;
+				} else if ($next.element.required) {
 					// check required status
 					if (vmcm === "force-valid") {
-						$next.condition.value.error = false;
+						$next.condition.error = false;
 					} else {
-						const incomplete = isFieldIncomplete(setup, $next.condition, $next.value);
-						$next.condition.value.error = incomplete ? "incomplete" : false;
+						const incomplete = isFieldIncomplete($next.element, $next.value);
+						$next.condition.error = incomplete ? "incomplete" : false;
 					}
 				} else {
-					$next.condition.value.error = false;
+					$next.condition.error = false;
 				}
 
 				// process value
 				$next.errors = undefined;
-				$next.condition.value.updated = true;
-				$next.condition.value.lastUpdate = manualUpdate ? "manual" : "user";
+				$next.condition.updated = true;
+				$next.condition.by = manualUpdate ? "manual" : "user";
 
 				// finally, set validity
-				$next.condition.valid = $next.condition.value.error ? false : true;
+				$next.condition.valid = $next.condition.error ? false : true;
 			}
 		}
 
@@ -181,6 +178,7 @@ export function changeCycle<
 				[REFRESH]: true,
 			},
 		});
+		return $next;
 
 		// many to one store update could cause race condition, don't like it :(
 		// if (form == null || formStore == null) {

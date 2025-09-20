@@ -23,7 +23,7 @@ export function createElement<S extends Field.Setup, O extends Form.Options>(
 	const { key, setup, options, store } = props;
 
 	// const baseEl = makeBaseElement({ field, key, $state, options });
-	const element = "select" === setup.type ? selectElement<S, O>(props) : inputElement<S, O>(props);
+	const render = "select" === setup.type ? selectElement<S, O>(props) : inputElement<S, O>(props);
 	// determine used hooks
 	const { getHook, getHooks, hookNames } = hooksInUse(store);
 	const preactHook = getHook(hookNames.preact);
@@ -45,7 +45,7 @@ export function createElement<S extends Field.Setup, O extends Form.Options>(
 			) => {
 				const data = store.get();
 				const [dType, kType] = getElementCustomProps("dom", props);
-				return element(dType, kType, data);
+				return render(dType, kType, data);
 			};
 		},
 		// preact
@@ -60,7 +60,7 @@ export function createElement<S extends Field.Setup, O extends Form.Options>(
 				}
 				const data = (store as any).hooks[preactHook]();
 				const [dType, kType] = getElementCustomProps("vdom", props);
-				return element(dType, kType, data);
+				return render(dType, kType, data);
 			};
 		},
 		// react
@@ -75,7 +75,7 @@ export function createElement<S extends Field.Setup, O extends Form.Options>(
 				}
 				const data = (store as any).hooks[reactHook]();
 				const [dType, kType] = getElementCustomProps("vdom", props);
-				return element(dType, kType, data);
+				return render(dType, kType, data);
 			};
 		},
 		// solidjs
@@ -90,13 +90,13 @@ export function createElement<S extends Field.Setup, O extends Form.Options>(
 				}
 				const data = (store as any).hooks[solidHook]();
 				const [dType, kType] = getElementCustomProps("dom", props);
-				return element(dType, kType, data);
+				return render(dType, kType, data);
 			};
 		},
 		get svelte() {
 			const data = store.get();
 			const [dType, kType] = getElementCustomProps("dom");
-			return element(dType, kType, data);
+			return render(dType, kType, data);
 		},
 		ref: <K extends Element.KeysType>(ref: any, props?: ElementCustomProps<"dom", K>) => {
 			// keep type as any to avoid unnecessary type issues
@@ -107,7 +107,7 @@ export function createElement<S extends Field.Setup, O extends Form.Options>(
 			// console.log("ref is initialized for :: ", key);
 			const data = store.get();
 			const [dType, kType] = getElementCustomProps("dom", props);
-			const el = element(dType, kType, data);
+			const el = render(dType, kType, data);
 			for (const k in el) {
 				// @ts-ignore
 				ref[k] = el[k];

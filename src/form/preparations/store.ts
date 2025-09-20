@@ -9,8 +9,9 @@ export function prepareStore<F extends Form.Fields, O extends Form.Options<F>>(o
 		conditions: {} as any,
 		errors: {} as any,
 		extras: {} as any,
+		elements: {},
 		incomplete: [],
-		status: "idle",
+		status: "mount",
 	} as Form.StoreObject<any>;
 	const store = map(init, {
 		hooks: options.storeHooks, //as O["hooks"],

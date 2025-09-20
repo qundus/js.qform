@@ -66,5 +66,18 @@ export function formUpdateAddon<F extends Form.Fields, O extends Form.Options<F>
 				field.update.condition(condition);
 			}
 		},
+		elements: <G extends Record<keyof F, Field.Element<any>>>(elements: G) => {
+			if (elements == null) {
+				return;
+			}
+			for (const key in elements) {
+				if (!isKeyInFormFields(fields, options, key)) {
+					continue;
+				}
+				const field = fields[key];
+				const element = elements[key];
+				field.update.element(element);
+			}
+		},
 	};
 }

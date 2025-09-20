@@ -1,9 +1,8 @@
 import type { Field, Form, FunctionProps } from "../../_model";
-import { mergeFieldConditions } from "../../methods/merge-field-conditions";
 
 export type FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> = {
 	value: (
-		value: S["value"] | undefined | ((prev: S["value"] | undefined) => S["value"] | undefined),
+		value: S["value"] | ((prev: undefined) => S["value"] | undefined) | undefined,
 		configs?: { preprocess?: boolean },
 	) => void;
 	condition: (
@@ -11,41 +10,59 @@ export type FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> = {
 			| Partial<Field.Condition>
 			| ((prev: Partial<Field.Condition>) => Partial<Field.Condition>),
 	) => void;
+	element: (
+		value:
+			| Partial<Field.Element<S>>
+			| ((prev: Partial<Field.Element<S>>) => Partial<Field.Element<S>>),
+	) => void;
 };
 export function fieldUpdateAddon<S extends Field.Setup, O extends Form.Options>(
 	props: FunctionProps.FieldAddon<S, O>,
 ): FieldAddonUpdate<S, O> {
-	const { key, setup, options, store } = props;
+	const { store } = props;
 	return {
-		value: (_value, configs) => {
-			const state = { ...store.get() };
+		value: (value, configs) => {
+			const state = store.get();
 			const prev = state.value; //as S["value"];
-			// @ts-expect-error
-			const value = typeof _value === "function" ? _value(prev) : _value;
+			const next = typeof value === "function" ? (value as any)(prev) : value;
 			store.set({
 				...state,
-				value,
+				value: next,
 				__internal: {
 					update: "value",
 					manual: true,
 					preprocess: configs?.preprocess,
-					event: undefined,
+					event: state.__internal.event,
 				},
 			});
 		},
 		condition: (value) => {
-			const state = { ...store.get() };
+			const state = store.get();
 			const prev = state.condition;
-			const userCondition = typeof value === "function" ? value(prev) : value;
-			const condition = mergeFieldConditions(prev, userCondition);
+			const next = typeof value === "function" ? value(prev) : value;
 			store.set({
 				...state,
-				condition,
+				condition: { ...prev, ...next },
 				__internal: {
 					update: "value",
 					manual: true,
 					// preprocess: configs?.preprocess,
-					event: undefined,
+					event: state.__internal.event,
+				},
+			});
+		},
+		element: (value) => {
+			const state = store.get();
+			const prev = state.element;
+			const next = typeof value === "function" ? value(prev) : value;
+			store.set({
+				...state,
+				element: { ...prev, ...next },
+				__internal: {
+					update: "element",
+					manual: true,
+					// preprocess: configs?.preprocess,
+					event: state.__internal.event,
 				},
 			});
 		},

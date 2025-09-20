@@ -16,42 +16,41 @@ export type SelectElementFactory<T extends Element.DomType> = Element.Factory<
 		onInput: OnInput;
 	}
 >;
-export function selectElement<F extends Field.Setup, O extends Form.Options>(
-	props: FunctionProps.Field<F, O>,
+export function selectElement<S extends Field.Setup, O extends Form.Options>(
+	props: FunctionProps.Field<S, O>,
 ) {
-	const { key, setup, options, store } = props;
-	const key_str = String(key);
+	const { key, options, store, setup } = props;
 	const baseEl = baseElement(props);
 	return <D extends Element.DomType, K extends Element.KeysType>(
 		dType: D,
 		kType: K,
-		reactive: Field.StoreObject<Field.Setup> | (() => Field.StoreObject<Field.Setup>),
+		reactive: Field.StoreObject<S> | (() => Field.StoreObject<S>),
 	) => {
-		const data = typeof reactive === "function" ? reactive() : reactive;
-		let result = {} as any;
+		const state = typeof reactive === "function" ? reactive() : reactive;
+		let render = {} as any;
 		if (kType !== "special") {
-			result = baseEl(dType, kType, data);
+			render = baseEl(dType, kType, state);
 		}
 		if (kType !== "base") {
-			result = {
-				...result,
-				name: key_str,
-				value: data?.value,
-				multiple: setup.multiple ?? false,
+			render = {
+				...render,
+				name: state.__key,
+				value: state?.value,
+				multiple: state.element.multiple,
 			};
 
 			//
 			let listenerId = undefined as string | undefined;
-			if (setup.validateOn === "change") {
+			if (state.element.validateOn === "change") {
 				listenerId = dType !== "vdom" ? "onchange" : "onChange";
 			} else {
 				//if (setup.validateOn === "input") {
 				listenerId = dType !== "vdom" ? "oninput" : "onInput";
 			}
-			result[listenerId] = (event: Event) => {
+			render[listenerId] = (event: Event) => {
 				event.preventDefault();
 				store.set({
-					...(data as any),
+					...(state as any),
 					__internal: {
 						event,
 						manual: false,
@@ -63,14 +62,14 @@ export function selectElement<F extends Field.Setup, O extends Form.Options>(
 
 		// check user process
 		// check user process
-		const processProps = { key, isVdom: dType === "vdom", kType, value: data, element: result };
-		if (options?.processElementOrder === "before") {
-			options?.onRenderField?.(processProps);
+		const processProps = { key, state, render, store, isVdom: dType === "vdom", kType };
+		if (options?.onFieldElementOrder === "before") {
+			options?.onFieldElement?.(processProps);
 		}
-		setup.onRender?.(processProps);
-		if (options?.processElementOrder === "after") {
-			options?.onRenderField?.(processProps);
+		setup.onElement?.(processProps);
+		if (options?.onFieldElementOrder === "after") {
+			options?.onFieldElement?.(processProps);
 		}
-		return result as SelectElementFactory<D>;
+		return render as SelectElementFactory<D>;
 	};
 }

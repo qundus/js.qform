@@ -20,34 +20,34 @@ export type BaseElementFactory<T extends Element.DomType> = Element.Factory<
 		autoComplete?: "on" | "off";
 	}
 >;
-export function baseElement<F extends Field.Setup, O extends Form.Options>(
-	basic: FunctionProps.Field<F, O>,
+export function baseElement<S extends Field.Setup, O extends Form.Options>(
+	basic: FunctionProps.Field<S, O>,
 ) {
 	const { setup, store } = basic;
 	return <D extends Element.DomType, K extends Element.KeysType>(
 		dType: D,
 		_kType: K,
-		reactive: Field.StoreObject<Field.Setup> | (() => Field.StoreObject<Field.Setup>),
+		reactive: Field.StoreObject<S> | (() => Field.StoreObject<S>),
 	) => {
 		const data = typeof reactive === "function" ? reactive() : reactive;
 		return {
-			id: setup.label,
+			id: data?.element?.label ?? setup.label,
 			[dType !== "vdom" ? "autocomplete" : "autoComplete"]: "off",
-			required: data?.condition.element.required,
-			disabled: data?.condition.element.disabled,
+			required: data?.element.required,
+			disabled: data?.element.disabled,
 			[dType !== "vdom" ? "onfocus" : "onFocus"]: (event: FocusEvent) => {
 				event.preventDefault();
 				event.stopImmediatePropagation();
 				event.stopPropagation();
 				//
-				const condition = { ...data.condition };
-				condition.element.state = "focus";
-				condition.element.visited = true;
+				const element = { ...data.element };
+				element.focused = true;
+				element.visited = true;
 				store.set({
 					...(data as any),
-					condition,
+					element,
 					__internal: {
-						update: "focus",
+						update: "element.focus",
 						event,
 						manual: false,
 					},
@@ -61,14 +61,14 @@ export function baseElement<F extends Field.Setup, O extends Form.Options>(
 				// 	return;
 				// }
 				//
-				const condition = { ...data.condition };
-				condition.element.state = "blur";
-				condition.element.visited = true;
+				const element = { ...data.element };
+				element.focused = false;
+				element.visited = true;
 				store.set({
 					...(data as any),
-					condition,
+					element,
 					__internal: {
-						update: "blur",
+						update: "element.blur",
 						event,
 						manual: false,
 					},

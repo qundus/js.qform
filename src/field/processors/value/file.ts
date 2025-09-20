@@ -6,7 +6,7 @@ export function processFileValue<S extends Field.Setup<"file">, O extends Form.O
 	processor: FunctionProps.FieldProcessor<S, O>,
 ) {
 	// setup
-	const { store, setup } = props;
+	const { store } = props;
 	const { event, manualUpdate, preprocessValue, $next } = processor;
 	const el = event?.target as HTMLInputElement;
 	let result = undefined as
@@ -158,9 +158,9 @@ export function processFileValue<S extends Field.Setup<"file">, O extends Form.O
 		}
 	}
 
-	if (setup.multiple) {
+	if ($next.element.multiple) {
 		return result;
 	}
 
-	return result[0];
+	return result?.[0];
 }

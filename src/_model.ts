@@ -1,10 +1,8 @@
 import type { _QSTATE } from "@qundus/qstate";
 import type { createElement } from "./field/elements";
 import type { OptionHooksIn } from "@qundus/qstate/hooks";
-import type { PLACEHOLDERS } from "./const";
+import type { PLACEHOLDERS, IGNORED_SETUP_KEYS, FIELD_CYCLES } from "./const";
 import type { deriveAddon } from "@qundus/qstate/addons";
-
-// export types
 
 // checkers
 export namespace Check {
@@ -61,18 +59,21 @@ export namespace Field {
 
 	export type Condition = {
 		valid: boolean;
-		hidden: boolean;
-		value: {
-			updated: boolean; // happens when value updated
-			lastUpdate: false | "user" | "manual"; // last modification by user or manual
-			error: false | "validation" | "incomplete" | "optional";
-		};
-		element: {
-			state: false | "focus" | "blur";
-			visited: boolean; // happens first onfocus
-			disabled: boolean;
-			required: boolean;
-		};
+		error: false | "validation" | "incomplete" | "optional";
+		updated: boolean; // happens when value updated
+		by: false | "user" | "manual"; // last modification by user or manual
+	};
+	export type Element<S extends Setup> = {
+		[K in keyof Setup as K extends keyof typeof IGNORED_SETUP_KEYS ? never : K]: S[K] extends
+			| Check.IsUnknown<S[K]>
+			| Check.IsUndefined<S[K]>
+			| Check.IsNull<S[K]>
+			| Check.IsEmpty<S[K]>
+			? Setup[K]
+			: S[K];
+	} & {
+		readonly focused: boolean;
+		readonly visited: boolean;
 	};
 	export type Errors = string[] | null | undefined;
 	export type Validate = (props: {
@@ -101,21 +102,26 @@ export namespace Field {
 
 	// events
 	export type OnMount<T extends Type, V> = (props: {
-		setup: Setup<any, V>;
-		update: Addon.FieldUpdate<Setup<T, V>, Form.Options>;
+		setup: Setup;
+		update: Addon.FieldUpdate<Setup, Form.Options>;
+		mark: Addon.FieldMark<Setup, Form.Options>;
 	}) => void | (() => void) | Promise<void | (() => void)>;
-	export type OnChange<T extends Type, V, S extends Setup<T, V> = Setup<T, V>> = (props: {
+	export type OnChange<T extends Type, V> = (props: {
 		$next: StoreObject<Setup>;
 		prev: StoreObject<Setup>;
-		setup: Setup<T, V>;
+		setup: Setup;
 		form: Form.StoreObject<any> | undefined;
+		mark: Addon.FieldMark<Setup, Form.Options>;
 		// prevForm: Form.StoreObject<Form.Fields>;
 	}) => void | Promise<void>;
-	export type OnRender = <D extends Element.DomType = Element.DomType>(props: {
+	export type OnElement = <D extends Element.DomType = Element.DomType>(props: {
 		key: string;
 		// element: ElementSelectReturns<D> | ElementInputReturns<D>;
-		element: Record<string, any>; // very tough getting the proper types here while allowing freedom of key assignment
-		value: StoreObject<any>;
+		/** this is the final props passed to the element */
+		render: Record<string, any>; // very tough getting the proper types here while allowing freedom of key assignment
+		state: StoreObject<any>;
+		/** low-level control over the final store, only allowed here. */
+		store: Store<any, any>;
 		isVdom: D extends "vdom" ? true : false;
 		kType: Element.KeysType;
 	}) => void;
@@ -143,9 +149,9 @@ export namespace Field {
 		//## events
 		onMount?: OnMount<T, V>;
 		/**
-		 * processor used in case of complex data values
+		 * event used in case of complex data values
 		 * need to be extracted from field element and the basic
-		 * element.value processor isn't accurate enough.
+		 * element.value event isn't accurate enough.
 		 * some processors run when events like onfocus and onblur fire,
 		 * this gives the chance to modify field state like required,
 		 * disabled..etc, according to specific needs or logic.
@@ -155,7 +161,8 @@ export namespace Field {
 		 * html bare element props passed, this is so preliminary right
 		 * now and requires extra work for vdom, expect breaking changes here.
 		 */
-		onRender?: OnRender;
+		onElement?: OnElement;
+
 		//## conditions
 		hidden?: boolean;
 		required?: boolean;
@@ -170,7 +177,7 @@ export namespace Field {
 		 */
 		preprocessValue?: boolean;
 		/**
-		 * checks for missing/required value and mark condition.value.error as
+		 * checks for missing/required value and mark condition.error as
 		 * incomplete.
 		 * @default true
 		 */
@@ -182,11 +189,11 @@ export namespace Field {
 
 		//## state effects
 		/**
-		 * abort state changes when an exception is thrown from processState
+		 * abort state changes when an exception is thrown from onChange
 		 * method or not
 		 * @default false
 		 */
-		abortProcessStateException?: boolean;
+		onChangeException?: boolean;
 
 		//## type specific
 		selections?: T extends "select" | "radio" ? Selections : null;
@@ -265,26 +272,30 @@ export namespace Field {
 						};
 						fallback?: { name: string; url: string }[];
 					}
-				: T extends "select" | "radio"
-					? {
-							selections: S["selections"];
-							// valueKey: string;
-						}
-					: never)
+				: never)
 		| undefined;
 
 	// store
 	export type StoreObject<S extends Setup> = {
 		readonly __key: string;
 		readonly __internal: {
-			readonly update: undefined | "focus" | "blur" | "value" | "extras";
+			readonly update:
+				| undefined
+				| "value"
+				| "extras"
+				| "element"
+				| "element.focus"
+				| "element.blur"
+				| "cycle";
 			readonly manual: boolean;
 			readonly event: Event | undefined;
 			readonly preprocess?: boolean;
 		};
+		readonly cycle: keyof typeof FIELD_CYCLES;
 		// user
 		value: S["value"] | undefined;
-		condition: Field.Condition;
+		condition: Condition;
+		element: Element<S>;
 		errors?: string[];
 		extras?: Field.Extras<S>;
 	};
@@ -294,30 +305,24 @@ export namespace Field {
 		{ hooks: O["storeHooks"] }
 	>;
 
-	// element
-	export type Element<F extends Setup, O extends Form.Options> = ReturnType<
-		typeof createElement<F, O>
-	>;
-
-	// atom
-
+	// factory
 	export type Factory<S extends Setup, O extends Form.Options> = {
 		readonly key: string;
 		readonly setup: S;
 		readonly store: Omit<Store<S, O>, "set" | "setKey">; //Store<S, O>;
-		readonly element: Element<S, O>;
+		readonly render: ReturnType<typeof createElement<S, O>>;
 		readonly placeholders: typeof PLACEHOLDERS;
 		// addons
 		readonly add: Addon.FieldAdd<S, O>;
 		readonly clear: Addon.FieldClear<S, O>;
 		readonly update: Addon.FieldUpdate<S, O>;
+		readonly mark: Addon.FieldMark<S, O>;
 	};
 }
 
 export namespace Form {
 	//
-	export type Status = "idle" | "incomplete" | "error" | "valid" | "submit";
-	//
+	export type Status = "mount" | "idle" | "incomplete" | "error" | "valid" | "submit";
 	export type FieldsIn = Record<string, Field.SetupIn> | undefined | null;
 	export type Fields<I extends FieldsIn = FieldsIn, O extends Options = Options> = I extends Record<
 		string,
@@ -366,15 +371,20 @@ export namespace Form {
 		//## store
 		storeHooks?: OptionHooksIn;
 		onMount?: (props: {
-			form: StoreObject<F>;
-			update: Addon.FormUpdate<F, Options<F>>;
-			isServerSide: () => boolean;
-		}) => Promise<void> | void;
-		onChange?: (props: {
-			// $next: StoreObject<F>;
-			abort: () => void;
-			isServerSide: () => boolean;
+			readonly isServerSide: () => boolean;
+			readonly form: StoreObject<F>;
+			readonly prev: StoreObject<F>;
+			readonly getForm: () => StoreObject<F>;
+			readonly fields: F;
+			// readonly update: Addon.FormUpdate<F, Options<F>>;
 		}) => void | Promise<void>;
+		onEffect?: (props: {
+			readonly isServerSide: () => boolean;
+			readonly form: StoreObject<F>;
+			readonly prev: StoreObject<F>;
+			readonly fields: F;
+			// readonly update: Addon.FormUpdate<F, Options<F>>;
+		}) => void;
 		/**
 		 * abort state changes when an exception is thrown from onChange
 		 * method or not
@@ -395,18 +405,18 @@ export namespace Form {
 		allFieldsDisabled?: boolean;
 
 		//## field events
-		onChangeField?: Field.OnChange<Field.Type, any>;
+		onFieldChange?: Field.OnChange<Field.Type, any>;
 		/**
-		 * global element render listener, gets called before or after field's specific processElement
-		 * based on processElementOrder option.
+		 * global per element render listener, gets called before or after field's specific
+		 * onElement based on onFieldElementOrder option.
 		 */
-		onRenderField?: Field.OnRender;
+		onFieldElement?: Field.OnElement;
 		/**
-		 * determines wheather global processElement is going to take place before or after
-		 * field's specific processElement
+		 * determines wheather global onFieldElement is going to take place before or after
+		 * field's specific onFieldElementOrder
 		 * @default "after"
 		 */
-		processElementOrder?: "before" | "after";
+		onFieldElementOrder?: "before" | "after";
 
 		//## exportation and usage
 		/**
@@ -469,6 +479,9 @@ export namespace Form {
 		values: {
 			[K in keyof F]: F[K]["setup"]["value"];
 		};
+		elements: {
+			[K in keyof F]: F[K]["store"]["value"]["element"];
+		};
 		conditions: {
 			[K in keyof F]: Field.Condition;
 		};
@@ -497,14 +510,14 @@ export namespace Form {
 	>;
 
 	// factory/result
-	export type Factory<I extends FieldsIn, F extends Fields<I>, O extends Options<F>> = {
+	export type Factory<F extends Fields, O extends Options<F>> = {
 		/**
 		 * extreme low-level control of form, use setters with extreme care as this affects
 		 * the core logic of the form, it's advised to not modify form atoms/elements
 		 * directly but use form.actions or atom.<method-name>
 		 */
 		readonly store: Store<F, O>;
-		readonly fields: Fields<I, O>;
+		readonly fields: F; //Fields<I, O>;
 		readonly options: O;
 		readonly placeholders: typeof PLACEHOLDERS;
 		get keys(): () => (keyof F)[];
@@ -525,6 +538,7 @@ export namespace FunctionProps {
 		setup: S;
 		options: O | undefined;
 		store: Field.Store<S, O>;
+		init: Field.StoreObject<S>;
 	}
 	export type FieldCycle<S extends Field.Setup, O extends Form.Options> = Field<S, O>;
 	export type FieldAddon<S extends Field.Setup, O extends Form.Options> = Field<S, O>;
@@ -549,6 +563,7 @@ export namespace FunctionProps {
 import type { FieldAddonAdd } from "./addons/field/add";
 import type { FieldAddonClear } from "./addons/field/clear";
 import type { FieldAddonUpdate } from "./addons/field/update";
+import type { FieldAddonMark } from "./addons/field/mark";
 
 import type { FormAddonSubmit } from "./addons/form/submit";
 import type { FormAddonUpdate } from "./addons/form/update";
@@ -560,6 +575,7 @@ export namespace Addon {
 	export type FieldAdd<S extends Field.Setup, O extends Form.Options> = FieldAddonAdd<S, O>;
 	export type FieldClear<S extends Field.Setup, O extends Form.Options> = FieldAddonClear<S, O>;
 	export type FieldUpdate<S extends Field.Setup, O extends Form.Options> = FieldAddonUpdate<S, O>;
+	export type FieldMark<S extends Field.Setup, O extends Form.Options> = FieldAddonMark<S, O>;
 
 	// form
 	export type FormSubmit<F extends Form.Fields, O extends Form.Options<F>> = FormAddonSubmit<F, O>;

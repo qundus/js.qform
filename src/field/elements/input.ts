@@ -17,67 +17,65 @@ export type InputElementFactory<T extends Element.DomType> = Element.Factory<
 		onInput: OnInput;
 	}
 >;
-export function inputElement<F extends Field.Setup, O extends Form.Options>(
-	props: FunctionProps.Field<F, O>,
+export function inputElement<S extends Field.Setup, O extends Form.Options>(
+	props: FunctionProps.Field<S, O>,
 ) {
-	const { key, setup, options, store } = props;
-	const key_str = String(key);
+	const { key, options, store, setup } = props;
 	const baseEl = baseElement(props);
 	return <D extends Element.DomType, K extends Element.KeysType>(
 		dType: D,
 		kType: K,
-		reactive: Field.StoreObject<Field.Setup> | (() => Field.StoreObject<Field.Setup>),
+		reactive: Field.StoreObject<S> | (() => Field.StoreObject<S>),
 	) => {
-		const data = typeof reactive === "function" ? reactive() : reactive;
-		let result = {} as any;
+		const state = typeof reactive === "function" ? reactive() : reactive;
+		let render = {} as any;
 		if (kType !== "special") {
-			result = baseEl(dType, kType, data);
+			render = baseEl(dType, kType, state);
 		}
 		if (kType !== "base") {
-			result = {
-				...result,
-				type: data.condition.hidden ? "hidden" : setup.type,
-				name: key_str,
-				multiple: setup.multiple,
+			render = {
+				...render,
+				type: state?.element.hidden ? "hidden" : setup.type,
+				name: state.__key,
+				multiple: state?.element.multiple,
 			};
 			const addValue = setup.type !== "checkbox" && setup.type !== "radio" && setup.type !== "file";
 			if (addValue) {
-				result.value = data?.value ?? "";
+				render.value = state?.value ?? "";
 			}
 
 			// listener id
 			let listenerId = undefined as string | undefined;
-			if (setup.validateOn === "change") {
+			if (state.element.validateOn === "change") {
 				listenerId = dType !== "vdom" ? "onchange" : "onChange";
 			} else {
 				//if (setup.validateOn === "input") {
 				listenerId = dType !== "vdom" ? "oninput" : "onInput";
 			}
-			result[listenerId] = (event: Event) => {
+			render[listenerId] = (event: Event) => {
 				event.preventDefault();
 				store.set({
-					...(data as any),
+					...(state as any),
 					__internal: {
-						event,
-						manual: false,
 						update: "value",
+						manual: false,
+						event,
 					},
 				});
-				// valueInteraction(basic, { event, value: null }, interactionProcessorProps);
 			};
 		}
 
 		// check user process
-		const processProps = { key, isVdom: dType === "vdom", kType, value: data, element: result };
-		if (options?.processElementOrder === "before") {
-			options?.onRenderField?.(processProps);
+		const processProps = { key, state, render, store, isVdom: dType === "vdom", kType };
+		if (options?.onFieldElementOrder === "before") {
+			options?.onFieldElement?.(processProps);
 		}
-		setup.onRender?.(processProps);
-		if (options?.processElementOrder === "after") {
-			options?.onRenderField?.(processProps);
+		setup.onElement?.(processProps);
+		if (options?.onFieldElementOrder === "after") {
+			options?.onFieldElement?.(processProps);
 		}
 
 		// console.log("element input :: ", key, " :: ", result.value);
-		return result as InputElementFactory<D>;
+		return render as InputElementFactory<D>;
 	};
 }
