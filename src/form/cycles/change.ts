@@ -14,7 +14,7 @@ export function changeCycle<F extends Form.Fields, O extends Form.Options<F>>(
 		stores.push(field.store as any);
 	}
 	effect(stores, (...stores) => {
-		const $next = { ...store.get() } as Form.StoreObject<F>;
+		const $next = { ...store.get() } as Form.StoreObject<F, O>;
 		const count = {
 			invalids: 0,
 			errors: 0,

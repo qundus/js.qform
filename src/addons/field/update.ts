@@ -13,13 +13,16 @@ export type FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> = {
 	element: (
 		value:
 			| Partial<Field.Element<S>>
-			| ((prev: Partial<Field.Element<S>>) => Partial<Field.Element<S>>),
+			| ((prev?: Partial<Field.Element<S>>) => Partial<Field.Element<S>>),
+	) => void;
+	props: <G extends S["props"]>(
+		value: Partial<G> | ((prev: Partial<G>) => Partial<G> | undefined) | undefined,
 	) => void;
 };
 export function fieldUpdateAddon<S extends Field.Setup, O extends Form.Options>(
 	props: FunctionProps.FieldAddon<S, O>,
 ): FieldAddonUpdate<S, O> {
-	const { store } = props;
+	const { store, options } = props;
 	return {
 		value: (value, configs) => {
 			const state = store.get();
@@ -60,6 +63,21 @@ export function fieldUpdateAddon<S extends Field.Setup, O extends Form.Options>(
 				element: { ...prev, ...next },
 				__internal: {
 					update: "element",
+					manual: true,
+					// preprocess: configs?.preprocess,
+					event: state.__internal.event,
+				},
+			});
+		},
+		props: (value) => {
+			const state = store.get();
+			const prev = state.props;
+			const next = typeof value === "function" ? (value as any)(prev) : value;
+			store.set({
+				...state,
+				props: next,
+				__internal: {
+					update: "props",
 					manual: true,
 					// preprocess: configs?.preprocess,
 					event: state.__internal.event,

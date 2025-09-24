@@ -3,10 +3,9 @@ import type { Element, Field, Form, FunctionProps } from "../../_model";
 
 //
 type OnInput = (event: Event) => void;
-export type InputElementFactory<T extends Element.DomType> = Element.Factory<
+export type SelectElementFactory<T extends Element.DomType> = Element.Factory<
 	T,
 	{
-		type: string;
 		name: string;
 		value: any;
 	},
@@ -17,7 +16,7 @@ export type InputElementFactory<T extends Element.DomType> = Element.Factory<
 		onInput: OnInput;
 	}
 >;
-export function inputElement<S extends Field.Setup, O extends Form.Options>(
+export function selectElement<S extends Field.Setup, O extends Form.Options>(
 	props: FunctionProps.Field<S, O>,
 ) {
 	const { key, options, store, setup } = props;
@@ -35,16 +34,12 @@ export function inputElement<S extends Field.Setup, O extends Form.Options>(
 		if (kType !== "base") {
 			render = {
 				...render,
-				type: state?.element.hidden ? "hidden" : setup.type,
 				name: state.__key,
-				multiple: state?.element.multiple,
+				value: state?.value,
+				multiple: state.element.multiple,
 			};
-			const addValue = setup.type !== "checkbox" && setup.type !== "radio" && setup.type !== "file";
-			if (addValue) {
-				render.value = state?.value ?? "";
-			}
 
-			// listener id
+			//
 			let listenerId = undefined as string | undefined;
 			if (state.element.validateOn === "change") {
 				listenerId = dType !== "vdom" ? "onchange" : "onChange";
@@ -57,9 +52,9 @@ export function inputElement<S extends Field.Setup, O extends Form.Options>(
 				store.set({
 					...(state as any),
 					__internal: {
-						update: "value",
-						manual: false,
 						event,
+						manual: false,
+						update: "value",
 					},
 				});
 			};
@@ -74,8 +69,6 @@ export function inputElement<S extends Field.Setup, O extends Form.Options>(
 		if (options?.onFieldElementOrder === "after") {
 			options?.onFieldElement?.(processProps);
 		}
-
-		// console.log("element input :: ", key, " :: ", result.value);
-		return render as InputElementFactory<D>;
+		return render as SelectElementFactory<D>;
 	};
 }

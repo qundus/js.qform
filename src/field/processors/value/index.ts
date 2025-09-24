@@ -20,7 +20,7 @@ export function processValue<S extends Field.Setup, O extends Form.Options>(
 		value = processCheckboxValue(props, processor);
 	} else if (setup.type === "file") {
 		value = processFileValue(props as any, processor as any);
-	} else if (setup.type === "number" || setup.type === "tel") {
+	} else if (setup.type === "number") {
 		value = processNumberValue(props, processor);
 	} else {
 		const el = event?.target as any;

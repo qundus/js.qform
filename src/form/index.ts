@@ -12,14 +12,14 @@ import { prepareFields } from "./preparations/fields";
 import { prepareStore } from "./preparations/store";
 import { setupOptionsMerger } from "../methods/setup-options-merger";
 import { prepareOptions } from "./preparations/options";
-import { mountCycle } from "./cycles/mount";
+// import { mountCycle } from "./cycles/mount";
 import { changeCycle } from "./cycles/change";
 
 export function createForm<
 	I extends Form.FieldsIn,
 	F extends Form.Fields<I>,
 	O extends Form.Options<F>,
->(inn?: I, _options?: O): Form.Factory<F, O> {
+>(inn?: I, _options?: O): Form.Factory<I, F, O> {
 	// preparations
 	const options = prepareOptions<O>(_options);
 	const store = prepareStore<F, O>(options as any);

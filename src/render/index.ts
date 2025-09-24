@@ -1,5 +1,4 @@
 import type { Field, Form, Element, FunctionProps } from "../../_model";
-import { hooksInUse } from "@qundus/qstate/hooks";
 import { inputElement } from "./input";
 import { selectElement } from "./select";
 
@@ -21,23 +20,9 @@ export function createElement<S extends Field.Setup, O extends Form.Options>(
 	props: FunctionProps.Field<S, O>,
 ) {
 	const { key, setup, options, store } = props;
-
+	const hooksUsed = store.hooksUsed();
 	// const baseEl = makeBaseElement({ field, key, $state, options });
 	const render = "select" === setup.type ? selectElement<S, O>(props) : inputElement<S, O>(props);
-	// determine used hooks
-	const { getHook, getHooks, hookNames } = hooksInUse(store);
-	const preactHook = getHook(hookNames.preact);
-	const reactHook = getHook(hookNames.react);
-	const solidHooks = getHooks(
-		hookNames.solid,
-		hookNames.solid_unwrapped,
-		hookNames.solid_from,
-		hookNames.solid_from_unwrapped,
-	);
-	let solidHook = false as false | string;
-	if (solidHooks) {
-		solidHook = solidHooks[0];
-	}
 	return {
 		get dom() {
 			return <D extends Element.DomType, K extends Element.KeysType>(

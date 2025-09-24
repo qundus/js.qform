@@ -1,4 +1,4 @@
-import { createForm, createField } from "../src";
+import { createForm, createField, Field } from "../src";
 import { vFile } from "../src/validators";
 import { preactHook } from "@qundus/qstate/preact";
 
@@ -9,6 +9,7 @@ export const picture = createField("picture", {
 	type: "text",
 });
 
+// name.render.dom()
 // picture.store.get().element.
 // picture.update.element({
 
@@ -134,7 +135,13 @@ export const form = createForm(
 	},
 );
 
-form.fields.cities.store.get().element.selections;
+// test dynamic/component type usage
+// function wow<F extends Field.Setup<'file'>>(field: Field.Factory<F, any>) {
+// 	const extras = field.store.get().extras
+// }
+
+form.fields.picture.store.hooks;
+form.store.hooks;
 // const data = form.submit
 
 // const gender = $form.atoms("gender");

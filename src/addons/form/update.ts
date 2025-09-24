@@ -1,5 +1,6 @@
 import type { Field, Form, FunctionProps } from "../../_model";
 import { isKeyInFormFields } from "../../form/checks/is-key-in-form-fields";
+import { mergeFieldProps } from "../../methods/merge-field-props";
 
 function getDeepPath(obj: any, _path: string) {
 	const path = _path.split(".");
@@ -77,6 +78,18 @@ export function formUpdateAddon<F extends Form.Fields, O extends Form.Options<F>
 				const field = fields[key];
 				const element = elements[key];
 				field.update.element(element);
+			}
+		},
+		props: <G extends O["props"]>(props: Partial<G>) => {
+			store.set({ ...store.get(), props });
+			if (options == null || options.propsMergeStrategy === "none") {
+				return;
+			}
+			for (const key in fields) {
+				const field = fields[key];
+				const fieldProps = field.store.value?.props;
+				const next = mergeFieldProps(fieldProps, props, options?.propsMergeStrategy) as any;
+				field.update.props(next);
 			}
 		},
 	};

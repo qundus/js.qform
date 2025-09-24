@@ -24,18 +24,22 @@ export const IGNORED_SETUP_KEYS = {
 	onElement: undefined,
 	onMount: undefined,
 	validate: undefined,
+	props: undefined,
+	nested: undefined,
 } as Pick<
 	Field.Setup,
-	//
+	// make sure to update the keys above
 	| "type"
 	| "validate"
 	| "value"
-	//
+	// make sure to update the keys above
 	| "onMount"
 	| "onChange"
 	| "onElement"
-	//
+	// make sure to update the keys above
 	| "labelReplace"
+	| "props"
+	| "nested"
 >;
 
 export const FIELD_CYCLES = {

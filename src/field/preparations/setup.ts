@@ -1,5 +1,6 @@
 import type { Field, Form } from "../../_model";
 import { PLACEHOLDERS } from "../../const";
+import { mergeFieldProps } from "../../methods/merge-field-props";
 
 export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToSetup<F>>(
 	key: string,
@@ -36,6 +37,7 @@ export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToS
 	setup.incompleteStatus = setup.incompleteStatus ?? true;
 	setup.multiple = setup.multiple ?? false;
 	setup.onChangeException = setup.onChangeException ?? false;
+	setup.props = mergeFieldProps(setup.props, options?.props, options?.propsMergeStrategy) as any;
 
 	// SPECIAL ASSIGNMENTS
 	// label
@@ -81,5 +83,7 @@ export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToS
 	if (typeof setup.preprocessValue !== "boolean") {
 		throw new Error("form: preprocessValue of " + key + " must be boolean!");
 	}
+
+	// finally, do props things
 	return setup as Field.Setup;
 }

@@ -23,6 +23,7 @@ export function prepareOptions<O extends Form.Options>(options?: O) {
 	result.flatObjectKeysChar = ".";
 	result.flatLabelJoinChar = result.flatLabelJoinChar ?? " ";
 	result.abortOnChangeException = result.abortOnChangeException ?? false;
+	result.propsMergeStrategy = result.propsMergeStrategy ?? "none";
 
 	// mark processed
 	result[PROCESSED] = true;

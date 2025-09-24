@@ -1,5 +1,6 @@
 import type { Form, FunctionProps } from "../../_model";
-import { type _QSTATE, atom } from "@qundus/qstate";
+import { atom } from "@qundus/qstate";
+import type * as _QSTATE from "@qundus/qstate";
 
 type ButtonObject = {
 	status: Form.Status;
@@ -7,7 +8,7 @@ type ButtonObject = {
 	canSubmit: boolean;
 	submitting: boolean;
 };
-type ButtonStore<F extends Form.Fields, O extends Form.Options<F>> = _QSTATE.StoreDerived<
+type ButtonStore<F extends Form.Fields, O extends Form.Options<F>> = _QSTATE.StoreDerived.Factory<
 	ButtonObject,
 	{
 		hooks: O["storeHooks"];

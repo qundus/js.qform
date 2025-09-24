@@ -1,8 +1,6 @@
-import type { _QSTATE } from "@qundus/qstate";
-import type { createElement } from "./field/elements";
-import type { OptionHooksIn } from "@qundus/qstate/hooks";
+import type * as _QSTATE from "@qundus/qstate";
 import type { PLACEHOLDERS, IGNORED_SETUP_KEYS, FIELD_CYCLES } from "./const";
-import type { deriveAddon } from "@qundus/qstate/addons";
+import type { deriveAddon, hooksInUseAddon } from "@qundus/qstate/addons";
 
 // checkers
 export namespace Check {
@@ -12,21 +10,21 @@ export namespace Check {
 	export type IsEmpty<T> = {} extends T ? true : false;
 }
 
-export namespace Element {
-	export type DomType = "dom" | "vdom";
-	/**
-	 * when element props is accessed, usually the returned keys are
-	 * all that support for html element, this gives user the option
-	 * to choose which ones are wanted.
-	 * @default "all";
-	 */
-	export type KeysType = "base" | "special" | "all";
+// export namespace Element {
+// 	export type DomType = "dom" | "vdom";
+// 	/**
+// 	 * when element props is accessed, usually the returned keys are
+// 	 * all that support for html element, this gives user the option
+// 	 * to choose which ones are wanted.
+// 	 * @default "all";
+// 	 */
+// 	export type KeysType = "base" | "special" | "all";
 
-	export type Factory<T extends DomType, Base, Dom, VDom> = Base &
-		("dom" extends T ? Dom : VDom) extends infer G
-		? G
-		: never;
-}
+// 	export type Factory<T extends DomType, Base, Dom, VDom> = Base &
+// 		("dom" extends T ? Dom : VDom) extends infer G
+// 		? G
+// 		: never;
+// }
 
 export namespace Field {
 	//
@@ -64,6 +62,9 @@ export namespace Field {
 		by: false | "user" | "manual"; // last modification by user or manual
 	};
 	export type Element<S extends Setup> = {
+		readonly focused: boolean;
+		readonly visited: boolean;
+	} & {
 		[K in keyof Setup as K extends keyof typeof IGNORED_SETUP_KEYS ? never : K]: S[K] extends
 			| Check.IsUnknown<S[K]>
 			| Check.IsUndefined<S[K]>
@@ -71,15 +72,12 @@ export namespace Field {
 			| Check.IsEmpty<S[K]>
 			? Setup[K]
 			: S[K];
-	} & {
-		readonly focused: boolean;
-		readonly visited: boolean;
 	};
 	export type Errors = string[] | null | undefined;
 	export type Validate = (props: {
 		value: any;
 		prev: any;
-		form: Form.StoreObject<Form.Fields> | undefined;
+		form: Form.StoreObject<Form.Fields, Form.Options> | undefined;
 	}) => string | string[] | undefined | null | void;
 	/**
 	 * Value Manual Change Mechanism (VMCM), happens when values are updated from api
@@ -94,11 +92,12 @@ export namespace Field {
 	 */
 	export type VMCM = "normal" | "bypass" | "force-valid";
 	export type ValidateOn = "input" | "change";
-	export type Selections =
+	export type Options =
 		| string[]
 		| number[]
 		| Record<string, unknown>[]
 		| { label: string; value: string }[];
+	export type OptionsValueId = string | string[] | undefined;
 
 	// events
 	export type OnMount<T extends Type, V> = (props: {
@@ -110,20 +109,18 @@ export namespace Field {
 		$next: StoreObject<Setup>;
 		prev: StoreObject<Setup>;
 		setup: Setup;
-		form: Form.StoreObject<any> | undefined;
+		form: Form.StoreObject<any, any> | undefined;
 		mark: Addon.FieldMark<Setup, Form.Options>;
 		// prevForm: Form.StoreObject<Form.Fields>;
 	}) => void | Promise<void>;
-	export type OnElement = <D extends Element.DomType = Element.DomType>(props: {
+	export type OnElement<T extends Type> = (props: {
 		key: string;
-		// element: ElementSelectReturns<D> | ElementInputReturns<D>;
 		/** this is the final props passed to the element */
-		render: Record<string, any>; // very tough getting the proper types here while allowing freedom of key assignment
-		state: StoreObject<any>;
+		render: Render.Element.Factory<Setup<T>, Form.Options, Render.Attributes.Type>; //Record<string, any>; // very tough getting the proper types here while allowing freedom of key assignment
+		reactive: StoreObject<any>;
 		/** low-level control over the final store, only allowed here. */
 		store: Store<any, any>;
-		isVdom: D extends "vdom" ? true : false;
-		kType: Element.KeysType;
+		isVdom: boolean;
 	}) => void;
 
 	// DON'T CHANGE TEMPLATES, IF CHANGED CHECK EVERY FIELD ATTRIBUTES
@@ -161,7 +158,7 @@ export namespace Field {
 		 * html bare element props passed, this is so preliminary right
 		 * now and requires extra work for vdom, expect breaking changes here.
 		 */
-		onElement?: OnElement;
+		onElement?: OnElement<T>;
 
 		//## conditions
 		hidden?: boolean;
@@ -195,8 +192,14 @@ export namespace Field {
 		 */
 		onChangeException?: boolean;
 
+		//## passables
+		/** coming soon, a way to defing nested field fields */
+		nested?: any;
+		props?: Record<string, any>;
+
 		//## type specific
-		selections?: T extends "select" | "radio" ? Selections : null;
+		options?: T extends "select" | "radio" ? Options : null;
+		optionsValueId?: T extends "select" | "radio" ? OptionsValueId : null;
 		multiple?: T extends "select" ? boolean : false;
 		/**
 		 * for when a checkbox is mandatory daah
@@ -286,7 +289,8 @@ export namespace Field {
 				| "element"
 				| "element.focus"
 				| "element.blur"
-				| "cycle";
+				| "cycle"
+				| "props";
 			readonly manual: boolean;
 			readonly event: Event | undefined;
 			readonly preprocess?: boolean;
@@ -296,13 +300,20 @@ export namespace Field {
 		value: S["value"] | undefined;
 		condition: Condition;
 		element: Element<S>;
+		/** user defined data */
+		props: S["props"];
 		errors?: string[];
 		extras?: Field.Extras<S>;
 	};
-	export type StoreState<S extends Setup> = _QSTATE.NanoAtom<StoreObject<S>>;
-	export type Store<S extends Setup, O extends Form.Options> = _QSTATE.Store<
+	export type StoreState<S extends Setup> = _QSTATE.Nano.Atom<StoreObject<S>>;
+	export type Store<S extends Setup, O extends Form.Options> = _QSTATE.Store.Factory<
 		StoreState<S>,
-		{ hooks: O["storeHooks"] }
+		{
+			hooks: O["storeHooks"];
+			addons: {
+				hooksUsed: typeof hooksInUseAddon;
+			};
+		}
 	>;
 
 	// factory
@@ -310,7 +321,10 @@ export namespace Field {
 		readonly key: string;
 		readonly setup: S;
 		readonly store: Omit<Store<S, O>, "set" | "setKey">; //Store<S, O>;
-		readonly render: ReturnType<typeof createElement<S, O>>;
+		// readonly render: ReturnType<typeof createElement<S, O>>;
+		readonly render: {
+			dom: IntegrationDom<S, O>["render"];
+		};
 		readonly placeholders: typeof PLACEHOLDERS;
 		// addons
 		readonly add: Addon.FieldAdd<S, O>;
@@ -368,20 +382,32 @@ export namespace Form {
 		 */
 		validateOn?: Field.ValidateOn;
 
+		//## passables
+		/** store and pass any data around */
+		props?: Record<string, any>;
+		/**
+		 * how's the props passed/merged with field's specific props.
+		 * @option 'none' each props is kept independantly
+		 * @option 'form-override' global form props trumps/overrides field's props
+		 * @option 'field-override' field specific props trumps/overrides form's props
+		 * @default 'none'
+		 */
+		propsMergeStrategy?: "none" | "form-override" | "field-override";
+
 		//## store
-		storeHooks?: OptionHooksIn;
+		storeHooks?: _QSTATE.Option.Hooks.In<any>;
 		onMount?: (props: {
 			readonly isServerSide: () => boolean;
-			readonly form: StoreObject<F>;
-			readonly prev: StoreObject<F>;
-			readonly getForm: () => StoreObject<F>;
+			readonly form: StoreObject<F, Options<F>>;
+			readonly prev: StoreObject<F, Options<F>>;
+			readonly getForm: () => StoreObject<F, Options<F>>;
 			readonly fields: F;
 			// readonly update: Addon.FormUpdate<F, Options<F>>;
 		}) => void | Promise<void>;
 		onEffect?: (props: {
 			readonly isServerSide: () => boolean;
-			readonly form: StoreObject<F>;
-			readonly prev: StoreObject<F>;
+			readonly form: StoreObject<F, Options<F>>;
+			readonly prev: StoreObject<F, Options<F>>;
 			readonly fields: F;
 			// readonly update: Addon.FormUpdate<F, Options<F>>;
 		}) => void;
@@ -410,14 +436,13 @@ export namespace Form {
 		 * global per element render listener, gets called before or after field's specific
 		 * onElement based on onFieldElementOrder option.
 		 */
-		onFieldElement?: Field.OnElement;
+		onFieldElement?: Field.OnElement<Field.Type>;
 		/**
 		 * determines wheather global onFieldElement is going to take place before or after
 		 * field's specific onFieldElementOrder
 		 * @default "after"
 		 */
 		onFieldElementOrder?: "before" | "after";
-
 		//## exportation and usage
 		/**
 		 * the last step of checking for form validity is to check for
@@ -475,7 +500,8 @@ export namespace Form {
 	export type OptionsMerged<G extends Options, D extends Options> = D & G;
 
 	// store
-	export interface StoreObject<F extends Fields> extends _QSTATE.TypeDeepMapObject {
+	export interface StoreObject<F extends Fields, O extends Options<F>>
+		extends _QSTATE.NanoType.DeepMapObject {
 		values: {
 			[K in keyof F]: F[K]["setup"]["value"];
 		};
@@ -493,13 +519,16 @@ export namespace Form {
 				F[K]["setup"]
 			>;
 		};
+		props: O["props"];
 		incomplete: string[];
 		status: Status;
 		// changed: undefined | { root: keyof StoreObject<F>; key?: keyof F; value: any };
 	}
-	export type StoreState<F extends Fields> = _QSTATE.NanoMap<StoreObject<F>>;
-	export type Store<F extends Fields, O extends Options<F>> = _QSTATE.Store<
-		StoreState<F>,
+	export type StoreState<F extends Fields, O extends Options<F>> = _QSTATE.Nano.Map<
+		StoreObject<F, O>
+	>;
+	export type Store<F extends Fields, O extends Options<F>> = _QSTATE.Store.Factory<
+		StoreState<F, O>,
 		{
 			hooks: O["storeHooks"];
 			addons: {
@@ -510,14 +539,14 @@ export namespace Form {
 	>;
 
 	// factory/result
-	export type Factory<F extends Fields, O extends Options<F>> = {
+	export type Factory<I extends FieldsIn, F extends Fields<I>, O extends Options<F>> = {
 		/**
 		 * extreme low-level control of form, use setters with extreme care as this affects
 		 * the core logic of the form, it's advised to not modify form atoms/elements
 		 * directly but use form.actions or atom.<method-name>
 		 */
 		readonly store: Store<F, O>;
-		readonly fields: F; //Fields<I, O>;
+		readonly fields: Fields<I, O>;
 		readonly options: O;
 		readonly placeholders: typeof PLACEHOLDERS;
 		get keys(): () => (keyof F)[];
@@ -557,6 +586,16 @@ export namespace FunctionProps {
 		store: Form.Store<F, O>;
 	};
 	export type FormAddon<F extends Form.Fields, O extends Form.Options> = FormCycle<F, O>;
+
+	// render
+	export type RenderAttributes<
+		S extends Field.Setup,
+		O extends Form.Options,
+		A extends Render.Attributes.Type,
+	> = {
+		attrType: A;
+		reactive: Field.StoreObject<S>;
+	};
 }
 
 // addons/future-independant
@@ -582,4 +621,100 @@ export namespace Addon {
 	export type FormUpdate<F extends Form.Fields, O extends Form.Options<F>> = FormAddonUpdate<F, O>;
 	export type FormValues<F extends Form.Fields, O extends Form.Options<F>> = FormAddonValues<F, O>;
 	export type FormButton<F extends Form.Fields, O extends Form.Options<F>> = FormAddonButton<F, O>;
+}
+
+//
+
+import type { RenderAttributesBase } from "./render/attributes/base";
+import type { RenderAttributesInput } from "./render/attributes/input";
+import type { IntegrationDom } from "./integrations/dom";
+export namespace Render {
+	export namespace Attributes {
+		// /**
+		//  * when element props is accessed, usually the returned keys are
+		//  * all that support for html element, this gives user the option
+		//  * to choose which ones are wanted.
+		//  * @default "all";
+		//  */
+		// export type Keys = "base" | "dedicated" | "all";
+		export type Type = "dom" | "vdom";
+
+		type ToDom<T extends Record<string, unknown>> = {
+			[K in keyof T as `${Lowercase<K & string>}`]: T[K];
+		};
+		export type BaseDom = ToDom<BaseVdom>;
+		export type BaseVdom = {
+			id: string;
+			required: boolean;
+			disabled: boolean;
+			autoComplete: "on" | "off";
+			onFocus: (event: FocusEvent) => void;
+			onBlur: (event: FocusEvent) => void;
+		};
+
+		// input
+		export type InputDom = ToDom<InputVdom>;
+		export type InputVdom = {
+			type: string; // not linking to Field.Type to avoid issues with html.input.type
+			name: string;
+			multiple: boolean;
+			value: any;
+			onInput: (event: Event) => void;
+			onChange: (event: Event) => void;
+		};
+
+		// select
+		export type SelectTriggerDom = ToDom<SelectTriggerVdom>;
+		export type SelectTriggerVdom = {
+			name: string;
+			value: any;
+			onClick: (event: Event) => void;
+		};
+
+		export type SelectOptionDom = ToDom<SelectOptionVdom>;
+		export type SelectOptionVdom = {
+			value: any;
+			selected: boolean;
+			onClick: (event: Event) => void;
+		};
+
+		// radio
+		export type RadioDom = ToDom<RadioVdom>;
+		export type RadioVdom = {
+			type: "radio";
+			selected: boolean;
+			onClick: (event: Event) => void;
+		};
+
+		// factory
+		export type Factory<R> = R;
+	}
+
+	export namespace Element {
+		export type Factory<
+			S extends Field.Setup,
+			O extends Form.Options,
+			A extends Attributes.Type,
+		> = S["type"] extends "select"
+			? { trigger: any; option: () => any }
+			: S["type"] extends "radio"
+				? {
+						option: () => any;
+					}
+				: RenderAttributesBase<S, O, A> & RenderAttributesInput<S, O, A>;
+	}
+}
+
+export namespace Integration {
+	export type Factory<
+		S extends Field.Setup,
+		O extends Form.Options,
+		A extends Render.Attributes.Type,
+		//
+		R extends
+			| Render.Element.Factory<S, O, A>
+			| ((...args: any[]) => Render.Element.Factory<S, O, A>),
+	> = {
+		render: R;
+	};
 }

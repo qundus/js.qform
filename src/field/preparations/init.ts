@@ -21,6 +21,7 @@ export function prepareInit<S extends Field.Setup, O extends Form.Options>(
 		},
 		cycle: "init",
 		value: setup.value,
+		props: setup.props,
 		errors: undefined,
 		extras: undefined,
 		condition: {
