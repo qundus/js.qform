@@ -1,16 +1,18 @@
 import type { Field, Form, FunctionProps, Integration, Render } from "../_model";
+import { renderAttributesBase } from "../render/attributes/base";
 import { renderAttributesInput } from "../render/attributes/input";
+import { processRenderAttributes } from "../render/processors/attributes";
 
-export type IntegrationDom<S extends Field.Setup, O extends Form.Options> = Integration.Factory<
+export type IntegrationReact<S extends Field.Setup, O extends Form.Options> = Integration.Factory<
 	S,
 	O,
 	<D extends Render.Attributes.Type = "dom">(props?: {
 		attrType?: D;
 	}) => Render.Element.Factory<S, O, D>
 >;
-export function domIntegration<S extends Field.Setup, O extends Form.Options>(
+export function reactIntegration<S extends Field.Setup, O extends Form.Options>(
 	basic: FunctionProps.Field<S, O>,
-): IntegrationDom<S, O> {
+): IntegrationReact<S, O> {
 	const { key, setup, store, options } = basic;
 	// check user process
 
@@ -21,8 +23,12 @@ export function domIntegration<S extends Field.Setup, O extends Form.Options>(
 			// so field.render.<integration>.option is no different from
 			// field.render.option.<integration>, it'll get rerendered anyway +
 			// this way is much easier to handle with types and logic
-			const reactive = store.get();
-			// const state = typeof reactive === "function" ? reactive() : reactive;
+			if (store.hooksUsed().react == null) {
+				throw new Error(
+					"qform: react hook does not exist, please add it to options.storeHooks option!",
+				);
+			}
+			const reactive = store.hooksUsed().react?.call();
 			const attrType = props?.attrType ?? "dom";
 			let result = {} as any;
 			if (setup.type === "select") {
@@ -30,8 +36,13 @@ export function domIntegration<S extends Field.Setup, O extends Form.Options>(
 			} else if (setup.type === "radio") {
 				//
 			} else {
-				result = renderAttributesInput(basic, { attrType, reactive });
+				const base = renderAttributesBase(basic, { attrType, reactive });
+				const input = renderAttributesInput(basic, { attrType, reactive });
+				result = { ...base, ...input };
 			}
+
+			// process render element
+			processRenderAttributes(basic, { attrType, reactive }, result);
 
 			return result;
 		},

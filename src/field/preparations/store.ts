@@ -10,7 +10,7 @@ export function prepareStore<S extends Field.Setup, O extends Form.Options>(
 ) {
 	// create state
 	const store = atom(init, {
-		hooks: options?.storeHooks,
+		hooks: options?.storeHooks as O["storeHooks"],
 		addons: {
 			hooksUsed: hooksInUseAddon,
 		},

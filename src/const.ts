@@ -18,12 +18,14 @@ export const PLACEHOLDERS = {
 
 export const IGNORED_SETUP_KEYS = {
 	type: "text",
-	value: undefined,
-	labelReplace: undefined,
-	onChange: undefined,
-	onElement: undefined,
-	onMount: undefined,
 	validate: undefined,
+	value: undefined,
+	//
+	onMount: undefined,
+	onChange: undefined,
+	onRender: undefined,
+	//
+	labelReplace: undefined,
 	props: undefined,
 	nested: undefined,
 } as Pick<
@@ -35,7 +37,7 @@ export const IGNORED_SETUP_KEYS = {
 	// make sure to update the keys above
 	| "onMount"
 	| "onChange"
-	| "onElement"
+	| "onRender"
 	// make sure to update the keys above
 	| "labelReplace"
 	| "props"

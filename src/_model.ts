@@ -1,6 +1,7 @@
 import type * as _QSTATE from "@qundus/qstate";
 import type { PLACEHOLDERS, IGNORED_SETUP_KEYS, FIELD_CYCLES } from "./const";
 import type { deriveAddon, hooksInUseAddon } from "@qundus/qstate/addons";
+import type { JSX as PJSX } from "preact";
 
 // checkers
 export namespace Check {
@@ -9,22 +10,6 @@ export namespace Check {
 	export type IsNull<T> = Exclude<T, null> extends never ? true : false;
 	export type IsEmpty<T> = {} extends T ? true : false;
 }
-
-// export namespace Element {
-// 	export type DomType = "dom" | "vdom";
-// 	/**
-// 	 * when element props is accessed, usually the returned keys are
-// 	 * all that support for html element, this gives user the option
-// 	 * to choose which ones are wanted.
-// 	 * @default "all";
-// 	 */
-// 	export type KeysType = "base" | "special" | "all";
-
-// 	export type Factory<T extends DomType, Base, Dom, VDom> = Base &
-// 		("dom" extends T ? Dom : VDom) extends infer G
-// 		? G
-// 		: never;
-// }
 
 export namespace Field {
 	//
@@ -113,15 +98,27 @@ export namespace Field {
 		mark: Addon.FieldMark<Setup, Form.Options>;
 		// prevForm: Form.StoreObject<Form.Fields>;
 	}) => void | Promise<void>;
-	export type OnElement<T extends Type> = (props: {
-		key: string;
-		/** this is the final props passed to the element */
-		render: Render.Element.Factory<Setup<T>, Form.Options, Render.Attributes.Type>; //Record<string, any>; // very tough getting the proper types here while allowing freedom of key assignment
-		reactive: StoreObject<any>;
-		/** low-level control over the final store, only allowed here. */
-		store: Store<any, any>;
-		isVdom: boolean;
-	}) => void;
+	export type OnRender<T extends Type> = (
+		props: {
+			key: string;
+			attrType: Render.Attributes.Type;
+			data: StoreObject<any>;
+			// attrs: undefined;
+		} /** this is the final attributes passed to the element */ & (
+			| {
+					attrFor: "input";
+					attrs: Render.Element.Input<Setup<T>, Form.Options, Render.Attributes.Type>;
+			  }
+			| {
+					attrFor: "select";
+					attrs: Render.Element.Select<Setup<T>, Form.Options, Render.Attributes.Type, true>;
+			  }
+			| {
+					attrFor: "radio";
+					attrs: Render.Element.Radio<Setup<T>, Form.Options, Render.Attributes.Type, true>;
+			  }
+		),
+	) => void;
 
 	// DON'T CHANGE TEMPLATES, IF CHANGED CHECK EVERY FIELD ATTRIBUTES
 	export type Setup<
@@ -158,7 +155,7 @@ export namespace Field {
 		 * html bare element props passed, this is so preliminary right
 		 * now and requires extra work for vdom, expect breaking changes here.
 		 */
-		onElement?: OnElement<T>;
+		onRender?: OnRender<T>;
 
 		//## conditions
 		hidden?: boolean;
@@ -324,6 +321,11 @@ export namespace Field {
 		// readonly render: ReturnType<typeof createElement<S, O>>;
 		readonly render: {
 			dom: IntegrationDom<S, O>["render"];
+			ref: IntegrationRef<S, O>["render"];
+			preact: IntegrationPreact<S, O>["render"];
+			react: IntegrationReact<S, O>["render"];
+			solid: IntegrationSolid<S, O>["render"];
+			svelte: IntegrationSvelte<S, O>["render"];
 		};
 		readonly placeholders: typeof PLACEHOLDERS;
 		// addons
@@ -436,7 +438,7 @@ export namespace Form {
 		 * global per element render listener, gets called before or after field's specific
 		 * onElement based on onFieldElementOrder option.
 		 */
-		onFieldElement?: Field.OnElement<Field.Type>;
+		onFieldRender?: Field.OnRender<Field.Type>;
 		/**
 		 * determines wheather global onFieldElement is going to take place before or after
 		 * field's specific onFieldElementOrder
@@ -624,10 +626,12 @@ export namespace Addon {
 }
 
 //
-
-import type { RenderAttributesBase } from "./render/attributes/base";
-import type { RenderAttributesInput } from "./render/attributes/input";
 import type { IntegrationDom } from "./integrations/dom";
+import type { IntegrationRef } from "./integrations/ref";
+import type { IntegrationPreact } from "./integrations/preact";
+import type { IntegrationReact } from "./integrations/react";
+import type { IntegrationSolid } from "./integrations/solid";
+import type { IntegrationSvelte } from "./integrations/svelte";
 export namespace Render {
 	export namespace Attributes {
 		// /**
@@ -642,25 +646,22 @@ export namespace Render {
 		type ToDom<T extends Record<string, unknown>> = {
 			[K in keyof T as `${Lowercase<K & string>}`]: T[K];
 		};
-		export type BaseDom = ToDom<BaseVdom>;
-		export type BaseVdom = {
-			id: string;
-			required: boolean;
-			disabled: boolean;
-			autoComplete: "on" | "off";
-			onFocus: (event: FocusEvent) => void;
-			onBlur: (event: FocusEvent) => void;
-		};
 
 		// input
 		export type InputDom = ToDom<InputVdom>;
 		export type InputVdom = {
+			id: string;
+			required: boolean;
+			disabled: boolean;
+			autoComplete: "on" | "off";
 			type: string; // not linking to Field.Type to avoid issues with html.input.type
 			name: string;
 			multiple: boolean;
 			value: any;
 			onInput: (event: Event) => void;
 			onChange: (event: Event) => void;
+			onFocus: (event: FocusEvent) => void;
+			onBlur: (event: FocusEvent) => void;
 		};
 
 		// select
@@ -679,42 +680,92 @@ export namespace Render {
 		};
 
 		// radio
-		export type RadioDom = ToDom<RadioVdom>;
-		export type RadioVdom = {
+		export type RadioOptionDom = ToDom<RadioOptionVdom>;
+		export type RadioOptionVdom = {
 			type: "radio";
 			selected: boolean;
 			onClick: (event: Event) => void;
 		};
+
+		// all
+		export type AllInputDom = HTMLInputElement;
+		export type AllInputVdom = PJSX.IntrinsicElements["input"];
 
 		// factory
 		export type Factory<R> = R;
 	}
 
 	export namespace Element {
+		export type Input<
+			S extends Field.Setup,
+			O extends Form.Options,
+			A extends Attributes.Type,
+		> = A extends Attributes.Type
+			? Attributes.InputDom & Attributes.InputVdom & Record<string, unknown>
+			: "dom" extends A
+				? Attributes.InputDom & Record<string, unknown>
+				: Attributes.InputVdom & Record<string, unknown>;
+
+		export type Select<
+			S extends Field.Setup,
+			O extends Form.Options,
+			A extends Attributes.Type,
+			P extends boolean,
+		> = {
+			trigger: A extends Attributes.Type
+				? Attributes.SelectTriggerDom & Attributes.SelectTriggerVdom & Record<string, unknown>
+				: A extends "dom"
+					? Attributes.SelectTriggerDom & Record<string, unknown>
+					: Attributes.SelectTriggerVdom & Record<string, unknown>;
+			option: true extends P
+				? A extends Attributes.Type
+					? Attributes.SelectOptionDom & Attributes.SelectOptionVdom & Record<string, unknown>
+					: A extends "dom"
+						? Attributes.SelectOptionDom & Record<string, unknown>
+						: Attributes.SelectOptionVdom & Record<string, unknown>
+				: () => A extends Attributes.Type
+						? Attributes.SelectOptionDom & Attributes.SelectOptionVdom & Record<string, unknown>
+						: A extends "dom"
+							? Attributes.SelectOptionDom & Record<string, unknown>
+							: Attributes.SelectOptionVdom & Record<string, unknown>;
+		};
+
+		export type Radio<
+			S extends Field.Setup,
+			O extends Form.Options,
+			A extends Attributes.Type,
+			P extends boolean,
+		> = {
+			option: true extends P
+				? A extends Attributes.Type
+					? Attributes.RadioOptionDom & Attributes.RadioOptionDom & Record<string, unknown>
+					: A extends "dom"
+						? Attributes.RadioOptionDom & Record<string, unknown>
+						: Attributes.RadioOptionDom & Record<string, unknown>
+				: () => A extends Attributes.Type
+						? Attributes.RadioOptionDom & Attributes.RadioOptionDom & Record<string, unknown>
+						: A extends "dom"
+							? Attributes.RadioOptionDom & Record<string, unknown>
+							: Attributes.RadioOptionDom & Record<string, unknown>;
+		};
+
 		export type Factory<
 			S extends Field.Setup,
 			O extends Form.Options,
 			A extends Attributes.Type,
 		> = S["type"] extends "select"
-			? { trigger: any; option: () => any }
+			? Select<S, O, A, boolean>
 			: S["type"] extends "radio"
-				? {
-						option: () => any;
-					}
-				: RenderAttributesBase<S, O, A> & RenderAttributesInput<S, O, A>;
+				? Radio<S, O, A, boolean>
+				: Input<S, O, A>; //& GG;
+		// extends infer G
+		// 	? { [K in keyof G]: G[K] }
+		// 	: never;
 	}
 }
 
 export namespace Integration {
-	export type Factory<
-		S extends Field.Setup,
-		O extends Form.Options,
-		A extends Render.Attributes.Type,
-		//
-		R extends
-			| Render.Element.Factory<S, O, A>
-			| ((...args: any[]) => Render.Element.Factory<S, O, A>),
-	> = {
+	export type Factory<S extends Field.Setup, O extends Form.Options, R> = {
 		render: R;
 	};
 }

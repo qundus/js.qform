@@ -44,10 +44,10 @@ export function setupOptionsMerger<G extends Form.Options>(_base?: G) {
 			};
 		}
 
-		if (base?.onFieldElement != null || target?.onFieldElement != null) {
-			merged.onFieldElement = (props) => {
-				base?.onFieldElement?.(props);
-				target?.onFieldElement?.(props);
+		if (base?.onFieldRender != null || target?.onFieldRender != null) {
+			merged.onFieldRender = (props) => {
+				base?.onFieldRender?.(props);
+				target?.onFieldRender?.(props);
 			};
 		}
 

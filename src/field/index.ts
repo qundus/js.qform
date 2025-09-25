@@ -8,7 +8,7 @@ import { prepareStore } from "./preparations/store";
 
 //
 import { changeCycle } from "./cycles/change";
-import { createElement } from "./elements";
+import { createRender } from "../render";
 import { PLACEHOLDERS } from "../const";
 import { mountCycle } from "./cycles/mount";
 import { fieldAddAddon } from "../addons/field/add";
@@ -32,7 +32,7 @@ export function createField<
 	const fieldProps = { key, setup, options, store, init };
 
 	// elements
-	const element = createElement(fieldProps);
+	const render = createRender(fieldProps);
 
 	// addons
 	const add = fieldAddAddon(fieldProps);
@@ -48,7 +48,7 @@ export function createField<
 		key,
 		setup: setup as any,
 		store: store as any,
-		render: element,
+		render,
 		placeholders: PLACEHOLDERS,
 		add,
 		update: update as any,

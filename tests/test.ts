@@ -8,15 +8,21 @@ export const goal = createField("goal", "file");
 export const picture = createField("picture", {
 	type: "text",
 });
+export const cities = createField("name", "select");
+export const radio = createField("name", "radio");
+
+// cities.render.dom()
+// radio.render.dom()
 
 // name.render.dom()
 // picture.store.get().element.
 // picture.update.element({
-
 // })
-// name.setup.;
+// name.setup;
 // goal.setup;
-export const form = createForm(
+// name.render.dom()
+
+const form = createForm(
 	{
 		name: null,
 		color: "color",
@@ -34,7 +40,7 @@ export const form = createForm(
 			},
 		},
 		phone: {
-			type: "tel",
+			type: "select",
 			hidden: true,
 			// value: 5004625,
 			// validateOn: "change",
@@ -63,8 +69,8 @@ export const form = createForm(
 			// 	// 	$condition.hidden = false;
 			// 	// }
 			// },
-			onRender: ({ key, isVdom, element }) => {
-				console.log("process element :: ", key);
+			onRender: ({ key, isVdom, attrs: attributes }) => {
+				attributes.console.log("process element :: ", key);
 			},
 		},
 		cities: {
