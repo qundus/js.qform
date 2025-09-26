@@ -1,6 +1,6 @@
 import type { Field, Form, FunctionProps, Render } from "../../_model";
 
-export function renderAttributesInput<
+export function renderAttributesTrigger<
 	S extends Field.Setup,
 	O extends Form.Options,
 	A extends Render.Attributes.Type,
@@ -10,11 +10,11 @@ export function renderAttributesInput<
 	const state = reactive;
 	const attrs = {
 		id: state?.element?.label ?? setup.label,
-		type: state?.element.hidden ? "hidden" : setup.type,
+		// type: state?.element.hidden ? "hidden" : setup.type,
 		name: state.__key,
-		multiple: state?.element.multiple,
-		required: state?.element.required,
-		disabled: state?.element.disabled,
+		// multiple: state?.element.multiple,
+		// required: state?.element.required,
+		// disabled: state?.element.disabled,
 		[attrType !== "vdom" ? "autocomplete" : "autoComplete"]: "off",
 		[attrType !== "vdom" ? "onfocus" : "onFocus"]: (event: FocusEvent) => {
 			event.preventDefault();
@@ -56,35 +56,24 @@ export function renderAttributesInput<
 			});
 		},
 	} as any;
-	// check if value should be added to object
-	const addValue = setup.type !== "checkbox" && setup.type !== "radio" && setup.type !== "file";
-	if (addValue) {
-		attrs.value = state?.value ?? "";
-	}
 
 	// event listener id
-	let listenerId = undefined as string | undefined;
-	if (state.element.validateOn === "change") {
-		listenerId = attrType !== "vdom" ? "onchange" : "onChange";
-	} else {
-		//if (setup.validateOn === "input") {
-		listenerId = attrType !== "vdom" ? "oninput" : "onInput";
-	}
+	const listenerId = attrType !== "vdom" ? "onclick" : "onClick";
 	attrs[listenerId] = (event: Event) => {
 		event.preventDefault();
 		store.set({
 			...(state as any),
 			__internal: {
-				update: "value",
+				update: "element.click.trigger",
 				manual: false,
 				event,
 			},
 		});
 	};
 
-	// process input
+	// process trigger
 	type PP = Parameters<Field.OnRender<Field.Type>>[0];
-	const processProps: PP = { key, data: reactive, attrType, attrs, attrFor: "input" };
+	const processProps: PP = { key, data: reactive, attrType, attrs, attrFor: "trigger" };
 	if (options?.onFieldElementOrder === "before") {
 		options?.onFieldRender?.(processProps);
 	}
@@ -93,6 +82,5 @@ export function renderAttributesInput<
 		options?.onFieldRender?.(processProps);
 	}
 
-	// console.log("element input :: ", key, " :: ", result.value);
-	return attrs as Render.Attributes.Input<S, O, A>;
+	return attrs as Render.Attributes.Trigger<S, O, A>;
 }

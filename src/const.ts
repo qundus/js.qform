@@ -28,6 +28,10 @@ export const IGNORED_SETUP_KEYS = {
 	labelReplace: undefined,
 	props: undefined,
 	nested: undefined,
+	//
+	selections: undefined,
+	selectionsLabelKey: undefined,
+	selectionsValueKey: undefined,
 } as Pick<
 	Field.Setup,
 	// make sure to update the keys above
@@ -42,6 +46,10 @@ export const IGNORED_SETUP_KEYS = {
 	| "labelReplace"
 	| "props"
 	| "nested"
+	// select
+	| "selections"
+	| "selectionsValueKey"
+	| "selectionsLabelKey"
 >;
 
 export const FIELD_CYCLES = {

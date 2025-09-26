@@ -9,16 +9,20 @@ export function mountCycle<S extends Field.Setup, O extends Form.Options>(
 ) {
 	const { key, setup, options, store, init } = props;
 	// do startup checks for input types like file
-	if (setup.type === "file" && setup.value != null) {
-		const value = processValue(props, {
-			$next: init,
-			event: undefined,
-			value: setup.value,
-			manualUpdate: true,
-			preprocessValue: true,
-		});
-		update.value(value);
+	if (setup.value != null) {
+		const shouldCheck = setup.type === "file" || setup.type === "select" || setup.type === "radio";
+		if (shouldCheck) {
+			const value = processValue(props, {
+				$next: init,
+				event: undefined,
+				value: setup.value,
+				manualUpdate: true,
+				preprocessValue: true,
+			});
+			update.value(value);
+		}
 	}
+
 	mark.cycle.__mount();
 	onMount(store, () => {
 		let ureturns = null as null | void | (() => void);

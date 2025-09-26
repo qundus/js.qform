@@ -1,12 +1,23 @@
 import type { Field, Form, FunctionProps, Integration, Render } from "../_model";
-import { renderAttributesBase } from "../render/attributes/base";
 import { renderAttributesInput } from "../render/attributes/input";
-import { processRenderAttributes } from "../render/processors/attributes";
+import { renderAttributesTrigger } from "../render/attributes/trigger";
+import { renderAttributesOption } from "../render/attributes/option";
 
 export type IntegrationSvelte<S extends Field.Setup, O extends Form.Options> = Integration.Factory<
 	S,
 	O,
-	Render.Element.Factory<S, O, "dom">
+	{
+		render: {
+			input: Render.Attributes.Input<S, O, "dom">;
+			select: {
+				trigger: Render.Attributes.Trigger<S, O, "dom">;
+				option: (value: any) => Render.Attributes.Option<S, O, "dom">;
+			};
+			radio: {
+				option: (value: any) => Render.Attributes.Option<S, O, "dom">;
+			};
+		};
+	}
 >;
 export function svelteIntegration<S extends Field.Setup, O extends Form.Options>(
 	basic: FunctionProps.Field<S, O>,
@@ -15,29 +26,43 @@ export function svelteIntegration<S extends Field.Setup, O extends Form.Options>
 	// check user process
 
 	return {
-		// i chose this style because reactivity won't make any difference
-		// if i placed it under individual sub-objects like select.option,
-		// so field.render.<integration>.option is no different from
-		// field.render.option.<integration>, it'll get rerendered anyway +
-		// this way is much easier to handle with types and logic
-		get render() {
-			const reactive = store.get();
-			const attrType = "dom";
-			let result = {} as any;
-			if (setup.type === "select") {
-				// result =
-			} else if (setup.type === "radio") {
-				//
-			} else {
-				const base = renderAttributesBase(basic, { attrType, reactive });
-				const input = renderAttributesInput(basic, { attrType, reactive });
-				result = { ...base, ...input };
-			}
-
-			// process render element
-			processRenderAttributes(basic, { attrType, reactive }, result);
-
-			return result;
+		render: {
+			get input() {
+				const reactive = store.get();
+				const attrType = "dom";
+				return renderAttributesInput(basic, { attrType, reactive }) as any;
+			},
+			select: {
+				get trigger() {
+					const reactive = store.get();
+					const attrType = "dom";
+					return renderAttributesTrigger(basic, { attrType, reactive }) as any;
+				},
+				get option() {
+					const reactive = store.get();
+					const attrType = "dom";
+					return (value: any) => {
+						return renderAttributesOption(basic, {
+							attrType,
+							reactive,
+							optionValue: value,
+						}) as any;
+					};
+				},
+			},
+			radio: {
+				get option() {
+					const reactive = store.get();
+					const attrType = "dom";
+					return (value: any) => {
+						return renderAttributesOption(basic, {
+							attrType,
+							reactive,
+							optionValue: value,
+						}) as any;
+					};
+				},
+			},
 		},
 	};
 }

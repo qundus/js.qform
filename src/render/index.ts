@@ -9,12 +9,24 @@ import { svelteIntegration } from "../integrations/svelte";
 export function createRender<S extends Field.Setup, O extends Form.Options>(
 	props: FunctionProps.Field<S, O>,
 ) {
-	return {
-		dom: domIntegration(props).render,
-		ref: refIntegration(props).render,
-		preact: preactIntegration(props).render,
-		react: reactIntegration(props).render,
-		solid: solidIntegration(props).render,
-		svelte: svelteIntegration(props).render,
-	} as any;
+	const { setup } = props;
+	const integrations = {
+		dom: domIntegration(props),
+		ref: refIntegration(props),
+		preact: preactIntegration(props),
+		react: reactIntegration(props),
+		solid: solidIntegration(props),
+		svelte: svelteIntegration(props),
+	};
+	const render = {};
+	for (const key in integrations) {
+		if (setup.type === "select") {
+			render[key] = integrations[key].render.select;
+		} else if (setup.type === "radio") {
+			render[key] = integrations[key].render.radio;
+		} else {
+			render[key] = integrations[key].render.input;
+		}
+	}
+	return render as any;
 }

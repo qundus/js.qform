@@ -1,12 +1,23 @@
 import type { Field, Form, FunctionProps, Integration, Render } from "../_model";
-import { renderAttributesBase } from "../render/attributes/base";
 import { renderAttributesInput } from "../render/attributes/input";
-import { processRenderAttributes } from "../render/processors/attributes";
+import { renderAttributesTrigger } from "../render/attributes/trigger";
+import { renderAttributesOption } from "../render/attributes/option";
 
 export type IntegrationRef<S extends Field.Setup, O extends Form.Options> = Integration.Factory<
 	S,
 	O,
-	(ref: any) => S["type"] extends "select" | "radio" ? Render.Element.Factory<S, O, "dom"> : void
+	{
+		render: {
+			input: (ref: any) => void;
+			select: {
+				trigger: (ref: any) => void;
+				option: (ref: any, value: any) => void;
+			};
+			radio: {
+				option: (ref: any, value: any) => void;
+			};
+		};
+	}
 >;
 export function refIntegration<S extends Field.Setup, O extends Form.Options>(
 	basic: FunctionProps.Field<S, O>,
@@ -15,44 +26,58 @@ export function refIntegration<S extends Field.Setup, O extends Form.Options>(
 	// check user process
 
 	return {
-		render: (ref) => {
-			// i chose this style because reactivity won't make any difference
-			// if i placed it under individual sub-objects like select.option,
-			// so field.render.<integration>.option is no different from
-			// field.render.option.<integration>, it'll get rerendered anyway +
-			//
-			// keep type as any to avoid unnecessary type issues
-			// initialization only
-			if (ref == null || ref.name === key) {
-				return;
-			}
-			const reactive = store.get();
-			const attrType = "dom";
-			let result = {} as any;
-
-			if (setup.type === "select") {
-				// result =
-			} else if (setup.type === "radio") {
-				//
-			} else {
-				result = renderAttributesInput(basic, { attrType, reactive });
-			}
-
-			// process render element
-			processRenderAttributes(basic, { attrType, reactive }, result);
-
-			// run
-			if (setup.type === "select") {
-				//
-			} else if (setup.type === "radio") {
-				//
-			} else {
-				for (const k in result) {
-					ref[k] = result[k];
+		// you can setup this integration through getters
+		render: {
+			input: (ref) => {
+				if (ref == null || ref.name === key) {
+					return;
 				}
-			}
-
-			return result;
+				const reactive = store.get();
+				const attrType = "dom";
+				const attrs = renderAttributesInput(basic, { attrType, reactive }) as any;
+				for (const k in attrs) {
+					ref[k] = attrs[k];
+				}
+			},
+			select: {
+				trigger: (ref) => {
+					if (ref == null || ref.name === key) {
+						return;
+					}
+					const reactive = store.get();
+					const attrType = "dom";
+					const attrs = renderAttributesTrigger(basic, { attrType, reactive }) as any;
+					for (const k in attrs) {
+						ref[k] = attrs[k];
+					}
+				},
+				option: (ref, value) => {
+					const reactive = store.get();
+					const attrType = "dom";
+					const attrs = renderAttributesOption(basic, {
+						attrType,
+						reactive,
+						optionValue: value,
+					}) as any;
+					for (const k in attrs) {
+						ref[k] = attrs[k];
+					}
+				},
+			},
+			radio: {
+				option: (ref, value) => {
+					const reactive = store.get();
+					const attrType = "dom";
+					const attrs = renderAttributesOption(basic, {
+						attrType,
+						reactive,
+						optionValue: value,
+					}) as any;
+					for (const k in attrs) {
+						ref[k] = attrs[k];
+					}
+				},
+			},
 		},
 	};
 }

@@ -47,8 +47,15 @@ export function changeCycle<
 		// @ts-expect-error
 		$next.__key = key;
 
-		// pre developer intervention
-		if (update === "value") {
+		// pre user intervention
+		if (update === "element.focus" || update === "element.blur") {
+			const extras = $next.extras as Field.Extras<Field.Setup<"select">>;
+			if (extras != null) {
+				extras.showList = update === "element.focus";
+			}
+			$next.extras = extras as any;
+		}
+		if (update === "value" || update === "element.click.option" || update === "extras") {
 			$next.value = processValue(props, {
 				$next,
 				event,

@@ -11,9 +11,10 @@ export const picture = createField("picture", {
 export const cities = createField("name", "select");
 export const radio = createField("name", "radio");
 
-// cities.render.dom()
+// cities.render.dom.trigger();
 // radio.render.dom()
 
+name.render;
 // name.render.dom()
 // picture.store.get().element.
 // picture.update.element({
@@ -40,7 +41,6 @@ const form = createForm(
 			},
 		},
 		phone: {
-			type: "select",
 			hidden: true,
 			// value: 5004625,
 			// validateOn: "change",
@@ -57,20 +57,12 @@ const form = createForm(
 				}
 				return undefined;
 			},
-			// processValue: () => {
-			// 	console.log("process value phone :: ");
-			// },
-			// processCondition: ({ value, $condition, getValueOf }) => {
-			// 	const name = getValueOf("name");
-			// 	console.log("name from phone value is :: ", name);
-			// 	// if (name == null) {
-			// 	// 	$condition.hidden = true;
-			// 	// } else {
-			// 	// 	$condition.hidden = false;
-			// 	// }
-			// },
-			onRender: ({ key, isVdom, attrs: attributes }) => {
-				attributes.console.log("process element :: ", key);
+			type: "radio",
+			onRender: ({ key, attrFor, attrs }) => {
+				if (attrFor === "input") {
+					// attrs.
+				}
+				console.log("process element :: ", key);
 			},
 		},
 		cities: {

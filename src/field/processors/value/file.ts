@@ -98,7 +98,7 @@ export function processFileValue<S extends Field.Setup<"file">, O extends Form.O
 							...$next,
 							__internal: {
 								...$next.__internal,
-								update: "extras",
+								update: "internal.extras",
 							},
 						});
 					},
@@ -129,7 +129,7 @@ export function processFileValue<S extends Field.Setup<"file">, O extends Form.O
 							...$next,
 							__internal: {
 								...$next.__internal,
-								update: "extras",
+								update: "internal.extras",
 							},
 						});
 					},
