@@ -33,6 +33,8 @@ export function prepareInit<S extends Field.Setup, O extends Form.Options>(
 		element: {
 			focused: false,
 			visited: false,
+			entered: false,
+			left: false,
 		},
 	};
 

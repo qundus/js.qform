@@ -15,15 +15,35 @@ export function renderAttributesTrigger<
 		// multiple: state?.element.multiple,
 		// required: state?.element.required,
 		// disabled: state?.element.disabled,
-		[attrType !== "vdom" ? "autocomplete" : "autoComplete"]: "off",
-		[attrType !== "vdom" ? "onfocus" : "onFocus"]: (event: FocusEvent) => {
-			event.preventDefault();
-			event.stopImmediatePropagation();
-			event.stopPropagation();
+		// [attrType !== "vdom" ? "autocomplete" : "autoComplete"]: "off",
+		[attrType !== "vdom" ? "onchange" : "onChange"]: (event: FocusEvent) => {
+			// event.preventDefault();
+			// event.stopImmediatePropagation();
+			// event.stopPropagation();
 			//
 			const element = { ...state.element };
 			element.focused = true;
 			element.visited = true;
+			console.log("setting trigger element to ", event);
+			store.set({
+				...(state as any),
+				element,
+				__internal: {
+					update: "element.focus",
+					event,
+					manual: false,
+				},
+			});
+		},
+		[attrType !== "vdom" ? "onfocus" : "onFocus"]: (event: FocusEvent) => {
+			// event.preventDefault();
+			// event.stopImmediatePropagation();
+			// event.stopPropagation();
+			//
+			const element = { ...state.element };
+			element.focused = true;
+			element.visited = true;
+			// console.log("setting trigger element to ", element);
 			store.set({
 				...(state as any),
 				element,
@@ -59,17 +79,21 @@ export function renderAttributesTrigger<
 
 	// event listener id
 	const listenerId = attrType !== "vdom" ? "onclick" : "onClick";
-	attrs[listenerId] = (event: Event) => {
-		event.preventDefault();
-		store.set({
-			...(state as any),
-			__internal: {
-				update: "element.click.trigger",
-				manual: false,
-				event,
-			},
-		});
-	};
+	// attrs[listenerId] = (event: Event) => {
+	// 	event.preventDefault();
+	// 	const element = { ...state.element };
+	// 	element.focused = true;
+	// 	element.visited = true;
+	// 	store.set({
+	// 		...(state as any),
+	// 		element,
+	// 		__internal: {
+	// 			update: "element.click.trigger",
+	// 			manual: false,
+	// 			event,
+	// 		},
+	// 	});
+	// };
 
 	// process trigger
 	type PP = Parameters<Field.OnRender<Field.Type>>[0];
@@ -82,5 +106,6 @@ export function renderAttributesTrigger<
 		options?.onFieldRender?.(processProps);
 	}
 
+	console.log("trigger attrs :: ", attrs);
 	return attrs as Render.Attributes.Trigger<S, O, A>;
 }

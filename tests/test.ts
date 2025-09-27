@@ -11,10 +11,10 @@ export const picture = createField("picture", {
 export const cities = createField("name", "select");
 export const radio = createField("name", "radio");
 
-// cities.render.dom.trigger();
+cities.render.preact.trigger();
 // radio.render.dom()
 
-name.render;
+// name.render;
 // name.render.dom()
 // picture.store.get().element.
 // picture.update.element({

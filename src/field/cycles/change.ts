@@ -48,14 +48,22 @@ export function changeCycle<
 		$next.__key = key;
 
 		// pre user intervention
-		if (update === "element.focus" || update === "element.blur") {
-			const extras = $next.extras as Field.Extras<Field.Setup<"select">>;
-			if (extras != null) {
-				extras.showList = update === "element.focus";
-			}
-			$next.extras = extras as any;
+		if (!prev.element.focused && $next.element.focused) {
+			// @ts-expect-error
+			$next.element.entered = true;
+		} else {
+			// @ts-expect-error
+			$next.element.entered = false;
 		}
-		if (update === "value" || update === "element.click.option" || update === "extras") {
+
+		if (prev.element.focused && !$next.element.focused) {
+			// @ts-expect-error
+			$next.element.left = true;
+		} else {
+			// @ts-expect-error
+			$next.element.left = false;
+		}
+		if (update === "value" || update === "element.click.option" || update === "element") {
 			$next.value = processValue(props, {
 				$next,
 				event,

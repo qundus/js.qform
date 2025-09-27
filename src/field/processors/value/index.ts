@@ -14,7 +14,7 @@ export function processValue<S extends Field.Setup, O extends Form.Options>(
 
 	//
 	let value = processor.value;
-	if (setup.type === "select") {
+	if (setup.type === "select" || setup.type === "radio") {
 		value = processSelectValue(props as any, processor as any);
 	} else if (setup.type === "checkbox") {
 		value = processCheckboxValue(props, processor);

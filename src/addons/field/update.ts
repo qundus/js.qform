@@ -18,10 +18,10 @@ export type FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> = {
 	props: <G extends S["props"]>(
 		value: Partial<G> | ((prev: Partial<G>) => Partial<G> | undefined) | undefined,
 	) => void;
-	/**
-	 * special api to update selections extras
-	 */
-	extras: <G extends Field.Extras<S>>(props: Partial<G> | ((value: G) => Partial<G>)) => void;
+	// /**
+	//  * special api to update selections extras
+	//  */
+	// extras: <G extends Field.Extras<S>>(props: Partial<G> | ((value: G) => Partial<G>)) => void;
 };
 export function fieldUpdateAddon<S extends Field.Setup, O extends Form.Options>(
 	props: FunctionProps.FieldAddon<S, O>,
@@ -88,26 +88,26 @@ export function fieldUpdateAddon<S extends Field.Setup, O extends Form.Options>(
 				},
 			});
 		},
-		extras: (value) => {
-			if (setup.type !== "select" && setup.type !== "radio") {
-				console.warn(
-					"qform: field.update.selection method can only be used when field is of type select or radio",
-				);
-				return;
-			}
-			const state = store.get();
-			const prev = state.props;
-			const next = typeof value === "function" ? (value as any)(prev) : value;
-			store.set({
-				...state,
-				extras: next,
-				__internal: {
-					update: "extras",
-					manual: true,
-					// preprocess: configs?.preprocess,
-					event: state.__internal.event,
-				},
-			});
-		},
+		// extras: (value) => {
+		// 	if (setup.type !== "select" && setup.type !== "radio") {
+		// 		console.warn(
+		// 			"qform: field.update.selection method can only be used when field is of type select or radio",
+		// 		);
+		// 		return;
+		// 	}
+		// 	const state = store.get();
+		// 	const prev = state.props;
+		// 	const next = typeof value === "function" ? (value as any)(prev) : value;
+		// 	store.set({
+		// 		...state,
+		// 		extras: next,
+		// 		__internal: {
+		// 			update: "extras",
+		// 			manual: true,
+		// 			// preprocess: configs?.preprocess,
+		// 			event: state.__internal.event,
+		// 		},
+		// 	});
+		// },
 	};
 }

@@ -9,8 +9,17 @@ export function renderAttributesOption<
 	props: FunctionProps.RenderAttributes<S, O, A> & { optionValue: any },
 ) {
 	const { key, options, store, setup } = basic;
-	const { attrType, reactive, optionValue } = props;
+	const { attrType, reactive, optionValue: _optionValue } = props;
 	const state = reactive;
+	// prepare option value
+	let optionValue = _optionValue;
+	if (optionValue === undefined) {
+		optionValue = { label: "unknown", value: "unknown" };
+	} else if (typeof optionValue === "string" || typeof optionValue === "number") {
+		optionValue = { label: optionValue, value: optionValue };
+	}
+
+	//
 	const attrs = {
 		id: state?.element?.label ?? setup.label,
 		// type: state?.element.hidden ? "hidden" : setup.type,
@@ -60,12 +69,28 @@ export function renderAttributesOption<
 		// },
 		[attrType !== "vdom" ? "onclick" : "onClick"]: (event: Event) => {
 			event.preventDefault();
+			const valueKey = state.element.selectionsValueKey;
+			let next = Array.isArray(state.value)
+				? [...state.value]
+				: state.value == null
+					? []
+					: [state.value];
+			//
+			if (next.length > 0) {
+				if (next.includes(optionValue[valueKey])) {
+					next = next.filter((item) => item === optionValue[valueKey]);
+				} else {
+					next.push(optionValue[valueKey]);
+				}
+			} else {
+				next.push(optionValue[valueKey]);
+			}
 			store.set({
 				...(state as any),
+				value: state.element.multiple ? next[0] : next,
 				__internal: {
 					update: "element.click.option",
 					manual: false,
-					optionValue,
 					event,
 				},
 			});

@@ -49,8 +49,13 @@ export namespace Field {
 	export type Element<S extends Setup> = {
 		readonly focused: boolean;
 		readonly visited: boolean;
+		readonly entered: boolean;
+		readonly left: boolean;
+		selections?: S["selections"];
 	} & {
-		[K in keyof Setup as K extends keyof typeof IGNORED_SETUP_KEYS ? never : K]: S[K] extends
+		[K in keyof Setup as K extends keyof typeof IGNORED_SETUP_KEYS | "selection"
+			? never
+			: K]: S[K] extends
 			| Check.IsUnknown<S[K]>
 			| Check.IsUndefined<S[K]>
 			| Check.IsNull<S[K]>
@@ -77,12 +82,6 @@ export namespace Field {
 	 */
 	export type VMCM = "normal" | "bypass" | "force-valid";
 	export type ValidateOn = "input" | "change";
-	export type Selections =
-		| string[]
-		| number[]
-		| Record<string, unknown>[]
-		| { label: string; value: string }[];
-
 	// events
 	export type OnMount<T extends Type, V> = (props: {
 		setup: Setup;
@@ -118,6 +117,12 @@ export namespace Field {
 			  }
 		),
 	) => void;
+	// select/radio
+	export type Selections =
+		| string[]
+		| number[]
+		| Record<string, unknown>[]
+		| { label: string; value: string }[];
 
 	// DON'T CHANGE TEMPLATES, IF CHANGED CHECK EVERY FIELD ATTRIBUTES
 	export type Setup<
@@ -194,6 +199,7 @@ export namespace Field {
 		props?: Record<string, any>;
 
 		//## type specific
+		// selections/options for select and radio
 		selections?: T extends "select" | "radio" ? Selections : null;
 		selectionsValueKey?: T extends "select" | "radio" ? string | string[] : null;
 		selectionsLabelKey?: T extends "select" | "radio" ? string | string[] : null;
@@ -272,20 +278,7 @@ export namespace Field {
 						};
 						fallback?: { name: string; url: string }[];
 					}
-				: S["type"] extends "select"
-					? {
-							showList: boolean;
-							selections: {
-								[K in keyof S["selections"]]: S["selections"][K] extends object
-									? S["selections"][K] & { selected: boolean }
-									: { label: S["selections"][K]; value: string; selected: boolean };
-							}[];
-							/** @default 'value' */
-							valueKey: string | undefined;
-							/** @default 'label' */
-							labelKey?: string | undefined;
-						}
-					: never)
+				: never)
 		| undefined;
 
 	// store
@@ -300,8 +293,7 @@ export namespace Field {
 		| "element.click.trigger"
 		| "element.click.option"
 		| "cycle"
-		| "props"
-		| "extras";
+		| "props";
 	export type StoreObject<S extends Setup> = {
 		readonly __key: string;
 		readonly __internal: {
@@ -309,7 +301,6 @@ export namespace Field {
 			readonly manual: boolean;
 			readonly event: Event | undefined;
 			readonly preprocess?: boolean;
-			readonly optionValue?: any;
 		};
 		readonly cycle: keyof typeof FIELD_CYCLES;
 		// user
@@ -764,9 +755,9 @@ export namespace Integration {
 		O extends Form.Options,
 		F extends Factory<S, O, Template<S, O>>,
 	> = {
-		readonly render: S["type"] extends "select"
+		readonly render: "select" extends S["type"]
 			? F["render"]["select"]
-			: S["type"] extends "radio"
+			: "radio" extends S["type"]
 				? F["render"]["radio"]
 				: F["render"]["input"];
 	};

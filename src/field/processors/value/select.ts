@@ -9,63 +9,42 @@ export function processSelectValue<
 	// setup
 	const { setup } = props;
 	const { event, manualUpdate, preprocessValue, $next } = processor;
-	const optionValue = $next.__internal.optionValue;
-
-	// first check validity extras
-	if ($next.extras == null) {
-		if (setup.selections != null && !Array.isArray(setup.selections)) {
-			throw new Error("qform: only arrays are aloowed as selections of fields!");
-		}
-		$next.extras = {
-			selections: setup.selections,
-			showList: $next.element.focused,
-			valueKey: setup.selectionsValueKey ?? "value",
-			labelKey: setup.selectionsLabelKey ?? "label",
-		} as any;
-	}
-
-	// second check validity of selections
-	const valueKey = $next.extras?.valueKey ?? "value";
-	const labelKey = $next.extras?.labelKey ?? "label";
+	const valueKey = $next.element.selectionsValueKey ?? "value";
+	// const labelKey = $next.element.selectionsLabelKey ?? "label";
 	const multiple = $next.element.multiple ?? false;
-	const value = !manualUpdate ? $next.value : processor.value;
+	const selections = $next.element.selections as any[];
+	const _value = !manualUpdate ? $next.value : processor.value;
 	const result = [] as any[];
-	if (value != null) {
-	}
-	if ($next.extras?.selections && $next.extras?.selections.length > 0) {
-		if ($next.extras?.selections != null && !Array.isArray($next.extras?.selections)) {
+	if (selections && selections.length > 0) {
+		if (!Array.isArray(selections)) {
 			throw new Error("qform: only arrays are allowed as selections of fields!");
 		}
-		for (let i = 0; i < $next.extras?.selections.length; i++) {
-			let option = $next.extras?.selections[i];
+		const selected = Array.isArray(_value) ? _value : _value == null ? [] : [_value];
+		for (let i = 0; i < selections.length; i++) {
+			let option = selections[i];
+			// process options
 			if (option == null) {
-				option = { label: "unknown", value: "unknown", selected: false } as any;
-			} else if (typeof option === "object") {
-				if (!("selected" in option)) {
-					// @ts-expect-error
-					option.selected = false as any;
-				}
-			} else if (typeof option === "string") {
-				option = { label: option, value: option, selected: false } as any;
+				option = { label: "unknown", value: "unknown", __selected: false } as any;
+			} else if (typeof option === "string" || typeof option === "number") {
+				option = { label: option, value: option, __selected: false } as any;
 			}
-			//
-			if (option[valueKey] === optionValue[valueKey]) {
-				// @ts-expect-error
-				option.selected = true;
+			if (selected.includes(option[valueKey])) {
+				option.__selected = true;
 				result.push(option[valueKey]);
+			} else {
+				option.__selected = false;
 			}
-			$next.extras.selections[i] = option;
+			selections[i] = option;
 		}
+		$next.element.selections = selections;
 	}
 
 	// user wants this value to be there
 	if (!preprocessValue) {
 		// TODO: lookup user value update in the selections array
-		return value;
+		return multiple ? result : result[0];
 	}
-
-	if (manualUpdate) {
-	}
+	return multiple ? result : result[0];
 
 	//
 	// if (!multiple) {
@@ -91,5 +70,4 @@ export function processSelectValue<
 	// 	// 	}
 	// 	// }
 	// }
-	return result;
 }

@@ -29,9 +29,9 @@ export const IGNORED_SETUP_KEYS = {
 	props: undefined,
 	nested: undefined,
 	//
-	selections: undefined,
-	selectionsLabelKey: undefined,
-	selectionsValueKey: undefined,
+	// selections: undefined,
+	// selectionsLabelKey: undefined,
+	// selectionsValueKey: undefined,
 } as Pick<
 	Field.Setup,
 	// make sure to update the keys above
@@ -47,9 +47,9 @@ export const IGNORED_SETUP_KEYS = {
 	| "props"
 	| "nested"
 	// select
-	| "selections"
-	| "selectionsValueKey"
-	| "selectionsLabelKey"
+	// | "selections"
+	// | "selectionsValueKey"
+	// | "selectionsLabelKey"
 >;
 
 export const FIELD_CYCLES = {

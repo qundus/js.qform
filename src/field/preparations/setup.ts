@@ -38,6 +38,8 @@ export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToS
 	setup.multiple = setup.multiple ?? false;
 	setup.onChangeException = setup.onChangeException ?? false;
 	setup.props = mergeFieldProps(setup.props, options?.props, options?.propsMergeStrategy) as any;
+	setup.selectionsValueKey = setup.selectionsValueKey ?? "value";
+	setup.selectionsLabelKey = setup.selectionsLabelKey ?? "label";
 
 	// SPECIAL ASSIGNMENTS
 	// label
