@@ -1,4 +1,5 @@
 import type { Field, Form, FunctionProps } from "../../../_model";
+import { DOM, MUTATE } from "../../../const";
 import { populateFileReader } from "../../../methods/populate-file-reader";
 
 export function processFileValue<S extends Field.Setup<"file">, O extends Form.Options>(
@@ -94,13 +95,11 @@ export function processFileValue<S extends Field.Setup<"file">, O extends Form.O
 						file.progress.loadedBytes = progress.loaded;
 						file.progress.percentage = progress.percentage;
 						$next.extras.files[idx] = file;
-						store.set({
-							...$next,
-							__internal: {
-								...$next.__internal,
-								update: "internal.extras",
-							},
-						});
+						//
+						$next.__internal.manual = false;
+						$next.event.DOM = DOM.FILE_PROGRESS;
+						$next.event.MUTATE = MUTATE.__EXTRAS;
+						store.set({ ...$next });
 					},
 					onloadend: ({ status, buffer, error, progress }) => {
 						if ($next.extras == null) {
@@ -125,13 +124,10 @@ export function processFileValue<S extends Field.Setup<"file">, O extends Form.O
 						}
 
 						// updates
-						store.set({
-							...$next,
-							__internal: {
-								...$next.__internal,
-								update: "internal.extras",
-							},
-						});
+						$next.__internal.manual = false;
+						$next.event.DOM = DOM.FILE_DONE;
+						$next.event.MUTATE = MUTATE.__EXTRAS;
+						store.set({ ...$next });
 					},
 				});
 			}

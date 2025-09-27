@@ -1,5 +1,5 @@
 import type * as _QSTATE from "@qundus/qstate";
-import type { PLACEHOLDERS, IGNORED_SETUP_KEYS, FIELD_CYCLES } from "./const";
+import type { PLACEHOLDERS, IGNORED_SETUP_KEYS, CYCLE, DOM, MUTATE } from "./const";
 import type { deriveAddon, hooksInUseAddon } from "@qundus/qstate/addons";
 import type { JSX as PJSX } from "preact";
 
@@ -9,6 +9,9 @@ export namespace Check {
 	export type IsUndefined<T> = Exclude<T, undefined> extends never ? true : false;
 	export type IsNull<T> = Exclude<T, null> extends never ? true : false;
 	export type IsEmpty<T> = {} extends T ? true : false;
+	export type IsSetupOfType<S extends Field.Setup, T extends Field.Type> = S extends { type: T }
+		? true
+		: never;
 }
 
 export namespace Field {
@@ -47,10 +50,10 @@ export namespace Field {
 		by: false | "user" | "manual"; // last modification by user or manual
 	};
 	export type Element<S extends Setup> = {
-		readonly focused: boolean;
-		readonly visited: boolean;
-		readonly entered: boolean;
-		readonly left: boolean;
+		focused: boolean;
+		visited: boolean;
+		entered: boolean;
+		left: boolean;
 		selections?: S["selections"];
 	} & {
 		[K in keyof Setup as K extends keyof typeof IGNORED_SETUP_KEYS | "selection"
@@ -282,27 +285,30 @@ export namespace Field {
 		| undefined;
 
 	// store
-	export type StoreUpdateSignal =
-		| undefined
-		| "internal.extras"
-		| "value"
-		| "element"
-		| "element.focus"
-		| "element.blur"
-		| "element.click"
-		| "element.click.trigger"
-		| "element.click.option"
-		| "cycle"
-		| "props";
+	// export type StoreUpdateSignal =
+	// 	| undefined
+	// 	| "internal.extras"
+	// 	| "value"
+	// 	| "element"
+	// 	| "element.focus"
+	// 	| "element.blur"
+	// 	| "element.click"
+	// 	| "element.click.trigger"
+	// 	| "element.click.option"
+	// 	| "cycle"
+	// 	| "props";
 	export type StoreObject<S extends Setup> = {
-		readonly __key: string;
 		readonly __internal: {
-			readonly update: StoreUpdateSignal;
-			readonly manual: boolean;
-			readonly event: Event | undefined;
-			readonly preprocess?: boolean;
+			key: string;
+			manual: boolean;
+			preprocess?: boolean;
 		};
-		readonly cycle: keyof typeof FIELD_CYCLES;
+		readonly event: {
+			DOM: DOM;
+			MUTATE: MUTATE;
+			CYCLE: CYCLE;
+			ev: Event | undefined;
+		};
 		// user
 		value: S["value"] | undefined;
 		condition: Condition;
@@ -337,12 +343,16 @@ export namespace Field {
 			solid: Integration.FactoryOut<S, O, IntegrationSolid<S, O>>["render"];
 			svelte: Integration.FactoryOut<S, O, IntegrationSvelte<S, O>>["render"];
 		};
-		readonly placeholders: typeof PLACEHOLDERS;
 		// addons
 		readonly add: Addon.FieldAdd<S, O>;
 		readonly clear: Addon.FieldClear<S, O>;
 		readonly update: Addon.FieldUpdate<S, O>;
 		readonly mark: Addon.FieldMark<S, O>;
+		// const
+		readonly CYCLE: typeof CYCLE;
+		readonly DOM: typeof DOM;
+		readonly MUTATE: typeof MUTATE;
+		readonly PLACEHOLDERS: typeof PLACEHOLDERS;
 	};
 }
 
@@ -750,15 +760,14 @@ export namespace Integration {
 	};
 	export type Factory<S extends Field.Setup, O extends Form.Options, T extends Template<S, O>> = T;
 
+	// for a better support for dynamic components that extend a certain type
 	export type FactoryOut<
 		S extends Field.Setup,
 		O extends Form.Options,
 		F extends Factory<S, O, Template<S, O>>,
-	> = {
-		readonly render: "select" extends S["type"]
-			? F["render"]["select"]
-			: "radio" extends S["type"]
-				? F["render"]["radio"]
-				: F["render"]["input"];
-	};
+	> = S extends { type: "select" }
+		? { readonly render: F["render"]["select"] }
+		: S extends { type: "radio" }
+			? { readonly render: F["render"]["radio"] }
+			: { readonly render: F["render"]["input"] };
 }

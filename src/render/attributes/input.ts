@@ -1,4 +1,5 @@
 import type { Field, Form, FunctionProps, Render } from "../../_model";
+import { DOM, MUTATE } from "../../const";
 
 export function renderAttributesInput<
 	S extends Field.Setup,
@@ -11,7 +12,7 @@ export function renderAttributesInput<
 	const attrs = {
 		id: state?.element?.label ?? setup.label,
 		type: state?.element.hidden ? "hidden" : setup.type,
-		name: state.__key,
+		name: state.__internal.key,
 		multiple: state?.element.multiple,
 		required: state?.element.required,
 		disabled: state?.element.disabled,
@@ -21,39 +22,29 @@ export function renderAttributesInput<
 			event.stopImmediatePropagation();
 			event.stopPropagation();
 			//
-			const element = { ...state.element };
-			element.focused = true;
-			element.visited = true;
-			store.set({
-				...(state as any),
-				element,
-				__internal: {
-					update: "element.focus",
-					event,
-					manual: false,
-				},
-			});
+			const next = { ...state };
+			next.element.focused = true;
+			next.element.visited = true;
+			next.__internal.manual = false;
+			//
+			next.event.DOM = DOM.FOCUS;
+			next.event.MUTATE = MUTATE.IDLE;
+			next.event.ev = event;
+			store.set(next);
 		},
 		[attrType !== "vdom" ? "onblur" : "onBlur"]: (event: Event) => {
 			event.preventDefault();
 			event.stopImmediatePropagation();
 			event.stopPropagation();
-			// if (field.validateOn === "change") {
-			// 	return;
-			// }
+			const next = { ...state };
+			next.element.focused = false;
+			next.element.visited = true;
+			next.__internal.manual = false;
 			//
-			const element = { ...state.element };
-			element.focused = false;
-			element.visited = true;
-			store.set({
-				...(state as any),
-				element,
-				__internal: {
-					update: "element.blur",
-					event,
-					manual: false,
-				},
-			});
+			next.event.DOM = DOM.BLUR;
+			next.event.MUTATE = MUTATE.IDLE;
+			next.event.ev = event;
+			store.set(next);
 		},
 	} as any;
 	// check if value should be added to object
@@ -67,19 +58,17 @@ export function renderAttributesInput<
 	if (state.element.validateOn === "change") {
 		listenerId = attrType !== "vdom" ? "onchange" : "onChange";
 	} else {
-		//if (setup.validateOn === "input") {
 		listenerId = attrType !== "vdom" ? "oninput" : "onInput";
 	}
 	attrs[listenerId] = (event: Event) => {
 		event.preventDefault();
-		store.set({
-			...(state as any),
-			__internal: {
-				update: "value",
-				manual: false,
-				event,
-			},
-		});
+		const next = { ...state };
+		next.__internal.manual = false;
+		//
+		next.event.DOM = DOM.IDLE; // questionable?
+		next.event.MUTATE = MUTATE.VALUE;
+		next.event.ev = event;
+		store.set(next);
 	};
 
 	// process input

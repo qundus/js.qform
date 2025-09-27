@@ -1,6 +1,6 @@
 import { effect, task } from "@qundus/qstate";
 import type { Addon, Field, Form, FunctionProps } from "../../_model";
-import { FIELD_CYCLES } from "../../const";
+import { CYCLE } from "../../const";
 import { isServerSide } from "@qundus/qstate/checks";
 
 export function changeCycle<F extends Form.Fields, O extends Form.Options<F>>(
@@ -28,13 +28,13 @@ export function changeCycle<F extends Form.Fields, O extends Form.Options<F>>(
 
 		for (const store of stores) {
 			//
-			const key = store.__key;
+			const key = store.__internal.key as any;
 			if (key == null || typeof key !== "string") {
 				console.log("qform: key is undefined for store ", store);
 				continue;
 			}
 			//
-			count.mounted += FIELD_CYCLES[store.cycle] > FIELD_CYCLES.mount ? 1 : 0;
+			count.mounted += store.event.CYCLE > CYCLE.MOUNT ? 1 : 0;
 			// @ts-expect-error
 			$next.values[key] = store.value;
 			// @ts-expect-error

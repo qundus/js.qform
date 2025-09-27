@@ -1,4 +1,5 @@
 import type { Field, Form, FunctionProps, Render } from "../../_model";
+import { DOM, MUTATE } from "../../const";
 
 export function renderAttributesTrigger<
 	S extends Field.Setup,
@@ -11,89 +12,90 @@ export function renderAttributesTrigger<
 	const attrs = {
 		id: state?.element?.label ?? setup.label,
 		// type: state?.element.hidden ? "hidden" : setup.type,
-		name: state.__key,
+		name: state.__internal.key,
 		// multiple: state?.element.multiple,
 		// required: state?.element.required,
 		// disabled: state?.element.disabled,
 		// [attrType !== "vdom" ? "autocomplete" : "autoComplete"]: "off",
-		[attrType !== "vdom" ? "onchange" : "onChange"]: (event: FocusEvent) => {
-			// event.preventDefault();
-			// event.stopImmediatePropagation();
-			// event.stopPropagation();
-			//
-			const element = { ...state.element };
-			element.focused = true;
-			element.visited = true;
-			console.log("setting trigger element to ", event);
-			store.set({
-				...(state as any),
-				element,
-				__internal: {
-					update: "element.focus",
-					event,
-					manual: false,
-				},
-			});
-		},
 		[attrType !== "vdom" ? "onfocus" : "onFocus"]: (event: FocusEvent) => {
-			// event.preventDefault();
-			// event.stopImmediatePropagation();
-			// event.stopPropagation();
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			event.stopPropagation();
 			//
-			const element = { ...state.element };
-			element.focused = true;
-			element.visited = true;
-			// console.log("setting trigger element to ", element);
-			store.set({
-				...(state as any),
-				element,
-				__internal: {
-					update: "element.focus",
-					event,
-					manual: false,
-				},
-			});
+			const next = { ...state };
+			next.element.focused = true;
+			next.element.visited = true;
+			next.__internal.manual = false;
+			//
+			next.event.DOM = DOM.FOCUS;
+			next.event.MUTATE = MUTATE.IDLE;
+			next.event.ev = event;
+			store.set(next);
 		},
 		[attrType !== "vdom" ? "onblur" : "onBlur"]: (event: Event) => {
 			event.preventDefault();
 			event.stopImmediatePropagation();
 			event.stopPropagation();
-			// if (field.validateOn === "change") {
-			// 	return;
-			// }
 			//
-			const element = { ...state.element };
-			element.focused = false;
-			element.visited = true;
-			store.set({
-				...(state as any),
-				element,
-				__internal: {
-					update: "element.blur",
-					event,
-					manual: false,
-				},
-			});
+			const next = { ...state };
+			next.element.focused = false;
+			next.element.visited = true;
+			next.__internal.manual = false;
+			//
+			next.event.DOM = DOM.BLUR;
+			next.event.MUTATE = MUTATE.IDLE;
+			next.event.ev = event;
+			store.set(next);
+		},
+		[attrType !== "vdom" ? "onmouseleave" : "onMouseLeave"]: (event: Event) => {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			event.stopPropagation();
+			// const parent = event.parent
+			console.log("parent :: ", event);
+			return;
+			const next = { ...state };
+			next.element.focused = false;
+			next.element.visited = true;
+			next.__internal.manual = false;
+			//
+			next.event.DOM = DOM.BLUR;
+			next.event.MUTATE = MUTATE.IDLE;
+			next.event.ev = event;
+			store.set(next);
+		},
+		blur: (event: Event) => {
+			console.log("blurrr :: ", event);
 		},
 	} as any;
 
 	// event listener id
-	const listenerId = attrType !== "vdom" ? "onclick" : "onClick";
-	// attrs[listenerId] = (event: Event) => {
-	// 	event.preventDefault();
-	// 	const element = { ...state.element };
-	// 	element.focused = true;
-	// 	element.visited = true;
-	// 	store.set({
-	// 		...(state as any),
-	// 		element,
-	// 		__internal: {
-	// 			update: "element.click.trigger",
-	// 			manual: false,
-	// 			event,
-	// 		},
-	// 	});
-	// };
+	const onclickId = attrType !== "vdom" ? "onclick" : "onClick";
+	attrs[onclickId] = (event: Event) => {
+		event.preventDefault();
+		const next = { ...state };
+		next.element.focused = true;
+		next.element.visited = true;
+		next.__internal.manual = false;
+		//
+		next.event.DOM = DOM.CLICK;
+		next.event.MUTATE = MUTATE.IDLE;
+		next.event.ev = event;
+		store.set(next);
+	};
+	const ontouchId = attrType !== "vdom" ? "ontouchstart" : "onTouchStart";
+	attrs[ontouchId] = (event: Event) => {
+		event.preventDefault();
+		const next = { ...state };
+		next.element.focused = true;
+		next.element.visited = true;
+		next.__internal.manual = false;
+		//
+		next.event.DOM = DOM.TOUCH;
+		next.event.MUTATE = MUTATE.IDLE;
+		next.event.ev = event;
+		store.set(next);
+	};
 
 	// process trigger
 	type PP = Parameters<Field.OnRender<Field.Type>>[0];
@@ -105,7 +107,5 @@ export function renderAttributesTrigger<
 	if (options?.onFieldElementOrder === "after") {
 		options?.onFieldRender?.(processProps);
 	}
-
-	console.log("trigger attrs :: ", attrs);
 	return attrs as Render.Attributes.Trigger<S, O, A>;
 }

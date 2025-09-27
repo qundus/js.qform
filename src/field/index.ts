@@ -9,7 +9,7 @@ import { prepareStore } from "./preparations/store";
 //
 import { changeCycle } from "./cycles/change";
 import { createRender } from "../render";
-import { PLACEHOLDERS } from "../const";
+import { CYCLE, DOM, MUTATE, PLACEHOLDERS } from "../const";
 import { mountCycle } from "./cycles/mount";
 import { fieldAddAddon } from "../addons/field/add";
 import { fieldClearAddon } from "../addons/field/clear";
@@ -49,10 +49,23 @@ export function createField<
 		setup: setup as any,
 		store: store as any,
 		render,
-		placeholders: PLACEHOLDERS,
+		//
 		add,
 		update: update as any,
 		clear,
 		mark,
+		// const
+		get CYCLE() {
+			return CYCLE;
+		},
+		get DOM() {
+			return DOM;
+		},
+		get MUTATE() {
+			return MUTATE;
+		},
+		get PLACEHOLDERS() {
+			return PLACEHOLDERS;
+		},
 	};
 }

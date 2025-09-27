@@ -1,4 +1,5 @@
 import type { Field, Form, FunctionProps, Render } from "../../_model";
+import { DOM, MUTATE } from "../../const";
 
 export function renderAttributesOption<
 	S extends Field.Setup,
@@ -23,77 +24,38 @@ export function renderAttributesOption<
 	const attrs = {
 		id: state?.element?.label ?? setup.label,
 		// type: state?.element.hidden ? "hidden" : setup.type,
-		name: state.__key,
+		name: state.__internal.key,
 		// multiple: state?.element.multiple,
 		// required: state?.element.required,
 		// disabled: state?.element.disabled,
 		[attrType !== "vdom" ? "autocomplete" : "autoComplete"]: "off",
-		// [attrType !== "vdom" ? "onfocus" : "onFocus"]: (event: FocusEvent) => {
-		// 	event.preventDefault();
-		// 	event.stopImmediatePropagation();
-		// 	event.stopPropagation();
-		// 	//
-		// 	const element = { ...state.element };
-		// 	element.focused = true;
-		// 	element.visited = true;
-		// 	store.set({
-		// 		...(state as any),
-		// 		element,
-		// 		__internal: {
-		// 			update: "element.focus",
-		// 			event,
-		// 			manual: false,
-		// 		},
-		// 	});
-		// },
-		// [attrType !== "vdom" ? "onblur" : "onBlur"]: (event: Event) => {
-		// 	event.preventDefault();
-		// 	event.stopImmediatePropagation();
-		// 	event.stopPropagation();
-		// 	// if (field.validateOn === "change") {
-		// 	// 	return;
-		// 	// }
-		// 	//
-		// 	const element = { ...state.element };
-		// 	element.focused = false;
-		// 	element.visited = true;
-		// 	store.set({
-		// 		...(state as any),
-		// 		element,
-		// 		__internal: {
-		// 			update: "element.blur",
-		// 			event,
-		// 			manual: false,
-		// 		},
-		// 	});
-		// },
 		[attrType !== "vdom" ? "onclick" : "onClick"]: (event: Event) => {
 			event.preventDefault();
 			const valueKey = state.element.selectionsValueKey;
-			let next = Array.isArray(state.value)
+			let nextValue = Array.isArray(state.value)
 				? [...state.value]
 				: state.value == null
 					? []
 					: [state.value];
 			//
-			if (next.length > 0) {
-				if (next.includes(optionValue[valueKey])) {
-					next = next.filter((item) => item === optionValue[valueKey]);
+			if (nextValue.length > 0) {
+				if (nextValue.includes(optionValue[valueKey])) {
+					nextValue = nextValue.filter((item) => item === optionValue[valueKey]);
 				} else {
-					next.push(optionValue[valueKey]);
+					nextValue.push(optionValue[valueKey]);
 				}
 			} else {
-				next.push(optionValue[valueKey]);
+				nextValue.push(optionValue[valueKey]);
 			}
-			store.set({
-				...(state as any),
-				value: state.element.multiple ? next[0] : next,
-				__internal: {
-					update: "element.click.option",
-					manual: false,
-					event,
-				},
-			});
+			//
+			const next = { ...state };
+			next.value = next.element.multiple ? nextValue[0] : nextValue;
+			next.__internal.manual = false;
+			//
+			next.event.DOM = DOM.CLICK_OPTION;
+			next.event.MUTATE = MUTATE.VALUE;
+			next.event.ev = event;
+			store.set(next);
 		},
 	} as any;
 

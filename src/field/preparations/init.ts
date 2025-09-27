@@ -1,7 +1,6 @@
-import { atom } from "@qundus/qstate";
 import type { Field, Form } from "../../_model";
 import { isFieldIncomplete } from "../checks/is-field-incomplete";
-import { IGNORED_SETUP_KEYS } from "../../const";
+import { IGNORED_SETUP_KEYS, CYCLE, DOM, MUTATE } from "../../const";
 
 // TODO: atom store may become inconsistent with onchange function
 // find another way to do it!
@@ -12,14 +11,17 @@ export function prepareInit<S extends Field.Setup, O extends Form.Options>(
 ) {
 	// initialize
 	const init: Field.StoreObject<S> = {
-		__key: key,
 		__internal: {
-			update: undefined,
+			key: key,
 			manual: false,
 			preprocess: true,
-			event: undefined,
 		},
-		cycle: "init",
+		event: {
+			DOM: DOM.INIT,
+			CYCLE: CYCLE.INIT,
+			MUTATE: MUTATE.INIT,
+			ev: undefined,
+		},
 		value: setup.value,
 		props: setup.props,
 		errors: undefined,

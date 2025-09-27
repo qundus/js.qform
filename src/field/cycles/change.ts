@@ -2,7 +2,7 @@ import { onSet } from "@qundus/qstate";
 import type { Addon, Field, Form, FunctionProps } from "../../_model";
 import { isFieldIncomplete } from "../checks/is-field-incomplete";
 import { processValue } from "../processors/value";
-import { FIELD_CYCLES } from "../../const";
+import { CYCLE, DOM, MUTATE } from "../../const";
 
 const REFRESH = "__REFRESH";
 export function changeCycle<
@@ -30,45 +30,47 @@ export function changeCycle<
 		if ($next.__internal[REFRESH]) {
 			delete $next.__internal[REFRESH];
 			return $next;
-		} else if (FIELD_CYCLES[$next.cycle] > FIELD_CYCLES.change) {
+		} else if ($next.event.CYCLE > CYCLE.CHANGE) {
 			return $next;
 		}
-		const internal = $next.__internal;
-		const event = internal.event;
-		const manualUpdate = internal.manual;
-		const preprocessValue = (internal.preprocess ?? $next.element.preprocessValue) as boolean;
-		const update = internal.update;
-		const vmcm = (manualUpdate ? $next.element.vmcm : "normal") as Field.VMCM;
+		const _DOM = $next.event.DOM;
+		const _MUTATE = $next.event.MUTATE;
+		const _CYCLE = $next.event.CYCLE;
+		const MANUAL_UPDATE = $next.__internal.manual;
+		const PREPROCESS_VALUE = ($next.__internal.preprocess ??
+			$next.element.preprocessValue) as boolean;
+		const EV = $next.event.ev;
+		const VMCM = (MANUAL_UPDATE ? $next.element.vmcm : "normal") as Field.VMCM;
+		const SHOULD_VALIDATE =
+			_MUTATE === MUTATE.VALUE || _MUTATE === MUTATE.ELEMENT || _DOM === DOM.CLICK_OPTION;
+		//
 		const prev = store.value;
 		const form = formStore?.get();
 		const oldValue = store.value.value;
 
-		// first fix key if it's not there
-		// @ts-expect-error
-		$next.__key = key;
+		// first reset necessaries
+		$next.__internal.key = key;
+		$next.__internal.preprocess = undefined;
 
 		// pre user intervention
 		if (!prev.element.focused && $next.element.focused) {
-			// @ts-expect-error
 			$next.element.entered = true;
 		} else {
-			// @ts-expect-error
 			$next.element.entered = false;
 		}
 
 		if (prev.element.focused && !$next.element.focused) {
-			// @ts-expect-error
 			$next.element.left = true;
 		} else {
-			// @ts-expect-error
 			$next.element.left = false;
 		}
-		if (update === "value" || update === "element.click.option" || update === "element") {
+
+		if (SHOULD_VALIDATE) {
 			$next.value = processValue(props, {
 				$next,
-				event,
-				manualUpdate,
-				preprocessValue,
+				event: EV,
+				manualUpdate: MANUAL_UPDATE,
+				preprocessValue: PREPROCESS_VALUE,
 				value: $next.value,
 			});
 		}
@@ -100,11 +102,11 @@ export function changeCycle<
 		}
 
 		// validate on update of type value
-		if (update === "value") {
+		if (SHOULD_VALIDATE) {
 			$next.errors = [];
 			// first check for user validation functions
 			if (setup.validate != null) {
-				if (!manualUpdate || (manualUpdate && vmcm === "normal")) {
+				if (!MANUAL_UPDATE || (MANUAL_UPDATE && VMCM === "normal")) {
 					const validations = Array.isArray(setup.validate) ? setup.validate : [setup.validate];
 					for (const validation of validations) {
 						const err = validation({ value: $next.value, prev, form });
@@ -133,7 +135,7 @@ export function changeCycle<
 			// we have errors
 			if ($next.errors.length > 0) {
 				// process condition
-				if (vmcm === "force-valid") {
+				if (VMCM === "force-valid") {
 					$next.condition.error = false;
 					$next.errors = undefined;
 				} else if ($next.element.required) {
@@ -147,7 +149,7 @@ export function changeCycle<
 					$next.value = oldValue;
 				} else {
 					$next.condition.updated = true;
-					$next.condition.by = manualUpdate ? "manual" : "user";
+					$next.condition.by = MANUAL_UPDATE ? "manual" : "user";
 				}
 
 				// finally, set validity
@@ -155,14 +157,13 @@ export function changeCycle<
 			}
 
 			// we don't have errors
-			// @ts-expect-error
-			if ($next.errors.length <= 0) {
+			if ($next.errors != null && $next.errors.length <= 0) {
 				// process condition
 				if ($next.element.disabled) {
 					$next.condition.error = false;
 				} else if ($next.element.required) {
 					// check required status
-					if (vmcm === "force-valid") {
+					if (VMCM === "force-valid") {
 						$next.condition.error = false;
 					} else {
 						const incomplete = isFieldIncomplete($next.element, $next.value);
@@ -175,7 +176,7 @@ export function changeCycle<
 				// process value
 				$next.errors = undefined;
 				$next.condition.updated = true;
-				$next.condition.by = manualUpdate ? "manual" : "user";
+				$next.condition.by = MANUAL_UPDATE ? "manual" : "user";
 
 				// finally, set validity
 				$next.condition.valid = $next.condition.error ? false : true;

@@ -23,7 +23,7 @@ export function mountCycle<S extends Field.Setup, O extends Form.Options>(
 		}
 	}
 
-	mark.cycle.__mount();
+	mark.cycle.mount();
 	onMount(store, () => {
 		let ureturns = null as null | void | (() => void);
 		if (setup.onMount) {

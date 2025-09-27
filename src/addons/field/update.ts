@@ -1,4 +1,5 @@
 import type { Field, Form, FunctionProps } from "../../_model";
+import { DOM, MUTATE } from "../../const";
 
 export type FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> = {
 	value: (
@@ -29,85 +30,50 @@ export function fieldUpdateAddon<S extends Field.Setup, O extends Form.Options>(
 	const { store, options, setup } = props;
 	return {
 		value: (value, configs) => {
-			const state = store.get();
+			const state = { ...store.get() };
 			const prev = state.value; //as S["value"];
 			const next = typeof value === "function" ? (value as any)(prev) : value;
-			store.set({
-				...state,
-				value: next,
-				__internal: {
-					update: "value",
-					manual: true,
-					preprocess: configs?.preprocess,
-					event: state.__internal.event,
-				},
-			});
+			state.value = next;
+			state.__internal.manual = true;
+			state.__internal.preprocess = configs?.preprocess;
+			//
+			state.event.MUTATE = MUTATE.VALUE;
+			state.event.DOM = DOM.IDLE;
+			store.set(state);
 		},
 		condition: (value) => {
 			const state = store.get();
 			const prev = state.condition;
 			const next = typeof value === "function" ? value(prev) : value;
-			store.set({
-				...state,
-				condition: { ...prev, ...next },
-				__internal: {
-					update: "value",
-					manual: true,
-					// preprocess: configs?.preprocess,
-					event: state.__internal.event,
-				},
-			});
+			state.condition = { ...prev, ...next };
+			state.__internal.manual = true;
+			// state.__internal.preprocess = configs?.preprocess;
+			//
+			state.event.MUTATE = MUTATE.CONDITION;
+			state.event.DOM = DOM.IDLE;
+			store.set(state);
 		},
 		element: (value) => {
 			const state = store.get();
 			const prev = state.element;
 			const next = typeof value === "function" ? value(prev) : value;
-			store.set({
-				...state,
-				element: { ...prev, ...next },
-				__internal: {
-					update: "element",
-					manual: true,
-					// preprocess: configs?.preprocess,
-					event: state.__internal.event,
-				},
-			});
+			state.element = { ...prev, ...next };
+			state.__internal.manual = true;
+			// state.__internal.preprocess = configs?.preprocess;
+			state.event.MUTATE = MUTATE.ELEMENT;
+			state.event.DOM = DOM.IDLE;
+			store.set(state);
 		},
 		props: (value) => {
 			const state = store.get();
 			const prev = state.props;
 			const next = typeof value === "function" ? (value as any)(prev) : value;
-			store.set({
-				...state,
-				props: next,
-				__internal: {
-					update: "props",
-					manual: true,
-					// preprocess: configs?.preprocess,
-					event: state.__internal.event,
-				},
-			});
+			state.props = next;
+			state.__internal.manual = true;
+			// state.__internal.preprocess = configs?.preprocess;
+			state.event.MUTATE = MUTATE.PROPS;
+			state.event.DOM = DOM.IDLE;
+			store.set(state);
 		},
-		// extras: (value) => {
-		// 	if (setup.type !== "select" && setup.type !== "radio") {
-		// 		console.warn(
-		// 			"qform: field.update.selection method can only be used when field is of type select or radio",
-		// 		);
-		// 		return;
-		// 	}
-		// 	const state = store.get();
-		// 	const prev = state.props;
-		// 	const next = typeof value === "function" ? (value as any)(prev) : value;
-		// 	store.set({
-		// 		...state,
-		// 		extras: next,
-		// 		__internal: {
-		// 			update: "extras",
-		// 			manual: true,
-		// 			// preprocess: configs?.preprocess,
-		// 			event: state.__internal.event,
-		// 		},
-		// 	});
-		// },
 	};
 }
