@@ -31,6 +31,7 @@ export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToS
 	setup.vmcm = setup.vmcm ?? options?.vmcm ?? "normal";
 	setup.required = setup.required ?? options?.allFieldsRequired ?? true;
 	setup.disabled = setup.disabled ?? options?.allFieldsDisabled ?? false;
+	setup.hidden = setup.hidden ?? false;
 	setup.valueNullable = setup.valueNullable ?? false;
 	setup.preprocessValue = setup.preprocessValue ?? options?.preprocessValues ?? true;
 	setup.validateOn = setup.validateOn ?? options?.validateOn;
@@ -38,8 +39,6 @@ export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToS
 	setup.multiple = setup.multiple ?? false;
 	setup.onChangeException = setup.onChangeException ?? false;
 	setup.props = mergeFieldProps(setup.props, options?.props, options?.propsMergeStrategy) as any;
-	setup.selectionsValueKey = setup.selectionsValueKey ?? "value";
-	setup.selectionsLabelKey = setup.selectionsLabelKey ?? "label";
 
 	// SPECIAL ASSIGNMENTS
 	// label
@@ -69,6 +68,12 @@ export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToS
 	// SPECIAL TYPES
 	// some specfic type settings
 	if (setup.type === "select") {
+		//
+		if (setup.select == null) {
+			setup.select = {};
+		}
+		setup.select.valueKey = setup.select.valueKey ?? "value";
+		setup.select.labelKey = setup.select.labelKey ?? "label";
 		if (!setup.multiple) {
 			setup.value = setup.value ?? PLACEHOLDERS.select.value;
 		} else {
@@ -79,6 +84,19 @@ export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToS
 				}
 			}
 		}
+	}
+	if (setup.type === "radio") {
+		if (setup.radio == null) {
+			setup.radio = {};
+		}
+		setup.radio.valueKey = setup.radio.valueKey ?? "value";
+		setup.radio.labelKey = setup.radio.labelKey ?? "label";
+	}
+	if (setup.type === "checkbox") {
+		if (setup.checkbox == null) {
+			setup.checkbox = {};
+		}
+		setup.checkbox.mandatory = setup.checkbox.mandatory ?? false;
 	}
 
 	// vital checks

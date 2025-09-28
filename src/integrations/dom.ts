@@ -16,13 +16,13 @@ export type IntegrationDom<S extends Field.Setup, O extends Form.Options> = Inte
 					attrType?: D;
 				}) => Render.Attributes.Trigger<S, O, D>;
 				option: <D extends Render.Attributes.Type = "dom">(
-					value: any,
+					option: any,
 					props?: { attrType?: D },
 				) => Render.Attributes.Option<S, O, D>;
 			};
 			radio: {
 				option: <D extends Render.Attributes.Type = "dom">(
-					value: any,
+					option: any,
 					props?: { attrType?: D },
 				) => Render.Attributes.Option<S, O, D>;
 			};

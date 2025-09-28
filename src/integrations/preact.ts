@@ -16,13 +16,13 @@ export type IntegrationPreact<S extends Field.Setup, O extends Form.Options> = I
 					attrType?: D;
 				}) => Render.Attributes.Trigger<S, O, D>;
 				option: <D extends Render.Attributes.Type = "vdom">(
-					value: any,
+					option: any,
 					props?: { attrType?: D },
 				) => Render.Attributes.Option<S, O, D>;
 			};
 			radio: {
 				option: <D extends Render.Attributes.Type = "vdom">(
-					value: any,
+					option: any,
 					props?: { attrType?: D },
 				) => Render.Attributes.Option<S, O, D>;
 			};

@@ -37,6 +37,9 @@ export function prepareInit<S extends Field.Setup, O extends Form.Options>(
 			visited: false,
 			entered: false,
 			left: false,
+			select: setup.select as any,
+			radio: setup.radio as any,
+			checkbox: setup.checkbox as any,
 		},
 	};
 

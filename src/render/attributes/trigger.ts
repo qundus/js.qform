@@ -17,85 +17,53 @@ export function renderAttributesTrigger<
 		// required: state?.element.required,
 		// disabled: state?.element.disabled,
 		// [attrType !== "vdom" ? "autocomplete" : "autoComplete"]: "off",
-		[attrType !== "vdom" ? "onfocus" : "onFocus"]: (event: FocusEvent) => {
+		[attrType !== "vdom" ? "onclick" : "onClick"]: function onclick(event: PointerEvent) {
 			event.preventDefault();
-			event.stopImmediatePropagation();
-			event.stopPropagation();
+			const next = { ...store.get() };
+			if (next.element.disabled) {
+				return;
+			}
+			// detect if first time click
+			if (!next.element.focused) {
+				const element = event.target as HTMLElement;
+				setTimeout(() => {
+					// Attach click listener to document
+					document.addEventListener("click", function outsideClick(e) {
+						const target = e.target as HTMLElement;
+						const name = target?.getAttribute("name");
+						if (!element.contains(target)) {
+							if (name && name.startsWith(state.__internal.key)) {
+								return;
+							}
+							// Remove the listener after detecting outside click
+							document.removeEventListener("click", outsideClick);
+							const next = { ...store.get() };
+							next.element.focused = false;
+							next.element.visited = true;
+							next.__internal.manual = false;
+							//
+							next.event.DOM = DOM.BLUR;
+							next.event.MUTATE = MUTATE.IDLE;
+							next.event.ev = event;
+							store.set(next);
+						}
+					});
+				}, 0);
+			}
 			//
-			const next = { ...state };
+			const pointer = event.pointerType as "mouse" | "touch";
 			next.element.focused = true;
 			next.element.visited = true;
 			next.__internal.manual = false;
 			//
-			next.event.DOM = DOM.FOCUS;
+			// const ischildclick = event.target !== event.currentTarget;
+			// console.log("is child click :: ", ischildclick);
+			next.event.DOM = pointer === "touch" ? DOM.TOUCH : DOM.CLICK;
 			next.event.MUTATE = MUTATE.IDLE;
 			next.event.ev = event;
 			store.set(next);
-		},
-		[attrType !== "vdom" ? "onblur" : "onBlur"]: (event: Event) => {
-			event.preventDefault();
-			event.stopImmediatePropagation();
-			event.stopPropagation();
-			//
-			const next = { ...state };
-			next.element.focused = false;
-			next.element.visited = true;
-			next.__internal.manual = false;
-			//
-			next.event.DOM = DOM.BLUR;
-			next.event.MUTATE = MUTATE.IDLE;
-			next.event.ev = event;
-			store.set(next);
-		},
-		[attrType !== "vdom" ? "onmouseleave" : "onMouseLeave"]: (event: Event) => {
-			event.preventDefault();
-			event.stopImmediatePropagation();
-			event.stopPropagation();
-			// const parent = event.parent
-			console.log("parent :: ", event);
-			return;
-			const next = { ...state };
-			next.element.focused = false;
-			next.element.visited = true;
-			next.__internal.manual = false;
-			//
-			next.event.DOM = DOM.BLUR;
-			next.event.MUTATE = MUTATE.IDLE;
-			next.event.ev = event;
-			store.set(next);
-		},
-		blur: (event: Event) => {
-			console.log("blurrr :: ", event);
 		},
 	} as any;
-
-	// event listener id
-	const onclickId = attrType !== "vdom" ? "onclick" : "onClick";
-	attrs[onclickId] = (event: Event) => {
-		event.preventDefault();
-		const next = { ...state };
-		next.element.focused = true;
-		next.element.visited = true;
-		next.__internal.manual = false;
-		//
-		next.event.DOM = DOM.CLICK;
-		next.event.MUTATE = MUTATE.IDLE;
-		next.event.ev = event;
-		store.set(next);
-	};
-	const ontouchId = attrType !== "vdom" ? "ontouchstart" : "onTouchStart";
-	attrs[ontouchId] = (event: Event) => {
-		event.preventDefault();
-		const next = { ...state };
-		next.element.focused = true;
-		next.element.visited = true;
-		next.__internal.manual = false;
-		//
-		next.event.DOM = DOM.TOUCH;
-		next.event.MUTATE = MUTATE.IDLE;
-		next.event.ev = event;
-		store.set(next);
-	};
 
 	// process trigger
 	type PP = Parameters<Field.OnRender<Field.Type>>[0];

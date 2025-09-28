@@ -15,6 +15,7 @@ import { fieldAddAddon } from "../addons/field/add";
 import { fieldClearAddon } from "../addons/field/clear";
 import { fieldUpdateAddon } from "../addons/field/update";
 import { fieldMarkAddon } from "../addons/field/mark";
+import { fieldRemoveAddon } from "../addons/field/remove";
 
 //
 export function createField<
@@ -39,6 +40,7 @@ export function createField<
 	const clear = fieldClearAddon(fieldProps);
 	const update = fieldUpdateAddon(fieldProps);
 	const mark = fieldMarkAddon(fieldProps);
+	const remove = fieldRemoveAddon(fieldProps);
 
 	// cycles
 	mountCycle(fieldProps, update, mark);
@@ -54,6 +56,7 @@ export function createField<
 		update: update as any,
 		clear,
 		mark,
+		remove,
 		// const
 		get CYCLE() {
 			return CYCLE;

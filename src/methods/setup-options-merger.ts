@@ -18,9 +18,9 @@ export function setupOptionsMerger<G extends Form.Options>(_base?: G) {
 		}
 
 		if (base?.onMount != null || target?.onMount != null) {
-			merged.onMount = async (props) => {
-				const breturns = (await base?.onMount?.(props)) ?? undefined;
-				const ureturns = (await target?.onMount?.(props)) ?? undefined;
+			merged.onMount = async (props, onchange) => {
+				const breturns = (await base?.onMount?.(props, onchange)) ?? undefined;
+				const ureturns = (await target?.onMount?.(props, onchange)) ?? undefined;
 				// // priority to children
 				if (ureturns) {
 					return ureturns;

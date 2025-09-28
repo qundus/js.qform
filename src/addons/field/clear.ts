@@ -1,4 +1,5 @@
 import type { Field, Form, FunctionProps } from "../../_model";
+import { DOM, MUTATE } from "../../const";
 
 export type FieldAddonClear<_S extends Field.Setup, _O extends Form.Options> = {
 	value: () => void;
@@ -9,12 +10,15 @@ export function fieldClearAddon<S extends Field.Setup, O extends Form.Options>(
 	const { store } = props;
 	return {
 		value: () => {
-			const state = { ...store.get() };
-			state.value = undefined;
-			state.__internal.manual = true;
-			state.__internal.preprocess = true;
-			state.event.ev = undefined;
-			store.set(state);
+			const next = { ...store.get() };
+			next.value = undefined;
+			next.__internal.manual = true;
+			next.__internal.preprocess = true;
+			next.event.ev = undefined;
+			//
+			next.event.DOM = DOM.IDLE;
+			next.event.MUTATE = MUTATE.VALUE;
+			store.set(next);
 		},
 	};
 }

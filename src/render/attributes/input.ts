@@ -22,7 +22,7 @@ export function renderAttributesInput<
 			event.stopImmediatePropagation();
 			event.stopPropagation();
 			//
-			const next = { ...state };
+			const next = { ...store.get() };
 			next.element.focused = true;
 			next.element.visited = true;
 			next.__internal.manual = false;
@@ -36,7 +36,7 @@ export function renderAttributesInput<
 			event.preventDefault();
 			event.stopImmediatePropagation();
 			event.stopPropagation();
-			const next = { ...state };
+			const next = { ...store.get() };
 			next.element.focused = false;
 			next.element.visited = true;
 			next.__internal.manual = false;
@@ -62,7 +62,10 @@ export function renderAttributesInput<
 	}
 	attrs[listenerId] = (event: Event) => {
 		event.preventDefault();
-		const next = { ...state };
+		const next = { ...store.get() };
+		if (next.element.disabled) {
+			return;
+		}
 		next.__internal.manual = false;
 		//
 		next.event.DOM = DOM.IDLE; // questionable?

@@ -82,7 +82,7 @@ function _schemaToFields<Z, E extends SchemaToFieldsExtenders<Z>>(
 						const value = obj[key];
 						selections.push({ label: key, value });
 					}
-					setup.selections = selections;
+					setup.select = { options: selections };
 				}
 				break;
 			case "file":

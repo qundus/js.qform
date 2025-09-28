@@ -6,15 +6,25 @@ import { preactHook } from "@qundus/qstate/preact";
 export const name = createField("name", "text");
 export const goal = createField("goal", "file");
 export const picture = createField("picture", {
-	type: "text",
+	type: "file",
+	value: "wow",
 });
-export const cities = createField("name", "select");
-export const radio = createField("name", "radio");
+export const cities = createField("cities", {
+	type: "select",
+	select: {
+		options: ["wow", 22, { code: "yee" }],
+	},
+});
+export const radio = createField("radio", "radio");
 
-cities.render.preact.trigger();
-// radio.render.dom()
+cities.store.get().value;
+// cities.store.get().element.select.options.map((item) => {
+// 	// item.
+// });
+// cities.setup.
+// radio.setup
 
-// name.render;
+// name.setup.type;
 // name.render.dom()
 // picture.store.get().element.
 // picture.update.element({
@@ -67,15 +77,19 @@ const form = createForm(
 		},
 		cities: {
 			type: "select",
-			value: undefined,
+			// value: undefined,
+			multiple: true,
 			// validateOn: "change",
 			// validate(value) {
 			// 	return null;
 			// },
-			selections: [
-				{ label: "saudi", value: "sa" },
-				{ label: "kuwait", value: "kw" },
-			],
+			select: {
+				options: [
+					{ label: "saudi", value: "sa", code: "" },
+					{ label: "kuwait", value: "kw", code: "" },
+					"madinah",
+				],
+			},
 			// multiple: true,
 			// processValue: ({ key, next }, { processors }) => {
 			// 	return processors.checkbox();
@@ -110,19 +124,21 @@ const form = createForm(
 			value: null, //null as { wow: string } | null,
 			// required: false,
 			// hidden: true,
-			selections: [
-				{ label: "male", value: "male", garage: "wow" },
-				{ label: "female", value: "female", garage: "wow" },
-			],
+			// selections: [
+			// 	{ label: "male", value: "male", garage: "wow" },
+			// 	{ label: "female", value: "female", garage: "wow" },
+			// ],
 		},
 		// wow: {}
 	},
 	{
-		onMount: (init) => {
+		onMount: ({ fields }, listen) => {
 			// init.extras.gender?.[0].
-			console.log("mounted form loginform :: ", init);
+			// console.log("mounted form loginform :: ", init);
+
+			listen([fields.cities.store, fields.color.store], (country, color) => {});
 		},
-		onChange: ($next) => {
+		onEffect: ($next) => {
 			console.log("changed form loginform :: ", $next);
 			// $next.conditions.phone.hidden = $next.values.name == null || $next.values.name === "";
 		},
@@ -137,9 +153,12 @@ const form = createForm(
 // function wow<F extends Field.Setup<'file'>>(field: Field.Factory<F, any>) {
 // 	const extras = field.store.get().extras
 // }
-
+form.values.get().picture;
 form.fields.picture.store.hooks;
 form.store.hooks;
+// form.fields.cities.setup.
+form.fields.cities.store.get();
+// form.fields.gender.setup.
 // const data = form.submit
 
 // const gender = $form.atoms("gender");

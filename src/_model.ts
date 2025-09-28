@@ -49,23 +49,6 @@ export namespace Field {
 		updated: boolean; // happens when value updated
 		by: false | "user" | "manual"; // last modification by user or manual
 	};
-	export type Element<S extends Setup> = {
-		focused: boolean;
-		visited: boolean;
-		entered: boolean;
-		left: boolean;
-		selections?: S["selections"];
-	} & {
-		[K in keyof Setup as K extends keyof typeof IGNORED_SETUP_KEYS | "selection"
-			? never
-			: K]: S[K] extends
-			| Check.IsUnknown<S[K]>
-			| Check.IsUndefined<S[K]>
-			| Check.IsNull<S[K]>
-			| Check.IsEmpty<S[K]>
-			? Setup[K]
-			: S[K];
-	};
 	export type Errors = string[] | null | undefined;
 	export type Validate = (props: {
 		value: any;
@@ -120,12 +103,6 @@ export namespace Field {
 			  }
 		),
 	) => void;
-	// select/radio
-	export type Selections =
-		| string[]
-		| number[]
-		| Record<string, unknown>[]
-		| { label: string; value: string }[];
 
 	// DON'T CHANGE TEMPLATES, IF CHANGED CHECK EVERY FIELD ATTRIBUTES
 	export type Setup<
@@ -200,56 +177,123 @@ export namespace Field {
 		/** coming soon, a way to defing nested field fields */
 		nested?: any;
 		props?: Record<string, any>;
+		multiple?: boolean;
 
 		//## type specific
-		// selections/options for select and radio
-		selections?: T extends "select" | "radio" ? Selections : null;
-		selectionsValueKey?: T extends "select" | "radio" ? string | string[] : null;
-		selectionsLabelKey?: T extends "select" | "radio" ? string | string[] : null;
-		multiple?: T extends "select" ? boolean : false;
+		radio?: T extends "radio" ? RadioSetup : never;
+		select?: T extends "select" ? SelectSetup : never;
+		checkbox?: T extends "checkbox" ? CheckboxSetup : never;
+	};
+
+	// type specific setup
+	export type SelectSetup = {
+		options?: (string | number | Record<string, unknown> | { label: string; value: string })[];
+		valueKey?: string;
+		labelKey?: string;
+		/**
+		 * allows for dynamic creation of selection options by deriving the options
+		 * from the selected option at runtime, useful for adding options to an existing
+		 * list or creating a whole selection options dynamically.
+		 */
+		dynamic?: boolean;
+	};
+	export type RadioSetup = SelectSetup;
+	export type CheckboxSetup = {
 		/**
 		 * for when a checkbox is mandatory daah
 		 */
-		mandatory?: T extends "checkbox" ? boolean : false;
+		mandatory?: boolean;
 	};
-	// extends infer G
-	// 	? { [K in keyof G as G[K] extends never ? never : K]: G[K] }
-	// 	: never;
 
 	// converters
-	export type ValueFromType<T extends Type> = T extends "select"
-		? string[]
-		: T extends "file"
-			? // TODO: figure out how to display this in options but hide it from final object value type
-				FileList // | string | string[] | {name: string; url: string;} | {name: string; url:string}[]
-			: T extends "checkbox"
-				? boolean
-				: T extends "radio"
-					? string
-					: T extends "tel"
-						? number | string
-						: string; // default/fallback data type
-	export type ValueFromOptions<T extends Type, V, Required, Hidden> = (
+	export type ValueFromType<T extends Type, S extends Setup<T> = Setup<T>> = T extends "file"
+		? // TODO: figure out how to display this in options but hide it from final object value type
+			FileList // | string | string[] | {name: string; url: string;} | {name: string; url:string}[]
+		: T extends "checkbox"
+			? boolean
+			: T extends "select" | "radio"
+				? (
+						SelectSetupOut<S>["options"][number] extends infer G
+							? { [K in keyof G as K extends `__${infer _internal}` ? never : K]: G[K] }
+							: never
+					) extends infer G
+					? S["multiple"] extends true
+						? G[]
+						: G
+					: never
+				: T extends "tel"
+					? number | string
+					: string; // default/fallback data type
+	export type ValueFromOptions<T extends Type, V, S extends Setup<T, V> = Setup<T, V>> = (
 		true extends Check.IsUnknown<V> | Check.IsUndefined<V> | Check.IsNull<V>
 			? // if value is not set then fallback to original input type value
-				{ value: ValueFromType<T> }
-			: // control final recieved types, for example file type input is strictly set to FileList
-				{ value: "file" extends T ? ValueFromType<T> : V }
+				{ value: ValueFromType<T, S> }
+			: T extends "file" | "select" | "radio"
+				? { value: ValueFromType<T, S> } // control final recieved types, for example file type input is strictly set to FileList
+				: { value: V }
 	) extends infer G
 		? {
-				[K in keyof G]: Required extends false
-					? G[K] | undefined
-					: Hidden extends true
-						? G[K] | undefined
+				[K in keyof G]: S["required"] extends false
+					? S["valueNullable"] extends false
+						? G[K]
+						: G[K] | undefined
+					: S["hidden"] extends true
+						? S["valueNullable"] extends false
+							? G[K]
+							: G[K] | undefined
 						: G[K];
 			}
 		: never;
 	export type SetupIn = Type | Setup | null | undefined;
 	export type SetupInToSetup<S extends SetupIn> = S extends Setup<infer type, infer value>
-		? ValueFromOptions<type, value, S["required"], S["hidden"]> & Omit<S, "value">
+		? ValueFromOptions<type, value, S> & Omit<S, "value">
 		: S extends Type
-			? ValueFromOptions<S, undefined, true, false> & Omit<Field.Setup<S>, "value"> // when basic is a field type
-			: ValueFromOptions<Type, string, true, false> & Omit<Setup<Type, string>, "value">; // if caused issues change to FieldType
+			? ValueFromOptions<S, undefined> & Omit<Field.Setup<S>, "value"> // when basic is a field type
+			: ValueFromOptions<Type, string> & Omit<Setup<Type, string>, "value">; // if caused issues change to FieldType
+
+	export type SelectSetupOut<S extends Setup> = {
+		dynamic: boolean | undefined;
+		valueKey: string;
+		labelKey: string;
+		selected: number;
+		prev: number[];
+		current: number[];
+		options: ((S["select"] extends SelectSetup
+			? S["select"]["options"] extends (infer option)[]
+				? option extends string | number
+					? { label: option; value: option }
+					: option
+				: { label: string; value: string }
+			: { label: string; value: string }) & { __selected: boolean; __key: string })[];
+	};
+	export type RadioSetupOut<S extends Setup> = Pick<
+		SelectSetupOut<S>,
+		"options" | "valueKey" | "labelKey"
+	>;
+	export type CheckboxSetupOut<S extends Setup> = {
+		mandatory: boolean;
+	};
+
+	// element
+	export type Element<S extends Setup> = {
+		focused: boolean;
+		visited: boolean;
+		entered: boolean;
+		left: boolean;
+		select: SelectSetupOut<S>;
+		radio: RadioSetupOut<S>;
+		checkbox: CheckboxSetupOut<S>;
+	} & {
+		[K in keyof Setup as K extends keyof typeof IGNORED_SETUP_KEYS | "select" | "radio" | "checkbox"
+			? never
+			: K]: S[K] extends
+			| Check.IsUnknown<S[K]>
+			| Check.IsUndefined<S[K]>
+			| Check.IsNull<S[K]>
+			| Check.IsEmpty<S[K]>
+			? Setup[K]
+			: S[K];
+	};
 
 	// extras
 	/**
@@ -285,23 +329,12 @@ export namespace Field {
 		| undefined;
 
 	// store
-	// export type StoreUpdateSignal =
-	// 	| undefined
-	// 	| "internal.extras"
-	// 	| "value"
-	// 	| "element"
-	// 	| "element.focus"
-	// 	| "element.blur"
-	// 	| "element.click"
-	// 	| "element.click.trigger"
-	// 	| "element.click.option"
-	// 	| "cycle"
-	// 	| "props";
 	export type StoreObject<S extends Setup> = {
 		readonly __internal: {
 			key: string;
 			manual: boolean;
 			preprocess?: boolean;
+			noValidation?: boolean;
 		};
 		readonly event: {
 			DOM: DOM;
@@ -348,6 +381,7 @@ export namespace Field {
 		readonly clear: Addon.FieldClear<S, O>;
 		readonly update: Addon.FieldUpdate<S, O>;
 		readonly mark: Addon.FieldMark<S, O>;
+		readonly remove: Addon.FieldRemove<S, O>;
 		// const
 		readonly CYCLE: typeof CYCLE;
 		readonly DOM: typeof DOM;
@@ -365,7 +399,9 @@ export namespace Form {
 		Field.SetupIn
 	>
 		? {
-				[K in keyof I]: Field.Factory<Field.SetupInToSetup<I[K]>, O>;
+				[K in keyof I]: Field.SetupInToSetup<I[K]> extends Field.Setup
+					? Field.Factory<Field.SetupInToSetup<I[K]>, O>
+					: never;
 			}
 		: Record<string, Field.Factory<Field.Setup, O>>;
 	// extends infer G? {[K in keyof G]: G[K]} : never;
@@ -418,14 +454,19 @@ export namespace Form {
 
 		//## store
 		storeHooks?: _QSTATE.Option.Hooks.In<any>;
-		onMount?: (props: {
-			readonly isServerSide: () => boolean;
-			readonly form: StoreObject<F, Options<F>>;
-			readonly prev: StoreObject<F, Options<F>>;
-			readonly getForm: () => StoreObject<F, Options<F>>;
-			readonly fields: F;
-			// readonly update: Addon.FormUpdate<F, Options<F>>;
-		}) => void | Promise<void>;
+		onMount?: (
+			props: {
+				readonly isServerSide: () => boolean;
+				readonly form: StoreObject<F, Options<F>>;
+				readonly prev: StoreObject<F, Options<F>>;
+				readonly getForm: () => StoreObject<F, Options<F>>;
+				readonly fields: F;
+			},
+			listen: <Value, OriginStores extends _QSTATE.Nano.Abstract[]>(
+				stores: [...OriginStores],
+				cb: (...values: _QSTATE.Nano.Values<OriginStores>) => void | Promise<void | Value>,
+			) => void,
+		) => void | Promise<void>;
 		onEffect?: (props: {
 			readonly isServerSide: () => boolean;
 			readonly form: StoreObject<F, Options<F>>;
@@ -625,6 +666,7 @@ import type { FieldAddonAdd } from "./addons/field/add";
 import type { FieldAddonClear } from "./addons/field/clear";
 import type { FieldAddonUpdate } from "./addons/field/update";
 import type { FieldAddonMark } from "./addons/field/mark";
+import type { FieldAddonRemove } from "./addons/field/remove";
 
 import type { FormAddonSubmit } from "./addons/form/submit";
 import type { FormAddonUpdate } from "./addons/form/update";
@@ -637,6 +679,7 @@ export namespace Addon {
 	export type FieldClear<S extends Field.Setup, O extends Form.Options> = FieldAddonClear<S, O>;
 	export type FieldUpdate<S extends Field.Setup, O extends Form.Options> = FieldAddonUpdate<S, O>;
 	export type FieldMark<S extends Field.Setup, O extends Form.Options> = FieldAddonMark<S, O>;
+	export type FieldRemove<S extends Field.Setup, O extends Form.Options> = FieldAddonRemove<S, O>;
 
 	// form
 	export type FormSubmit<F extends Form.Fields, O extends Form.Options<F>> = FormAddonSubmit<F, O>;
@@ -723,18 +766,18 @@ export namespace Render {
 		export type Factory<R> = R;
 	}
 
-	export namespace Element {
-		// export type Factory<
-		// 	S extends Field.Setup,
-		// 	O extends Form.Options,
-		// 	A extends Attributes.Type,
-		// > =
-		// S["type"] extends "select"
-		// 	? Select<S, O, A, boolean>
-		// 	: S["type"] extends "radio"
-		// 		? Radio<S, O, A, boolean>
-		// 		: Input<S, O, A>;
-	}
+	// export namespace Element {
+	// 	// export type Factory<
+	// 	// 	S extends Field.Setup,
+	// 	// 	O extends Form.Options,
+	// 	// 	A extends Attributes.Type,
+	// 	// > =
+	// 	// S["type"] extends "select"
+	// 	// 	? Select<S, O, A, boolean>
+	// 	// 	: S["type"] extends "radio"
+	// 	// 		? Radio<S, O, A, boolean>
+	// 	// 		: Input<S, O, A>;
+	// }
 }
 
 export namespace Integration {

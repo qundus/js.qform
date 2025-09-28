@@ -9,42 +9,70 @@ export function processSelectValue<
 	// setup
 	const { setup } = props;
 	const { event, manualUpdate, preprocessValue, $next } = processor;
-	const valueKey = $next.element.selectionsValueKey ?? "value";
-	// const labelKey = $next.element.selectionsLabelKey ?? "label";
+	// crucial checkup
 	const multiple = $next.element.multiple ?? false;
-	const selections = $next.element.selections as any[];
+	const select = ($next.element.select ?? {}) as Field.SelectSetupOut<S>;
 	const _value = !manualUpdate ? $next.value : processor.value;
-	const result = [] as any[];
-	if (selections && selections.length > 0) {
-		if (!Array.isArray(selections)) {
+	const selected = Array.isArray(_value) ? _value : _value == null ? [] : [_value];
+	let result = [] as any[];
+	//
+	select.valueKey = select.valueKey ?? "value";
+	select.labelKey = select.labelKey ?? "label";
+	select.prev = [];
+	select.current = [];
+
+	// check validity of result
+	selected.forEach((option, index, arr) => {
+		if (option == null) {
+			option = { label: "unknown", value: "unknown" } as any;
+		} else if (typeof option === "string" || typeof option === "number") {
+			option = { label: option, value: option } as any;
+		}
+		delete option.__selected;
+		delete option.__key;
+		arr[index] = option;
+	});
+	if (select.options && select.options.length > 0) {
+		if (!Array.isArray(select.options)) {
 			throw new Error("qform: only arrays are allowed as selections of fields!");
 		}
-		const selected = Array.isArray(_value) ? _value : _value == null ? [] : [_value];
-		for (let i = 0; i < selections.length; i++) {
-			let option = selections[i];
+		for (let i = 0; i < select.options.length; i++) {
+			let option = select.options[i];
 			// process options
 			if (option == null) {
 				option = { label: "unknown", value: "unknown", __selected: false } as any;
 			} else if (typeof option === "string" || typeof option === "number") {
 				option = { label: option, value: option, __selected: false } as any;
 			}
-			if (selected.includes(option[valueKey])) {
-				option.__selected = true;
-				result.push(option[valueKey]);
-			} else {
-				option.__selected = false;
+			//
+			if (option.__selected) {
+				select.prev.push(i);
 			}
-			selections[i] = option;
+			//
+			const item = selected.find((item) => item[select.valueKey] === option[select.valueKey]);
+			option.__selected = item != null;
+			if (option.__selected) {
+				select.current.push(i);
+				result.push(option);
+			}
+			// confirm key
+			option.__key = `${$next.__internal.key}-option${i}`;
+			select.options[i] = option;
 		}
-		$next.element.selections = selections;
+		$next.element.select = select as any;
 	}
+
+	if (result.length <= 0) {
+		result = undefined as any;
+	}
+	// console.log("result :: ", result);
 
 	// user wants this value to be there
 	if (!preprocessValue) {
 		// TODO: lookup user value update in the selections array
-		return multiple ? result : result[0];
+		return multiple ? result : result?.[0];
 	}
-	return multiple ? result : result[0];
+	return multiple ? result : result?.[0];
 
 	//
 	// if (!multiple) {

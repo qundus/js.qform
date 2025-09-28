@@ -1,4 +1,4 @@
-import { effect, task } from "@qundus/qstate";
+import { effect, task, batched, computed } from "@qundus/qstate";
 import type { Addon, Field, Form, FunctionProps } from "../../_model";
 import { CYCLE } from "../../const";
 import { isServerSide } from "@qundus/qstate/checks";
@@ -89,7 +89,21 @@ export function changeCycle<F extends Form.Fields, O extends Form.Options<F>>(
 		};
 		if (eventprops.prev.status === "mount") {
 			task(async () => {
-				await options?.onMount?.(eventprops);
+				await options?.onMount?.(eventprops, (stores, func) => {
+					if (isServerSide()) {
+						return;
+					}
+					let init = true;
+					effect(stores, (...values) => {
+						if (init) {
+							init = false;
+							return;
+						}
+						task(async () => {
+							await func(...values);
+						});
+					});
+				});
 			});
 		} else {
 			options?.onEffect?.(eventprops);

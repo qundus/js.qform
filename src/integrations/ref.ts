@@ -11,10 +11,10 @@ export type IntegrationRef<S extends Field.Setup, O extends Form.Options> = Inte
 			input: (ref: any) => void;
 			select: {
 				trigger: (ref: any) => void;
-				option: (ref: any, value: any) => void;
+				option: (ref: any, option: any) => void;
 			};
 			radio: {
-				option: (ref: any, value: any) => void;
+				option: (ref: any, option: any) => void;
 			};
 		};
 	}
