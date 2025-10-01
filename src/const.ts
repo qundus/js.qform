@@ -46,7 +46,9 @@ export const IGNORED_SETUP_KEYS = {
 	| "labelReplace"
 	| "props"
 	| "nested"
-	// select
+	// extras
+	| "select"
+	| "checkbox"
 	// | "selections"
 	// | "selectionsValueKey"
 	// | "selectionsLabelKey"
@@ -56,8 +58,10 @@ export enum CYCLE {
 	INIT = 0,
 	MOUNT = 1,
 	CHANGE = 2,
-	LOAD = 3,
-	SUBMIT = 4,
+	SUBMIT = 3,
+	// extra
+	LOAD = 4,
+	SKELETON = 5,
 }
 
 export enum DOM {
@@ -87,6 +91,8 @@ export enum MUTATE {
 	ELEMENT = "MUTATE.ELEMENT",
 	CYCLE = "MUTATE.CYCLE",
 	PROPS = "MUTATE.PROPS",
+	EXTRAS = "MUTATE.EXTRAS",
 	// internals
 	__EXTRAS = "MUTATE.__EXTRAS",
+	__RESET = "MUTATE.__RESET",
 }

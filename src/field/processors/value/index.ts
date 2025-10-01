@@ -10,14 +10,14 @@ export function processValue<S extends Field.Setup, O extends Form.Options>(
 	processor: FunctionProps.FieldProcessor<S, O>,
 ) {
 	const { setup } = props;
-	const { event, manualUpdate } = processor;
+	const { el, manualUpdate } = processor;
 
 	//
 	let value = processor.value;
-	if (setup.type === "select" || setup.type === "radio") {
+	if (setup.type.startsWith("select")) {
 		value = processSelectValue(props as any, processor as any);
 	} else if (setup.type === "checkbox") {
-		value = processCheckboxValue(props, processor);
+		value = processCheckboxValue(props as any, processor as any);
 	} else if (setup.type === "file") {
 		value = processFileValue(props as any, processor as any);
 	} else if (setup.type === "number") {

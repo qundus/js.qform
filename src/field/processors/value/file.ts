@@ -1,4 +1,4 @@
-import type { Field, Form, FunctionProps } from "../../../_model";
+import type { Extras, Field, Form, FunctionProps } from "../../../_model";
 import { DOM, MUTATE } from "../../../const";
 import { populateFileReader } from "../../../methods/populate-file-reader";
 
@@ -8,155 +8,164 @@ export function processFileValue<S extends Field.Setup<"file">, O extends Form.O
 ) {
 	// setup
 	const { store } = props;
-	const { event, manualUpdate, preprocessValue, $next } = processor;
-	const el = event?.target as HTMLInputElement;
-	let result = undefined as
+	const { el, manualUpdate, preprocessValue, $next } = processor;
+	const extras = {
+		count: { upload: 0, failed: 0, done: 0 },
+		fallback: undefined,
+		files: undefined as unknown as any[],
+	}; //as Extras.FileOut<S>;
+	let _value = undefined as
 		| undefined
 		| FileList
 		| string
 		| string[]
 		| { name: string; url: string }
 		| { name: string; url: string }[];
+
 	// first check for manual updates as they're usually different in nature
 	if (manualUpdate) {
-		result = processor.value;
-		const isFileListArr = Array.isArray(result) && result.length > 0 && result[0] instanceof File;
+		_value = processor.value;
+		const isFileListArr = Array.isArray(_value) && _value.length > 0 && _value[0] instanceof File;
 		// if not a filelist array, process value and return null
-		if (!isFileListArr && result != null) {
+		if (!isFileListArr && _value != null) {
 			// const fallback = [] as {name: string;url: string;}[]
-			result = (!Array.isArray(result) ? [result] : result) as any[];
-			for (let i = 0; i < result.length; i++) {
-				const obj = result[i];
+			_value = (!Array.isArray(_value) ? [_value] : _value) as any[];
+			for (let i = 0; i < _value.length; i++) {
+				const obj = _value[i];
 				if (typeof obj === "string") {
 					// we got a case of fallback placeholder
-					result[i] = { name: "unknown file name", url: obj };
+					_value[i] = { name: "unknown file name", url: obj };
 				}
 				// otherwise, the object is already of type {name,url}
 			}
-
-			// update extras
-			$next.extras = {
-				fallback: result,
-				count: { upload: 0, failed: 0, done: 0 },
-				files: [],
-			} as any;
+			// @ts-expect-error
+			extras.fallback = _value;
+			$next.extras = extras as any;
 			return null;
 		}
 	} else {
-		// console.log("result filelist ");
-		result = el?.files as FileList;
+		// console.log("result filelist");
+		_value = el?.files as FileList;
 	}
 
-	result = result as FileList;
-	if (preprocessValue) {
-		if (result == null || result.length <= 0) {
-			// cleanup
-			$next.extras = undefined;
-		} else {
-			// we got files, reset extras and move on
-			$next.extras = {
-				count: {
-					upload: (result as FileList).length,
-					failed: 0,
-					done: 0,
+	if (_value == null) {
+		$next.extras = extras as any;
+		return null;
+	}
+
+	//
+	const result = _value as FileList;
+	// it doesn't make sense to have a different behavior for !preprocessValue
+	// if it does exactly what a normal file upload does, cancelling preprocess
+	// value here
+	// if (!preprocessValue) {
+	// 	extras.count = {
+	// 		upload: result.length,
+	// 		failed: 0,
+	// 		done: 0,
+	// 	};
+	// 	extras.files = [];
+	// 	// value has been updated manually, update extras accordingly
+	// 	if (result != null && result.length > 0) {
+	// 		for (let i = 0; i < result.length; i++) {
+	// 			const extrasFile = $next.extras.files?.[i];
+	// 			const valueFile = result[i];
+	// 			if (extrasFile?.name !== valueFile.name) {
+	// 				extras.count.failed++;
+	// 				continue;
+	// 			}
+	// 			extras.count.done++;
+	// 			extras.files.push(extrasFile);
+	// 		}
+	// 	}
+	// 	return $next.element.multiple ? result : result?.[0];
+	// }
+
+	// we got files, reset extras and move on
+	extras.count = {
+		upload: result.length,
+		failed: 0,
+		done: 0,
+	};
+	extras.files = [];
+	for (const file of result) {
+		if (!(file instanceof File)) {
+			console.warn("qform: upload wasn't of type file ", file, " skipping!!");
+			extras.count.failed++;
+			continue;
+		}
+		const idx =
+			extras.files.push({
+				file,
+				name: file.name,
+				stage: "start",
+				loading: true,
+				progress: {
+					loadedBytes: 0,
+					totalBytes: file.size,
+					percentage: 0,
 				},
-				files: [],
-			} as any;
-			for (const file of result) {
-				if (!(file instanceof File)) {
-					console.warn("qform: upload wasn't of type file ", file, " skipping!!");
-					if ($next.extras) {
-						$next.extras.count.failed++;
-					}
-					continue;
-				}
-				const idx =
-					// @ts-expect-error
-					$next.extras.files.push({
-						file,
-						name: file.name,
-						stage: "start",
-						loading: true,
-						progress: {
-							loadedBytes: 0,
-							totalBytes: file.size,
-							percentage: 0,
-						},
-					}) - 1;
+			}) - 1;
 
-				// for async updates
-				populateFileReader(file, {
-					onprogress(progress) {
-						if ($next.extras == null) {
-							return;
-						}
-						// console.log("progress :: ", progress);
-						const file = $next.extras.files[idx];
-						file.progress.loadedBytes = progress.loaded;
-						file.progress.percentage = progress.percentage;
-						$next.extras.files[idx] = file;
-						//
-						$next.__internal.manual = false;
-						$next.event.DOM = DOM.FILE_PROGRESS;
-						$next.event.MUTATE = MUTATE.__EXTRAS;
-						store.set({ ...$next });
-					},
-					onloadend: ({ status, buffer, error, progress }) => {
-						if ($next.extras == null) {
-							return;
-						}
-						// console.log("loadend :: ", extras);
-						const file = $next.extras.files[idx];
-						file.progress.loadedBytes = progress.loaded;
-						file.progress.percentage = progress.percentage;
-						if (status === "success") {
-							file.buffer = buffer;
-							file.url = typeof buffer === "string" ? buffer : (buffer as any)[0];
-							file.stage = "success";
-							$next.extras.count.done++;
-						} else if (status === "error") {
-							file.error = error;
-							file.stage = "fail";
-							$next.extras.count.failed++;
-						} else {
-							file.stage = "abort";
-							$next.extras.count.failed++;
-						}
-
-						// updates
-						$next.__internal.manual = false;
-						$next.event.DOM = DOM.FILE_DONE;
-						$next.event.MUTATE = MUTATE.__EXTRAS;
-						store.set({ ...$next });
-					},
-				});
-			}
-		}
-	} else {
-		// value has been updated manually, check extras validity
-		if (result != null && result.length > 0) {
-			if ($next.extras != null) {
-				const files = [] as any[];
-				$next.extras.count.done = result.length;
-				$next.extras.count.failed = 0;
-				for (let i = 0; i < result.length; i++) {
-					const extrasFile = $next.extras.files[i];
-					const valueFile = result[i];
-					if (extrasFile.name !== valueFile.name) {
-						$next.extras.count.failed++;
-						continue;
-					}
-					$next.extras.count.done++;
-					files.push(extrasFile);
+		// for async updates
+		populateFileReader(file, {
+			onprogress(progress) {
+				// console.log("progress :: ", progress);
+				const file = extras.files[idx];
+				const next = { ...store.get() };
+				file.progress.loadedBytes = progress.loaded;
+				file.progress.percentage = progress.percentage;
+				//
+				if (next.extras == null) {
+					next.extras = extras as any;
 				}
-				$next.extras.files = files;
-			}
-		}
+				if (next.extras.files == null) {
+					next.extras.files = [file];
+				}
+				next.extras.files[idx] = file;
+				next.__internal.manual = false;
+				next.event.DOM = DOM.FILE_PROGRESS;
+				next.event.MUTATE = MUTATE.__EXTRAS;
+
+				console.log("update progress :: ");
+				store.set(next);
+			},
+			onloadend: ({ status, buffer, error, progress }) => {
+				// console.log("loadend :: ", extras);
+				const file = extras.files[idx];
+				const next = { ...store.get() };
+				file.progress.loadedBytes = progress.loaded;
+				file.progress.percentage = progress.percentage;
+				//
+				if (status === "success") {
+					file.buffer = buffer;
+					file.url = typeof buffer === "string" ? buffer : (buffer as any)[0];
+					file.stage = "success";
+					next.extras.count.done++;
+				} else if (status === "error") {
+					file.error = error;
+					file.stage = "fail";
+					next.extras.count.failed++;
+				} else {
+					file.stage = "abort";
+					next.extras.count.failed++;
+				}
+
+				// updates
+				if (next.extras == null) {
+					next.extras = extras as any;
+				}
+				if (next.extras.files == null) {
+					next.extras.files = [file];
+				}
+				next.extras.files[idx] = file;
+				next.__internal.manual = false;
+				next.event.DOM = DOM.FILE_DONE;
+				next.event.MUTATE = MUTATE.__EXTRAS;
+				store.set(next);
+			},
+		});
 	}
 
-	if ($next.element.multiple) {
-		return result;
-	}
-
-	return result?.[0];
+	return $next.element.multiple ? result : result?.[0];
 }

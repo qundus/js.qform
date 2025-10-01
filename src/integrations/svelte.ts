@@ -3,19 +3,18 @@ import { renderAttributesInput } from "../render/attributes/input";
 import { renderAttributesTrigger } from "../render/attributes/trigger";
 import { renderAttributesOption } from "../render/attributes/option";
 
-export type IntegrationSvelte<S extends Field.Setup, O extends Form.Options> = Integration.Factory<
+export type IntegrationSvelte<
+	S extends Field.Setup,
+	O extends Form.Options,
+> = Integration.RenderFactory<
 	S,
 	O,
+	"SOLID",
 	{
-		render: {
-			input: Render.Attributes.Input<S, O, "dom">;
-			select: {
-				trigger: Render.Attributes.Trigger<S, O, "dom">;
-				option: (option: any) => Render.Attributes.Option<S, O, "dom">;
-			};
-			radio: {
-				option: (option: any) => Render.Attributes.Option<S, O, "dom">;
-			};
+		input: { input: Render.Attributes.Input<S, O, "dom"> };
+		select: {
+			trigger: Render.Attributes.Trigger<S, O, "dom">;
+			option: (option: any) => Render.Attributes.Option<S, O, "dom">;
 		};
 	}
 >;
@@ -25,44 +24,37 @@ export function svelteIntegration<S extends Field.Setup, O extends Form.Options>
 	const { key, setup, store, options } = basic;
 	// check user process
 
-	return {
-		render: {
+	let result = undefined as any;
+	if (setup.type === "select" || setup.type === "select.radio") {
+		result = {
+			get trigger() {
+				const reactive = store.get();
+				const attrType = "dom";
+				return renderAttributesTrigger(basic, { attrType, reactive }) as any;
+			},
+			get option() {
+				const reactive = store.get();
+				const attrType = "dom";
+				return (value: any) => {
+					return renderAttributesOption(basic, {
+						attrType,
+						reactive,
+						optionValue: value,
+					}) as any;
+				};
+			},
+		} as any;
+	} else {
+		result = {
 			get input() {
 				const reactive = store.get();
 				const attrType = "dom";
 				return renderAttributesInput(basic, { attrType, reactive }) as any;
 			},
-			select: {
-				get trigger() {
-					const reactive = store.get();
-					const attrType = "dom";
-					return renderAttributesTrigger(basic, { attrType, reactive }) as any;
-				},
-				get option() {
-					const reactive = store.get();
-					const attrType = "dom";
-					return (value: any) => {
-						return renderAttributesOption(basic, {
-							attrType,
-							reactive,
-							optionValue: value,
-						}) as any;
-					};
-				},
-			},
-			radio: {
-				get option() {
-					const reactive = store.get();
-					const attrType = "dom";
-					return (value: any) => {
-						return renderAttributesOption(basic, {
-							attrType,
-							reactive,
-							optionValue: value,
-						}) as any;
-					};
-				},
-			},
-		},
-	};
+		};
+	}
+
+	result.__integrationFor = "SVELTE";
+	result.__integrationName = "SVELTE-RENDER";
+	return result;
 }

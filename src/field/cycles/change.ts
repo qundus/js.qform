@@ -9,7 +9,7 @@ export function changeCycle<
 	S extends Field.Setup,
 	O extends Form.Options,
 	G extends Form.Store<any, O>,
->(props: FunctionProps.Field<S, O>, formStore: G | undefined, mark: Addon.FieldMark<S, O>) {
+>(props: FunctionProps.Field<S, O>, formStore: G | undefined, update: Addon.FieldUpdate<S, O>) {
 	const { key, setup, options, store } = props;
 	// do startup checks for input types like file
 	//
@@ -27,10 +27,13 @@ export function changeCycle<
 	// });
 	onSet(store, async (payload) => {
 		const $next = payload.newValue;
+		// TODO: check if this is causing the radio to not update on some jumping back
+		// and fouth between options too fast sometimes
 		if ($next.__internal[REFRESH]) {
 			delete $next.__internal[REFRESH];
 			return $next;
 		} else if ($next.event.CYCLE > CYCLE.CHANGE) {
+			// console.log("current cycle :: ", $next.event.CYCLE);
 			return $next;
 		}
 		const _DOM = $next.event.DOM;
@@ -39,11 +42,13 @@ export function changeCycle<
 		const MANUAL_UPDATE = $next.__internal.manual;
 		const PREPROCESS_VALUE = ($next.__internal.preprocess ??
 			$next.element.preprocessValue) as boolean;
-		const EV = $next.event.ev;
 		const VMCM = (MANUAL_UPDATE ? $next.element.vmcm : "normal") as Field.VMCM;
 		const NO_VALIDATION = $next.__internal.noValidation ?? false;
 		const SHOULD_VALIDATE =
-			_MUTATE === MUTATE.VALUE || _MUTATE === MUTATE.ELEMENT || _DOM === DOM.CLICK_OPTION;
+			_MUTATE === MUTATE.VALUE ||
+			_MUTATE === MUTATE.ELEMENT ||
+			_DOM === DOM.CLICK_OPTION ||
+			_MUTATE === MUTATE.EXTRAS;
 		//
 		const prev = store.value;
 		const form = formStore?.get();
@@ -52,6 +57,7 @@ export function changeCycle<
 		// first reset necessaries
 		$next.__internal.key = key;
 		$next.__internal.preprocess = undefined;
+		$next.__internal.manual = false;
 		$next.__internal.noValidation = undefined;
 
 		// pre user intervention
@@ -70,7 +76,7 @@ export function changeCycle<
 		if (SHOULD_VALIDATE) {
 			$next.value = processValue(props, {
 				$next,
-				event: EV,
+				el: $next.event.ev,
 				manualUpdate: MANUAL_UPDATE,
 				preprocessValue: PREPROCESS_VALUE,
 				value: $next.value,
@@ -78,7 +84,22 @@ export function changeCycle<
 		}
 
 		try {
-			const onchangeprops = { form, setup, prev: prev as any, $next: $next as any, mark };
+			const onchangeprops = {
+				form,
+				setup,
+				prev: prev as any,
+				$next: $next as any,
+				update: update as any,
+				get DOM() {
+					return DOM;
+				},
+				get MUTATE() {
+					return MUTATE;
+				},
+				get CYCLE() {
+					return CYCLE;
+				},
+			};
 			if (typeof setup?.onChange === "function") {
 				await setup?.onChange?.(onchangeprops);
 			} else {
@@ -188,14 +209,8 @@ export function changeCycle<
 		// for some reason the effect of the form doesn't run properly so i have to rerun it by aborting and sending
 		// another store update
 		payload.abort();
-		store.set({
-			...$next,
-			__internal: {
-				...$next.__internal,
-				//@ts-expect-error
-				[REFRESH]: true,
-			},
-		});
+		$next.__internal[REFRESH] = true;
+		store.set($next);
 		return $next;
 
 		// many to one store update could cause race condition, don't like it :(

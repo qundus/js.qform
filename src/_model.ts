@@ -20,18 +20,17 @@ export namespace Field {
 	// | "button"
 	// | "submit"
 	export type Type =
+		// | "hidden" // replaced by hidden option
 		| "checkbox"
 		| "color"
 		| "date"
 		| "datetime-local"
 		| "email"
 		| "file"
-		// | "hidden" // replaced by hidden option
 		| "image"
 		| "month"
 		| "number"
 		| "password"
-		| "radio"
 		| "range"
 		| "reset"
 		| "search"
@@ -40,8 +39,10 @@ export namespace Field {
 		| "time"
 		| "url"
 		| "week"
-		| "select";
-	// | undefined;
+		| "select"
+		| "select.radio";
+	// | "select.native" // coming soon: for native select elements
+	// | "group" // coming soon: for collection of setups
 
 	export type Condition = {
 		valid: boolean;
@@ -55,31 +56,23 @@ export namespace Field {
 		prev: any;
 		form: Form.StoreObject<Form.Fields, Form.Options> | undefined;
 	}) => string | string[] | undefined | null | void;
-	/**
-	 * Value Manual Change Mechanism (VMCM), happens when values are updated from api
-	 * fetch data or just manual programmatic interferrence.
-	 * this affects whether the updated values go through the proper
-	 * channels of validation, proccessing and affects on form status or just
-	 * updates values without affecting anything else.
-	 * @option normal: value updates go through the proper channeels of validation, proccessing, error handling and condition report.
-	 * @option bypass: value updates are not validated so no proccessing or error handling, condition is changed though.
-	 * @option force-valid: value updates defaults fields value condition to valid.
-	 * @default "normal"
-	 */
 	export type VMCM = "normal" | "bypass" | "force-valid";
 	export type ValidateOn = "input" | "change";
 	// events
 	export type OnMount<T extends Type, V> = (props: {
 		setup: Setup;
 		update: Addon.FieldUpdate<Setup, Form.Options>;
-		mark: Addon.FieldMark<Setup, Form.Options>;
+		CYCLE: typeof CYCLE;
 	}) => void | (() => void) | Promise<void | (() => void)>;
 	export type OnChange<T extends Type, V> = (props: {
 		$next: StoreObject<Setup>;
 		prev: StoreObject<Setup>;
 		setup: Setup;
 		form: Form.StoreObject<any, any> | undefined;
-		mark: Addon.FieldMark<Setup, Form.Options>;
+		update: Addon.FieldUpdate<Setup, Form.Options>;
+		DOM: typeof DOM;
+		MUTATE: typeof MUTATE;
+		CYCLE: typeof CYCLE;
 		// prevForm: Form.StoreObject<Form.Fields>;
 	}) => void | Promise<void>;
 	export type OnRender<T extends Type> = (
@@ -103,6 +96,7 @@ export namespace Field {
 			  }
 		),
 	) => void;
+	export type Event = { value?: any; checked?: any; files?: FileList };
 
 	// DON'T CHANGE TEMPLATES, IF CHANGED CHECK EVERY FIELD ATTRIBUTES
 	export type Setup<
@@ -123,6 +117,11 @@ export namespace Field {
 		//## validations
 		/** validate value function or array of functions */
 		validate?: Validate | Validate[] | null; //| FieldValidate[];
+		/**
+		 * some developers like to validate on field.blur and others on field.change.
+		 * @option {change} run checks only on field.blur
+		 * @option {input} run checks on everychange occurs
+		 */
 		validateOn?: ValidateOn;
 		//## events
 		onMount?: OnMount<T, V>;
@@ -145,9 +144,23 @@ export namespace Field {
 		hidden?: boolean;
 		required?: boolean;
 		disabled?: boolean;
+		/**
+		 * can be used for when a field is mandatory, like a checkbox.
+		 */
+		mandatory?: boolean;
 
 		//## value effects
-		/** supercedes global options */
+		/**
+		 * Value Manual Change Mechanism (VMCM), happens when values are updated from api
+		 * fetch data or just manual programmatic interferrence.
+		 * this affects whether the updated values go through the proper
+		 * channels of validation, proccessing and affects on form status or just
+		 * updates values without affecting anything else.
+		 * @option normal: value updates go through the proper channeels of validation, proccessing, error handling and condition report.
+		 * @option bypass: value updates are not validated so no proccessing or error handling, condition is changed though.
+		 * @option force-valid: value updates defaults fields value condition to valid.
+		 * @default "normal"
+		 */
 		vmcm?: VMCM;
 		/**
 		 * all values go through preprocessing phase, use this to prevent that
@@ -179,30 +192,10 @@ export namespace Field {
 		props?: Record<string, any>;
 		multiple?: boolean;
 
-		//## type specific
-		radio?: T extends "radio" ? RadioSetup : never;
-		select?: T extends "select" ? SelectSetup : never;
-		checkbox?: T extends "checkbox" ? CheckboxSetup : never;
-	};
-
-	// type specific setup
-	export type SelectSetup = {
-		options?: (string | number | Record<string, unknown> | { label: string; value: string })[];
-		valueKey?: string;
-		labelKey?: string;
-		/**
-		 * allows for dynamic creation of selection options by deriving the options
-		 * from the selected option at runtime, useful for adding options to an existing
-		 * list or creating a whole selection options dynamically.
-		 */
-		dynamic?: boolean;
-	};
-	export type RadioSetup = SelectSetup;
-	export type CheckboxSetup = {
-		/**
-		 * for when a checkbox is mandatory daah
-		 */
-		mandatory?: boolean;
+		//## type specific as extra
+		// radio?: T extends "select.radio" ? RadioSetup : never;
+		select?: T extends "select" | "select.radio" ? Extras.Select : never;
+		checkbox?: T extends "checkbox" ? Extras.Checkbox : never;
 	};
 
 	// converters
@@ -211,9 +204,9 @@ export namespace Field {
 			FileList // | string | string[] | {name: string; url: string;} | {name: string; url:string}[]
 		: T extends "checkbox"
 			? boolean
-			: T extends "select" | "radio"
+			: T extends "select" | "select.radio"
 				? (
-						SelectSetupOut<S>["options"][number] extends infer G
+						Extras.Factory<S, "select" | "select.radio">["options"][number] extends infer G
 							? { [K in keyof G as K extends `__${infer _internal}` ? never : K]: G[K] }
 							: never
 					) extends infer G
@@ -228,7 +221,7 @@ export namespace Field {
 		true extends Check.IsUnknown<V> | Check.IsUndefined<V> | Check.IsNull<V>
 			? // if value is not set then fallback to original input type value
 				{ value: ValueFromType<T, S> }
-			: T extends "file" | "select" | "radio"
+			: T extends "file" | "select" | "select.radio"
 				? { value: ValueFromType<T, S> } // control final recieved types, for example file type input is strictly set to FileList
 				: { value: V }
 	) extends infer G
@@ -251,40 +244,14 @@ export namespace Field {
 			? ValueFromOptions<S, undefined> & Omit<Field.Setup<S>, "value"> // when basic is a field type
 			: ValueFromOptions<Type, string> & Omit<Setup<Type, string>, "value">; // if caused issues change to FieldType
 
-	export type SelectSetupOut<S extends Setup> = {
-		dynamic: boolean | undefined;
-		valueKey: string;
-		labelKey: string;
-		selected: number;
-		prev: number[];
-		current: number[];
-		options: ((S["select"] extends SelectSetup
-			? S["select"]["options"] extends (infer option)[]
-				? option extends string | number
-					? { label: option; value: option }
-					: option
-				: { label: string; value: string }
-			: { label: string; value: string }) & { __selected: boolean; __key: string })[];
-	};
-	export type RadioSetupOut<S extends Setup> = Pick<
-		SelectSetupOut<S>,
-		"options" | "valueKey" | "labelKey"
-	>;
-	export type CheckboxSetupOut<S extends Setup> = {
-		mandatory: boolean;
-	};
-
 	// element
 	export type Element<S extends Setup> = {
 		focused: boolean;
 		visited: boolean;
 		entered: boolean;
 		left: boolean;
-		select: SelectSetupOut<S>;
-		radio: RadioSetupOut<S>;
-		checkbox: CheckboxSetupOut<S>;
 	} & {
-		[K in keyof Setup as K extends keyof typeof IGNORED_SETUP_KEYS | "select" | "radio" | "checkbox"
+		[K in keyof Setup as K extends keyof typeof IGNORED_SETUP_KEYS | "select" | "checkbox"
 			? never
 			: K]: S[K] extends
 			| Check.IsUnknown<S[K]>
@@ -294,39 +261,6 @@ export namespace Field {
 			? Setup[K]
 			: S[K];
 	};
-
-	// extras
-	/**
-	 * sometimes some field types require additional information beyond the
-	 * the standard field "value", this offers that through value processing
-	 * and places it under FieldState or State
-	 */
-	export type Extras<S extends Setup<Type>, T = S["type"]> =
-		| (T extends "file"
-				? {
-						files: {
-							file: File;
-							name: string;
-							loading: boolean;
-							stage: "start" | "success" | "fail" | "abort";
-							progress: {
-								loadedBytes: number;
-								totalBytes: number;
-								percentage: number;
-							};
-							buffer?: string | ArrayBuffer | null;
-							url?: string;
-							error?: DOMException | null;
-						}[];
-						count: {
-							upload: number;
-							failed: number;
-							done: number;
-						};
-						fallback?: { name: string; url: string }[];
-					}
-				: never)
-		| undefined;
 
 	// store
 	export type StoreObject<S extends Setup> = {
@@ -340,7 +274,7 @@ export namespace Field {
 			DOM: DOM;
 			MUTATE: MUTATE;
 			CYCLE: CYCLE;
-			ev: Event | undefined;
+			ev: undefined | Event;
 		};
 		// user
 		value: S["value"] | undefined;
@@ -348,8 +282,8 @@ export namespace Field {
 		element: Element<S>;
 		/** user defined data */
 		props: S["props"];
+		extras: Extras.Factory<S>;
 		errors?: string[];
-		extras?: Field.Extras<S>;
 	};
 	export type StoreState<S extends Setup> = _QSTATE.Nano.Atom<StoreObject<S>>;
 	export type Store<S extends Setup, O extends Form.Options> = _QSTATE.Store.Factory<
@@ -366,28 +300,115 @@ export namespace Field {
 	export type Factory<S extends Setup, O extends Form.Options> = {
 		readonly key: string;
 		readonly setup: S;
-		readonly store: Omit<Store<S, O>, "set" | "setKey">; //Store<S, O>;
+		readonly store: Store<S, O>;
+		// readonly store: Omit<Store<S, O>, "set" | "setKey">; //Store<S, O>;
 		// readonly render: ReturnType<typeof createElement<S, O>>;
 		readonly render: {
-			dom: Integration.FactoryOut<S, O, IntegrationDom<S, O>>["render"];
-			ref: Integration.FactoryOut<S, O, IntegrationRef<S, O>>["render"];
-			preact: Integration.FactoryOut<S, O, IntegrationPreact<S, O>>["render"];
-			react: Integration.FactoryOut<S, O, IntegrationReact<S, O>>["render"];
-			solid: Integration.FactoryOut<S, O, IntegrationSolid<S, O>>["render"];
-			svelte: Integration.FactoryOut<S, O, IntegrationSvelte<S, O>>["render"];
+			dom: IntegrationDom<S, O>;
+			ref: IntegrationRef<S, O>;
+			preact: IntegrationPreact<S, O>;
+			react: IntegrationReact<S, O>;
+			solid: IntegrationSolid<S, O>;
+			svelte: IntegrationSvelte<S, O>;
 		};
 		// addons
-		readonly add: Addon.FieldAdd<S, O>;
-		readonly clear: Addon.FieldClear<S, O>;
 		readonly update: Addon.FieldUpdate<S, O>;
-		readonly mark: Addon.FieldMark<S, O>;
 		readonly remove: Addon.FieldRemove<S, O>;
+		readonly reset: Addon.FieldReset<S, O>;
 		// const
 		readonly CYCLE: typeof CYCLE;
 		readonly DOM: typeof DOM;
 		readonly MUTATE: typeof MUTATE;
 		readonly PLACEHOLDERS: typeof PLACEHOLDERS;
 	};
+}
+
+export namespace Extras {
+	// extras
+	export type Select = {
+		options?: (string | number | Record<string, unknown> | { label: string; value: string })[];
+		valueKey?: string;
+		labelKey?: string;
+		/**
+		 * incase the valueKey is not found in the option object, the dafault
+		 * behvior is to find a key dynamically and store it in the option
+		 * @default false
+		 */
+		throwOnKeyNotFound?: boolean;
+		/**
+		 * allows for dynamic creation of selection options by deriving the options
+		 * from the selected option at runtime, useful for adding options to an existing
+		 * list or creating a whole selection options dynamically.
+		 */
+		dynamic?: boolean;
+	};
+	export type Checkbox<Y = any, N = any> = {
+		yes?: Y;
+		no?: N;
+	};
+
+	// processed
+	export type FileOut<S extends Field.Setup> = {
+		count: {
+			upload: number;
+			failed: number;
+			done: number;
+		};
+		fallback?: { name: string; url: string }[];
+		files?: {
+			file: File;
+			name: string;
+			loading: boolean;
+			stage: "start" | "success" | "fail" | "abort";
+			progress: {
+				loadedBytes: number;
+				totalBytes: number;
+				percentage: number;
+			};
+			buffer?: string | ArrayBuffer | null;
+			url?: string;
+			error?: DOMException | null;
+		}[];
+	};
+	export type SelectOut<S extends Field.Setup> = {
+		dynamic: boolean | undefined;
+		valueKey: string;
+		labelKey: string;
+		selected: number;
+		throwOnKeyNotFound: boolean;
+		prev: number[];
+		current: number[];
+		options: ((S["select"] extends Select
+			? S["select"]["options"] extends (infer option)[]
+				? option extends string | number
+					? { label: option; value: option }
+					: option
+				: { label: string; value: string }
+			: { label: string; value: string }) & {
+			__selected: boolean;
+			__key: string;
+			__valueKey?: string;
+			__labelKey?: string;
+		})[];
+	};
+	export type CheckboxOut<S extends Field.Setup> = {
+		checked: boolean;
+		yes?: Exclude<S["checkbox"], undefined>["yes"];
+		no?: Exclude<S["checkbox"], undefined>["no"];
+	};
+
+	/**
+	 * sometimes some field types require additional information beyond the
+	 * the standard field "value", this offers that through value processing
+	 * and places it under FieldState or State
+	 */
+	export type Factory<S extends Field.Setup<Field.Type>, T = S["type"]> = T extends "file"
+		? FileOut<S>
+		: T extends "select" | "select.radio"
+			? SelectOut<S>
+			: T extends "checkbox"
+				? CheckboxOut<S>
+				: never;
 }
 
 export namespace Form {
@@ -460,6 +481,7 @@ export namespace Form {
 				readonly form: StoreObject<F, Options<F>>;
 				readonly prev: StoreObject<F, Options<F>>;
 				readonly getForm: () => StoreObject<F, Options<F>>;
+				readonly update: Addon.FormUpdate<F, Options<F>>;
 				readonly fields: F;
 			},
 			listen: <Value, OriginStores extends _QSTATE.Nano.Abstract[]>(
@@ -472,7 +494,6 @@ export namespace Form {
 			readonly form: StoreObject<F, Options<F>>;
 			readonly prev: StoreObject<F, Options<F>>;
 			readonly fields: F;
-			// readonly update: Addon.FormUpdate<F, Options<F>>;
 		}) => void;
 		/**
 		 * abort state changes when an exception is thrown from onChange
@@ -578,7 +599,7 @@ export namespace Form {
 			[K in keyof F]?: string[];
 		};
 		extras: {
-			[K in keyof F as Field.Extras<F[K]["setup"]> extends never ? never : K]: Field.Extras<
+			[K in keyof F as Extras.Factory<F[K]["setup"]> extends never ? never : K]: Extras.Factory<
 				F[K]["setup"]
 			>;
 		};
@@ -611,9 +632,8 @@ export namespace Form {
 		readonly store: Store<F, O>;
 		readonly fields: Fields<I, O>;
 		readonly options: O;
-		readonly placeholders: typeof PLACEHOLDERS;
+		// readonly placeholders: typeof PLACEHOLDERS;
 		get keys(): () => (keyof F)[];
-
 		// addons
 		submit: Addon.FormSubmit<F, O>;
 		update: Addon.FormUpdate<F, O>;
@@ -630,13 +650,12 @@ export namespace FunctionProps {
 		setup: S;
 		options: O | undefined;
 		store: Field.Store<S, O>;
-		init: Field.StoreObject<S>;
 	}
 	export type FieldCycle<S extends Field.Setup, O extends Form.Options> = Field<S, O>;
 	export type FieldAddon<S extends Field.Setup, O extends Form.Options> = Field<S, O>;
 	export interface FieldProcessor<S extends Field.Setup, O extends Form.Options> {
 		value: any;
-		event: Event | undefined;
+		el: Field.Event | undefined;
 		manualUpdate: boolean;
 		preprocessValue: boolean;
 		$next: Field.StoreObject<S>;
@@ -662,11 +681,9 @@ export namespace FunctionProps {
 }
 
 // addons/future-independant
-import type { FieldAddonAdd } from "./addons/field/add";
-import type { FieldAddonClear } from "./addons/field/clear";
 import type { FieldAddonUpdate } from "./addons/field/update";
-import type { FieldAddonMark } from "./addons/field/mark";
 import type { FieldAddonRemove } from "./addons/field/remove";
+import type { FieldAddonReset } from "./addons/field/reset";
 
 import type { FormAddonSubmit } from "./addons/form/submit";
 import type { FormAddonUpdate } from "./addons/form/update";
@@ -675,11 +692,9 @@ import type { FormAddonButton } from "./addons/form/button";
 
 export namespace Addon {
 	// field
-	export type FieldAdd<S extends Field.Setup, O extends Form.Options> = FieldAddonAdd<S, O>;
-	export type FieldClear<S extends Field.Setup, O extends Form.Options> = FieldAddonClear<S, O>;
 	export type FieldUpdate<S extends Field.Setup, O extends Form.Options> = FieldAddonUpdate<S, O>;
-	export type FieldMark<S extends Field.Setup, O extends Form.Options> = FieldAddonMark<S, O>;
 	export type FieldRemove<S extends Field.Setup, O extends Form.Options> = FieldAddonRemove<S, O>;
+	export type FieldReset<S extends Field.Setup, O extends Form.Options> = FieldAddonReset<S, O>;
 
 	// form
 	export type FormSubmit<F extends Form.Fields, O extends Form.Options<F>> = FormAddonSubmit<F, O>;
@@ -752,11 +767,18 @@ export namespace Render {
 			selected: boolean;
 			onClick: (event: Event) => void;
 		};
-		export type Option<
-			S extends Field.Setup,
-			O extends Form.Options,
-			A extends Type,
-		> = (A extends "dom" ? OptionDom : OptionVdom) & Record<string, unknown>;
+
+		export type OptionRadioDom = ToDom<OptionRadioVdom>;
+		export type OptionRadioVdom = {
+			value: any;
+			selected: boolean;
+			// onClick: (event: Event) => void;
+		};
+		export type Option<S extends Field.Setup, O extends Form.Options, A extends Type> = S extends {
+			type: "select";
+		}
+			? (A extends "dom" ? OptionDom : OptionVdom) & Record<string, unknown>
+			: (A extends "dom" ? OptionRadioDom : OptionRadioVdom) & Record<string, unknown>;
 
 		// all
 		export type AllInputDom = HTMLInputElement;
@@ -765,52 +787,32 @@ export namespace Render {
 		// factory
 		export type Factory<R> = R;
 	}
-
-	// export namespace Element {
-	// 	// export type Factory<
-	// 	// 	S extends Field.Setup,
-	// 	// 	O extends Form.Options,
-	// 	// 	A extends Attributes.Type,
-	// 	// > =
-	// 	// S["type"] extends "select"
-	// 	// 	? Select<S, O, A, boolean>
-	// 	// 	: S["type"] extends "radio"
-	// 	// 		? Radio<S, O, A, boolean>
-	// 	// 		: Input<S, O, A>;
-	// }
 }
 
 export namespace Integration {
 	export type Template<S extends Field.Setup, O extends Form.Options> = {
-		render: {
-			input:
-				| Render.Attributes.Input<S, O, Render.Attributes.Type>
-				| ((...args: any[]) => Render.Attributes.Input<S, O, Render.Attributes.Type> | void);
-			select: {
-				trigger:
-					| Render.Attributes.Trigger<S, O, Render.Attributes.Type>
-					| ((...args: any[]) => Render.Attributes.Trigger<S, O, Render.Attributes.Type> | void);
-				option: (
-					...args: [value: any, ...any[]]
-				) => Render.Attributes.Option<S, O, Render.Attributes.Type> | void;
-			};
-			radio: {
-				option: (
-					...args: [value: any, ...any[]]
-				) => Render.Attributes.Option<S, O, Render.Attributes.Type> | void;
-			};
+		input: any;
+		// | Render.Attributes.Input<S, O, Render.Attributes.Type>
+		// | ((...args: any[]) => Render.Attributes.Input<S, O, Render.Attributes.Type> | void);
+		select: {
+			trigger: any;
+			// | Render.Attributes.Trigger<S, O, Render.Attributes.Type>
+			// | ((...args: any[]) => Render.Attributes.Trigger<S, O, Render.Attributes.Type> | void);
+			option: any;
+			// (
+			// 	...args: [value: any, ...any[]]
+			// ) => Render.Attributes.Option<S, O, Render.Attributes.Type> | void;
 		};
 	};
-	export type Factory<S extends Field.Setup, O extends Form.Options, T extends Template<S, O>> = T;
 
-	// for a better support for dynamic components that extend a certain type
-	export type FactoryOut<
+	//
+	export type RenderFactory<
 		S extends Field.Setup,
 		O extends Form.Options,
-		F extends Factory<S, O, Template<S, O>>,
-	> = S extends { type: "select" }
-		? { readonly render: F["render"]["select"] }
-		: S extends { type: "radio" }
-			? { readonly render: F["render"]["radio"] }
-			: { readonly render: F["render"]["input"] };
+		N extends string,
+		T extends Template<S, O>,
+	> = (S extends { type: "select" } | { type: "select.radio" } ? T["select"] : T["input"]) & {
+		__integrationFor: N;
+		__integrationName: `${N}-RENDER`;
+	};
 }

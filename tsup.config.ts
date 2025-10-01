@@ -13,7 +13,14 @@ import { defineConfig } from "tsup";
 // publish --access=public --no-git-checks
 export default defineConfig((options) => {
 	return {
-		entry: ["src/index.ts", "src/converters/index.ts", "src/validators/index.ts"],
+		entry: [
+			//
+			"src/index.ts",
+			"src/converters/index.ts",
+			"src/validators/index.ts",
+			//
+			"src/const.ts",
+		],
 		external: [
 			"@qundus/qstate",
 			"astro",

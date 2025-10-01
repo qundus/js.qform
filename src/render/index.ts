@@ -10,7 +10,7 @@ export function createRender<S extends Field.Setup, O extends Form.Options>(
 	props: FunctionProps.Field<S, O>,
 ) {
 	const { setup } = props;
-	const integrations = {
+	return {
 		dom: domIntegration(props),
 		ref: refIntegration(props),
 		preact: preactIntegration(props),
@@ -18,15 +18,4 @@ export function createRender<S extends Field.Setup, O extends Form.Options>(
 		solid: solidIntegration(props),
 		svelte: svelteIntegration(props),
 	};
-	const render = {};
-	for (const key in integrations) {
-		if (setup.type === "select") {
-			render[key] = integrations[key].render.select;
-		} else if (setup.type === "radio") {
-			render[key] = integrations[key].render.radio;
-		} else {
-			render[key] = integrations[key].render.input;
-		}
-	}
-	return render as any;
 }

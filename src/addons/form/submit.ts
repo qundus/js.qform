@@ -1,4 +1,5 @@
 import type { Form, FunctionProps } from "../../_model";
+import { CYCLE } from "../../const";
 
 export type FormAddonSubmit<F extends Form.Fields, O extends Form.Options<F>> = ReturnType<
 	typeof formSubmitAddon<F, O>
@@ -15,15 +16,15 @@ export function formSubmitAddon<F extends Form.Fields, O extends Form.Options<F>
 		return status === "valid"; // || status === "submitting";
 	}
 
-	function markFields(submit: boolean) {
+	function startFieldsSubmitting() {
+		const cycles = [] as (() => void)[];
 		for (const key in fields) {
 			const field = fields[key];
-			if (submit) {
-				field.mark.cycle.submit();
-			} else {
-				field.mark.cycle.change();
-			}
+			cycles.push(field.update.cycle(CYCLE.SUBMIT));
 		}
+		return () => {
+			cycles.forEach((next) => next());
+		};
 	}
 
 	return {
@@ -42,13 +43,13 @@ export function formSubmitAddon<F extends Form.Fields, O extends Form.Options<F>
 			if (!canSubmit()) {
 				return null;
 			}
+			const end = startFieldsSubmitting();
 			store.set({ ...store.get(), status: "submit" });
-			markFields(true);
 			return () => {
+				end();
 				if (store.get().status !== "submit") {
 					return;
 				}
-				markFields(false);
 				store.set({ ...store.get(), status: "valid" });
 			};
 		},
@@ -66,16 +67,16 @@ export function formSubmitAddon<F extends Form.Fields, O extends Form.Options<F>
 				// console.log("form: cannot submit form!");
 				return [null, { message: "qform: cannot submit form!" }];
 			}
+			const end = startFieldsSubmitting();
 			try {
 				store.set({ ...store.get(), status: "submit" });
-				markFields(true);
 				const w = await runner?.();
 				store.set({ ...store.get(), status: "valid" });
-				markFields(false);
+				end();
 				return [w, null];
 			} catch (e: any) {
 				store.set({ ...store.get(), status: "valid" });
-				markFields(false);
+				end();
 				// error?.(e);
 				return [null, e];
 			}

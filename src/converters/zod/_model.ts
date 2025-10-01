@@ -65,7 +65,7 @@ export type ZodTypeNameToField<T> = T extends "boolean" | "nullable:boolean"
 		: T extends "number" | "nullable:number"
 			? Field.Setup<"number">
 			: T extends "enum" | "nullable:enum" | "nativeEnum" | "nullable:nativeEnum"
-				? Field.Setup<"select" | "radio">
+				? Field.Setup<"select" | "select.radio">
 				: T extends "date" | "nullable:date"
 					? Field.Setup<"date" | "datetime-local">
 					: T extends "file"

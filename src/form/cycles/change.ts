@@ -86,6 +86,7 @@ export function changeCycle<F extends Form.Fields, O extends Form.Options<F>>(
 			isServerSide,
 			fields,
 			getForm: () => store.get(),
+			update,
 		};
 		if (eventprops.prev.status === "mount") {
 			task(async () => {

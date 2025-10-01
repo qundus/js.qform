@@ -41,7 +41,7 @@ export function createForm<
 	return {
 		store,
 		fields: fields as any,
-		placeholders: PLACEHOLDERS,
+		// placeholders: PLACEHOLDERS,
 		options: options as any,
 		get keys() {
 			return () => {

@@ -1,43 +1,31 @@
 // https://dev.to/milliemolotov/how-to-retrieve-values-from-all-types-of-html-inputs-in-javascript-3143
-import type { Field, Form, FunctionProps } from "../../../_model";
+import type { Extras, Field, Form, FunctionProps } from "../../../_model";
 import { PLACEHOLDERS } from "../../../const";
 
 export function processSelectValue<
-	S extends Field.Setup<"select" | "radio">,
+	S extends Field.Setup<"select" | "select.radio">,
 	O extends Form.Options,
 >(props: FunctionProps.Field<S, O>, processor: FunctionProps.FieldProcessor<S, O>) {
 	// setup
 	const { setup } = props;
-	const { event, manualUpdate, preprocessValue, $next } = processor;
+	const { manualUpdate, preprocessValue, $next } = processor;
 	// crucial checkup
 	const multiple = $next.element.multiple ?? false;
-	const select = ($next.element.select ?? {}) as Field.SelectSetupOut<S>;
+	const extras = ($next.extras ?? setup.select ?? {}) as Extras.SelectOut<S>;
 	const _value = !manualUpdate ? $next.value : processor.value;
-	const selected = Array.isArray(_value) ? _value : _value == null ? [] : [_value];
-	let result = [] as any[];
+	const result = Array.isArray(_value) ? _value : _value == null ? [] : [_value];
 	//
-	select.valueKey = select.valueKey ?? "value";
-	select.labelKey = select.labelKey ?? "label";
-	select.prev = [];
-	select.current = [];
-
-	// check validity of result
-	selected.forEach((option, index, arr) => {
-		if (option == null) {
-			option = { label: "unknown", value: "unknown" } as any;
-		} else if (typeof option === "string" || typeof option === "number") {
-			option = { label: option, value: option } as any;
-		}
-		delete option.__selected;
-		delete option.__key;
-		arr[index] = option;
-	});
-	if (select.options && select.options.length > 0) {
-		if (!Array.isArray(select.options)) {
+	extras.valueKey = extras.valueKey ?? "value";
+	extras.labelKey = extras.labelKey ?? "label";
+	extras.prev = [];
+	extras.current = [];
+	//
+	if (extras.options?.length > 0) {
+		if (!Array.isArray(extras.options)) {
 			throw new Error("qform: only arrays are allowed as selections of fields!");
 		}
-		for (let i = 0; i < select.options.length; i++) {
-			let option = select.options[i];
+		for (let i = 0; i < extras.options.length; i++) {
+			let option = extras.options[i];
 			// process options
 			if (option == null) {
 				option = { label: "unknown", value: "unknown", __selected: false } as any;
@@ -45,34 +33,69 @@ export function processSelectValue<
 				option = { label: option, value: option, __selected: false } as any;
 			}
 			//
-			if (option.__selected) {
-				select.prev.push(i);
+			if (option.__selected === true) {
+				extras.prev.push(i);
 			}
-			//
-			const item = selected.find((item) => item[select.valueKey] === option[select.valueKey]);
-			option.__selected = item != null;
-			if (option.__selected) {
-				select.current.push(i);
-				result.push(option);
-			}
-			// confirm key
+			// processings
 			option.__key = `${$next.__internal.key}-option${i}`;
-			select.options[i] = option;
+			if (!((option.__valueKey ?? extras.valueKey) in option)) {
+				if (extras.throwOnKeyNotFound) {
+					throw new Error(
+						`qform: ${$next.__internal.key}.select.valueKey<${extras.valueKey}>` +
+							` does not exist in option ${JSON.stringify(option)}`,
+					);
+				} else {
+					option.__valueKey = "value" in option ? "value" : Object.keys(option)[0];
+				}
+			}
+			if (!((option.__labelKey ?? extras.labelKey) in option)) {
+				if (extras.throwOnKeyNotFound) {
+					throw new Error(
+						`qform: ${$next.__internal.key}.select.labelKey<${extras.labelKey}>` +
+							` does not exist in option ${JSON.stringify(option)}`,
+					);
+				} else {
+					option.__labelKey = "label" in option ? "label" : (option.__valueKey ?? extras.valueKey);
+				}
+			}
+			// validation
+			const found = result.find((other, idx, arr) => {
+				if (other == null) {
+					other = { label: "unknown", value: "unknown" } as any;
+				} else if (typeof option === "string" || typeof option === "number") {
+					other = { label: option, value: option } as any;
+				}
+				arr[idx] = other;
+				return (
+					other[other.__valueKey ?? extras.valueKey] ===
+					option[option.__valueKey ?? extras.valueKey]
+				);
+			});
+			option.__selected = found != null;
+			if (option.__selected === true) {
+				extras.current.push(i);
+				// result.push(option);
+			}
+			// confirmation
+			extras.options[i] = option;
 		}
-		$next.element.select = select as any;
+	} else {
+		extras.options = [];
 	}
 
-	if (result.length <= 0) {
-		result = undefined as any;
+	$next.extras = (extras ?? {}) as any;
+
+	// for that one case of not having options yet value is updated
+	if (result.length > 0 && extras.current.length <= 0) {
+		return null;
 	}
-	// console.log("result :: ", result);
 
 	// user wants this value to be there
 	if (!preprocessValue) {
 		// TODO: lookup user value update in the selections array
-		return multiple ? result : result?.[0];
+		return result.length <= 0 ? undefined : multiple ? result : result?.[0];
 	}
-	return multiple ? result : result?.[0];
+	return result.length <= 0 ? undefined : multiple ? result : result?.[0];
 
 	//
 	// if (!multiple) {

@@ -54,6 +54,12 @@
 			"import": "./dist/validators/index.mjs",
 			"module": "./dist/validators/index.mjs",
 			"require": "./dist/validators/index.cjs"
+		},
+		"./const": {
+			"types": "./dist/const.d.ts",
+			"import": "./dist/const.mjs",
+			"module": "./dist/const.mjs",
+			"require": "./dist/const.cjs"
 		}
 	},
 	"scripts": {

@@ -1,6 +1,7 @@
-import type { Field, Form } from "../../_model";
+import type { Field, Form, FunctionProps } from "../../_model";
 import { isFieldIncomplete } from "../checks/is-field-incomplete";
 import { IGNORED_SETUP_KEYS, CYCLE, DOM, MUTATE } from "../../const";
+import { processValue } from "../processors/value";
 
 // TODO: atom store may become inconsistent with onchange function
 // find another way to do it!
@@ -8,8 +9,10 @@ export function prepareInit<S extends Field.Setup, O extends Form.Options>(
 	key: string,
 	setup: S,
 	options: O | undefined,
-) {
+	store: Field.Store<S, O>,
+): Field.StoreObject<S> {
 	// initialize
+	const fieldProps = { key, setup, store, options };
 	const init: Field.StoreObject<S> = {
 		__internal: {
 			key: key,
@@ -25,7 +28,7 @@ export function prepareInit<S extends Field.Setup, O extends Form.Options>(
 		value: setup.value,
 		props: setup.props,
 		errors: undefined,
-		extras: undefined,
+		extras: setup.type === "checkbox" ? setup.checkbox : (undefined as any),
 		condition: {
 			valid: true,
 			error: false,
@@ -37,9 +40,6 @@ export function prepareInit<S extends Field.Setup, O extends Form.Options>(
 			visited: false,
 			entered: false,
 			left: false,
-			select: setup.select as any,
-			radio: setup.radio as any,
-			checkbox: setup.checkbox as any,
 		},
 	};
 
@@ -50,6 +50,24 @@ export function prepareInit<S extends Field.Setup, O extends Form.Options>(
 		}
 		// @ts-expect-error
 		init.element[key] = setup[key];
+	}
+
+	// process initial value and extras for certain types
+	switch (setup.type) {
+		case "select":
+		case "select.radio":
+		case "file":
+		case "checkbox":
+			init.value = processValue(fieldProps, {
+				$next: init,
+				el: undefined,
+				value: setup.value,
+				manualUpdate: true,
+				preprocessValue: true,
+			});
+			break;
+		default:
+			break;
 	}
 
 	//

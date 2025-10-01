@@ -1,4 +1,4 @@
-import type { Field, Form, FunctionProps, Render } from "../../_model";
+import type { Extras, Field, Form, FunctionProps, Render } from "../../_model";
 import { DOM, MUTATE } from "../../const";
 
 export function renderAttributesOption<
@@ -9,20 +9,35 @@ export function renderAttributesOption<
 	basic: FunctionProps.Field<S, O>,
 	props: FunctionProps.RenderAttributes<S, O, A> & { optionValue: any },
 ) {
-	const { key, options, store, setup } = basic;
+	const { key, options, store, setup } = basic as unknown as FunctionProps.Field<
+		Field.Setup<"select" | "select.radio">,
+		any
+	>;
 	const { attrType, reactive, optionValue: _optionValue } = props;
-	const state = reactive; //as Field.StoreObject<Field.Setup<'select'>>;
+	const state = reactive as unknown as Field.StoreObject<Field.Setup<"select" | "select.radio">>;
+	// const extras = (state.extras ?? {}) as Extras.SelectOut<S>;
 	// prepare option value
-	let optionValue = _optionValue;
+	let option = _optionValue;
 	let name = "";
-	if (optionValue === undefined) {
-		optionValue = { label: "unknown", value: "unknown" };
-	} else if (typeof optionValue === "string" || typeof optionValue === "number") {
-		optionValue = { label: optionValue, value: optionValue };
+	if (option === undefined) {
+		option = { label: "unknown", value: "unknown" };
+	} else if (typeof option === "string" || typeof option === "number") {
+		option = { label: option, value: option };
+	}
+	if (!(state.extras.valueKey in option) && option.__valueKey == null) {
+		if (state.extras.throwOnKeyNotFound) {
+			throw new Error(
+				`qform: ${key}.select.valueKey<${state.extras.valueKey}>` +
+					` does not exist in option ${JSON.stringify(option)}`,
+			);
+		} else {
+			option.__valueKey = "value" in option ? "value" : Object.keys(option)[0];
+		}
 	}
 	// create option name
 	try {
-		name = state.__internal.key + "-" + String(typeof optionValue.value);
+		const postfix = String(option[option.__valueKey ?? state.extras.valueKey]);
+		name = state.__internal.key + "-" + (typeof postfix === "string" ? postfix : "option");
 	} catch (e: any) {
 		name = state.__internal.key + "-option";
 	}
@@ -30,59 +45,144 @@ export function renderAttributesOption<
 	//
 	const attrs = {
 		name, // affects target ability to detect onblur, edit with care
-		id: state?.element?.label ?? setup.label,
-		// type: state?.element.hidden ? "hidden" : setup.type,
-		// multiple: state?.element.multiple,
-		// required: state?.element.required,
-		// disabled: state?.element.disabled,
+		id: name + "-id",
 		// [attrType !== "vdom" ? "autocomplete" : "autoComplete"]: "off",
+		// for radio
+		// [attrType !== "vdom" ? "onfocus" : "onFocus"]: (event: FocusEvent) => {
+		// 	event.preventDefault();
+		// 	event.stopImmediatePropagation();
+		// 	event.stopPropagation();
+		// 	//
+		// 	const next = { ...store.get() };
+		// 	next.element.focused = true;
+		// 	next.element.visited = true;
+		// 	next.__internal.manual = false;
+		// 	//
+		// 	next.event.DOM = DOM.FOCUS;
+		// 	next.event.MUTATE = MUTATE.IDLE;
+		// 	next.event.ev = event;
+		// 	store.set(next);
+		// },
+		// [attrType !== "vdom" ? "onblur" : "onBlur"]: (event: Event) => {
+		// 	event.preventDefault();
+		// 	event.stopImmediatePropagation();
+		// 	event.stopPropagation();
+		// 	const next = { ...store.get() };
+		// 	next.element.focused = false;
+		// 	next.element.visited = true;
+		// 	next.__internal.manual = false;
+		// 	//
+		// 	next.event.DOM = DOM.BLUR;
+		// 	next.event.MUTATE = MUTATE.IDLE;
+		// 	next.event.ev = event;
+		// 	store.set(next);
+		// },
+		// for all select options type
+		checked: option.__selected ?? false,
 		[attrType !== "vdom" ? "onclick" : "onClick"]: (event: PointerEvent) => {
 			event.preventDefault();
+			event.stopImmediatePropagation();
+			event.stopPropagation();
 			const next = { ...store.get() };
 			if (next.element.disabled) {
 				return;
 			}
-			const valueKey = state.element.select?.valueKey ?? "value";
+			//
+			const valueKey = next.extras.valueKey ?? "value";
+			const labelKey = next.extras.valueKey ?? "label";
+			const optionValueKey = option.__valueKey;
 			// dynamic check
-			if (setup.type === "select" && next.element.select?.dynamic) {
-				next.element.select.valueKey = next.element.select.valueKey ?? "value";
-				next.element.select.labelKey = next.element.select.valueKey ?? "label";
-				if (next.element.select.options == null) {
-					next.element.select.options = [];
+			if (next.extras?.dynamic) {
+				if (next.extras.options == null) {
+					next.extras.options = [];
 				}
-				const item = next.element.select?.options?.find(
-					(item) => item[valueKey] === optionValue[valueKey],
+				next.extras.valueKey = valueKey;
+				next.extras.labelKey = labelKey;
+				const item = next.extras?.options?.find(
+					(item) => item[item.__valueKey ?? valueKey] === option[optionValueKey ?? valueKey],
 				);
 				if (item == null) {
-					next.element.select?.options?.push(optionValue);
+					next.extras.options?.push(option);
 				}
 			}
 			//
 			if (Array.isArray(next.value)) {
-				const item = next.value.find((item) => item[valueKey] === optionValue[valueKey]);
+				const item = next.value.find(
+					(item) => item[item.__valueKey ?? valueKey] === option[optionValueKey ?? valueKey],
+				);
 				if (item == null) {
-					next.value.push(optionValue);
+					next.value.push(option);
 				} else {
 					next.value = (next.value as any[]).filter(
-						(item) => item[valueKey] !== optionValue[valueKey],
+						(item) => item[item.__valueKey ?? valueKey] !== option[optionValueKey ?? valueKey],
 					);
 				}
 			} else if (next.value == null) {
-				next.value = next.element.multiple ? [optionValue] : optionValue;
+				next.value = next.element.multiple ? [option] : option;
 			} else {
-				next.value = next.value[valueKey] === optionValue[valueKey] ? undefined : optionValue;
+				next.value =
+					next.value[next.value.__valueKey ?? valueKey] === option[optionValueKey ?? valueKey]
+						? undefined
+						: option;
+			}
+
+			// special handling for radio buttons
+			if (setup.type === "select.radio") {
+				if (!next.element.focused) {
+					const element = event.target as HTMLElement;
+					setTimeout(() => {
+						// Attach click listener to document
+						document.addEventListener("click", function outsideClick(event) {
+							event.preventDefault();
+							event.stopImmediatePropagation();
+							event.stopPropagation();
+							const target = event.target as HTMLElement;
+							const name = target?.getAttribute("name");
+							// TODO: fix condition as two options can be under the same element somehow
+							// causing blur instead of selection for the other option
+							if (!element.contains(target)) {
+								if (name && name.startsWith(state.__internal.key)) {
+									return;
+								}
+								// Remove the listener after detecting outside click
+								document.removeEventListener("click", outsideClick);
+								const next = { ...store.get() };
+								next.element.focused = false;
+								next.element.visited = true;
+								next.__internal.manual = false;
+								//
+								next.event.DOM = DOM.BLUR;
+								next.event.MUTATE = MUTATE.IDLE;
+								next.event.ev = undefined;
+								store.set(next);
+							}
+						});
+					}, 50);
+				}
+				next.element.focused = true;
+				next.element.visited = true;
 			}
 
 			next.__internal.manual = false;
 			//
 			next.event.DOM = event.pointerType === "touch" ? DOM.TOUCH_OPTION : DOM.CLICK_OPTION;
 			next.event.MUTATE = MUTATE.VALUE;
-			next.event.ev = event;
+			next.event.ev = {
+				value: (event.target as any).value,
+				// checked: event.target.value,
+			};
 			store.set(next);
 		},
 	} as any;
 
-	//
+	// if radio
+	if (setup.type === "select.radio") {
+		// multiple: state?.element.multiple,
+		attrs.type = "radio";
+		attrs.required = state?.element.required;
+		attrs.disabled = state?.element.disabled;
+		// attrs.value =
+	}
 
 	// process trigger
 	type PP = Parameters<Field.OnRender<Field.Type>>[0];

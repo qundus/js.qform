@@ -67,7 +67,7 @@ export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToS
 
 	// SPECIAL TYPES
 	// some specfic type settings
-	if (setup.type === "select") {
+	if (setup.type?.startsWith("select")) {
 		//
 		if (setup.select == null) {
 			setup.select = {};
@@ -75,7 +75,7 @@ export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToS
 		setup.select.valueKey = setup.select.valueKey ?? "value";
 		setup.select.labelKey = setup.select.labelKey ?? "label";
 		if (!setup.multiple) {
-			setup.value = setup.value ?? PLACEHOLDERS.select.value;
+			// setup.value = setup.value ?? PLACEHOLDERS.select.value;
 		} else {
 			if (setup.value != null) {
 				if (!Array.isArray(setup.value)) {
@@ -85,18 +85,12 @@ export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToS
 			}
 		}
 	}
-	if (setup.type === "radio") {
-		if (setup.radio == null) {
-			setup.radio = {};
-		}
-		setup.radio.valueKey = setup.radio.valueKey ?? "value";
-		setup.radio.labelKey = setup.radio.labelKey ?? "label";
-	}
 	if (setup.type === "checkbox") {
 		if (setup.checkbox == null) {
 			setup.checkbox = {};
 		}
-		setup.checkbox.mandatory = setup.checkbox.mandatory ?? false;
+		setup.checkbox.yes = setup.checkbox.yes ?? true;
+		setup.checkbox.no = setup.checkbox.no ?? false;
 	}
 
 	// vital checks

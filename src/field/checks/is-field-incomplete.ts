@@ -11,7 +11,7 @@ export function isFieldIncomplete<T extends Field.Type, S extends Field.Setup<T>
 			// (field.type === "checkbox" && value === "") ||
 			value === "" ||
 			(!element.valueNullable && (typeof value === "undefined" || value == null)) ||
-			(element.checkbox?.mandatory && (value == null || !value)) // for mandatory checkboxes
+			(element.mandatory && (value == null || !value)) // for mandatory checkboxes
 		) {
 			result = true;
 		}

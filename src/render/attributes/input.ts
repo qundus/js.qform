@@ -29,7 +29,12 @@ export function renderAttributesInput<
 			//
 			next.event.DOM = DOM.FOCUS;
 			next.event.MUTATE = MUTATE.IDLE;
-			next.event.ev = event;
+			next.event.ev = {
+				value: (event.target as any).value,
+				checked: (event.target as any).checked,
+				files: (event.target as any).files,
+			};
+
 			store.set(next);
 		},
 		[attrType !== "vdom" ? "onblur" : "onBlur"]: (event: Event) => {
@@ -43,13 +48,15 @@ export function renderAttributesInput<
 			//
 			next.event.DOM = DOM.BLUR;
 			next.event.MUTATE = MUTATE.IDLE;
-			next.event.ev = event;
+			next.event.ev = undefined;
 			store.set(next);
 		},
 	} as any;
+
 	// check if value should be added to object
-	const addValue = setup.type !== "checkbox" && setup.type !== "radio" && setup.type !== "file";
-	if (addValue) {
+	if (setup.type === "checkbox") {
+		// attrs.checked = (state.extras as any).checked ? true : false;
+	} else {
 		attrs.value = state?.value ?? "";
 	}
 
@@ -62,6 +69,8 @@ export function renderAttributesInput<
 	}
 	attrs[listenerId] = (event: Event) => {
 		event.preventDefault();
+		event.stopImmediatePropagation();
+		event.stopPropagation();
 		const next = { ...store.get() };
 		if (next.element.disabled) {
 			return;
@@ -70,7 +79,11 @@ export function renderAttributesInput<
 		//
 		next.event.DOM = DOM.IDLE; // questionable?
 		next.event.MUTATE = MUTATE.VALUE;
-		next.event.ev = event;
+		next.event.ev = {
+			value: (event.target as any).value,
+			checked: (event.target as any).checked,
+			files: (event.target as any).files,
+		};
 		store.set(next);
 	};
 

@@ -44,7 +44,7 @@ export function renderAttributesTrigger<
 							//
 							next.event.DOM = DOM.BLUR;
 							next.event.MUTATE = MUTATE.IDLE;
-							next.event.ev = event;
+							next.event.ev = undefined;
 							store.set(next);
 						}
 					});
@@ -60,7 +60,10 @@ export function renderAttributesTrigger<
 			// console.log("is child click :: ", ischildclick);
 			next.event.DOM = pointer === "touch" ? DOM.TOUCH : DOM.CLICK;
 			next.event.MUTATE = MUTATE.IDLE;
-			next.event.ev = event;
+			next.event.ev = {
+				value: (event.target as any).value,
+				// checked: event.target.value,
+			};
 			store.set(next);
 		},
 	} as any;

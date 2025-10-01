@@ -1,38 +1,28 @@
 import { onMount, task } from "@qundus/qstate";
 import type { Addon, Field, Form, FunctionProps } from "../../_model";
-import { processValue } from "../processors/value";
+import { CYCLE } from "../../const";
 
 export function mountCycle<S extends Field.Setup, O extends Form.Options>(
 	props: FunctionProps.Field<S, O>,
 	update: Addon.FieldUpdate<S, O>,
-	mark: Addon.FieldMark<S, O>,
 ) {
-	const { key, setup, options, store, init } = props;
-	// do startup checks for input types like file
-	if (setup.value != null) {
-		const shouldCheck = setup.type === "file" || setup.type === "select" || setup.type === "radio";
-		if (shouldCheck) {
-			const value = processValue(props, {
-				$next: init,
-				event: undefined,
-				value: setup.value,
-				manualUpdate: true,
-				preprocessValue: true,
-			});
-			update.value(value);
-		}
-	}
-
-	mark.cycle.mount();
+	const { setup, store } = props;
+	const next_cycle = update.cycle(CYCLE.MOUNT);
 	onMount(store, () => {
 		let ureturns = null as null | void | (() => void);
 		if (setup.onMount) {
 			task(async () => {
-				ureturns = await setup?.onMount?.({ setup, mark, update: update as any });
-				mark.cycle.change();
+				ureturns = await setup?.onMount?.({
+					setup,
+					update: update as any,
+					get CYCLE() {
+						return CYCLE;
+					},
+				});
+				next_cycle();
 			});
 		} else {
-			mark.cycle.change();
+			next_cycle();
 		}
 		return () => {
 			if (ureturns != null && typeof ureturns === "function") {

@@ -15,7 +15,9 @@ export const cities = createField("cities", {
 		options: ["wow", 22, { code: "yee" }],
 	},
 });
-export const radio = createField("radio", "radio");
+export const radio = createField("radio", "select.radio");
+
+// radio.render.preact.
 
 cities.store.get().value;
 // cities.store.get().element.select.options.map((item) => {
@@ -67,7 +69,7 @@ const form = createForm(
 				}
 				return undefined;
 			},
-			type: "radio",
+			type: "select.radio",
 			onRender: ({ key, attrFor, attrs }) => {
 				if (attrFor === "input") {
 					// attrs.
@@ -97,7 +99,7 @@ const form = createForm(
 		},
 		picture: {
 			type: "file",
-			value: "",
+			// value: "",
 			// val
 			validate: (value) => {
 				const range = vFile.Ranges.kilo;
@@ -120,8 +122,8 @@ const form = createForm(
 			// options: () => [{ label: "", value: "" }],
 		},
 		gender: {
-			type: "radio",
-			value: null, //null as { wow: string } | null,
+			type: "select.radio",
+			// value: null, //null as { wow: string } | null,
 			// required: false,
 			// hidden: true,
 			// selections: [
@@ -129,7 +131,6 @@ const form = createForm(
 			// 	{ label: "female", value: "female", garage: "wow" },
 			// ],
 		},
-		// wow: {}
 	},
 	{
 		onMount: ({ fields }, listen) => {
@@ -155,9 +156,9 @@ const form = createForm(
 // }
 form.values.get().picture;
 form.fields.picture.store.hooks;
-form.store.hooks;
+form.store.hooks.useStore();
 // form.fields.cities.setup.
-form.fields.cities.store.get();
+// form.fields.cities.store.get();
 // form.fields.gender.setup.
 // const data = form.submit
 

@@ -57,9 +57,34 @@ function _getValues<
 		const key_case = _getValueCase(key, props.special?.[key] ?? props.defaultCase);
 		let value = values[key];
 		// postprocess values
-		if (field.setup.type === "select") {
-			if (value === PLACEHOLDERS.select.value) {
-				value = null as any;
+		// if (field.setup.type === "select") {
+		// 	if (value === PLACEHOLDERS.select.value) {
+		// 		value = null as any;
+		// 	}
+		// }
+		if (value != null) {
+			if (field.setup.type.startsWith("select")) {
+				if (Array.isArray(value)) {
+					value.forEach((item, idx, arr) => {
+						const next = {};
+						for (const key in item) {
+							if (key.startsWith("__")) {
+								continue;
+							}
+							next[key] = value[key];
+						}
+						arr[idx] = next;
+					});
+				} else {
+					const next = {} as any;
+					for (const key in value) {
+						if (key.startsWith("__")) {
+							continue;
+						}
+						next[key] = value[key];
+					}
+					value = next;
+				}
 			}
 		}
 

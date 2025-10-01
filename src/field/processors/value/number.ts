@@ -4,9 +4,8 @@ export function processNumberValue<S extends Field.Setup, O extends Form.Options
 	_props: FunctionProps.Field<S, O>,
 	processor: FunctionProps.FieldProcessor<S, O>,
 ) {
-	const { event } = processor;
+	const { el } = processor;
 	const { manualUpdate, preprocessValue } = processor;
-	const el = event?.target as HTMLInputElement;
 	const value = !manualUpdate ? el?.value : processor.value;
 	if (!preprocessValue) {
 		return value;

@@ -1,5 +1,5 @@
-import type { Field, Form, FunctionProps } from "../../_model";
-import { DOM, MUTATE } from "../../const";
+import type { Extras, Field, Form, FunctionProps } from "../../_model";
+import { CYCLE, DOM, MUTATE } from "../../const";
 
 export type FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> = {
 	value: (
@@ -16,63 +16,159 @@ export type FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> = {
 	props: <G extends S["props"]>(
 		value: Partial<G> | ((prev: G) => Partial<G> | undefined) | undefined,
 	) => void;
+	cycle: (cycle: CYCLE) => () => void;
+	// extras indvidually
+	select: <E extends Extras.Select>(props: Partial<E> | ((prev: E) => Partial<E>)) => void;
+	checkbox: <E extends Extras.Checkbox>(props: Partial<E> | ((prev: E) => Partial<E>)) => void;
+
+	// cycleUnsafe:  (cycle: CYCLE) => void;
+	// validation(): (func: Field.Validate) => (() => void) | null;
 	// /**
 	//  * special api to update selections extras
 	//  */
 	// extras: <G extends Field.Extras<S>>(props: Partial<G> | ((value: G) => Partial<G>)) => void;
 };
-export function fieldUpdateAddon<S extends Field.Setup, O extends Form.Options>(
+export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 	props: FunctionProps.FieldAddon<S, O>,
 ): FieldAddonUpdate<S, O> {
 	const { store, options, setup } = props;
+	let cycle_tracker = 0;
 	return {
 		value: (value, configs) => {
-			const state = { ...store.get() };
-			const prev = state.value;
-			const next = typeof value === "function" ? (value as any)(prev) : value;
-			state.value = next;
-			state.__internal.manual = true;
-			state.__internal.preprocess = configs?.preprocess;
-			state.__internal.noValidation = configs?.noValidate;
+			const next = { ...store.get() };
+			const prev = next.value;
+			next.value = typeof value === "function" ? (value as any)(prev) : value;
+			next.__internal.manual = true;
+			next.__internal.preprocess = configs?.preprocess;
+			next.__internal.noValidation = configs?.noValidate;
 			//
-			state.event.MUTATE = MUTATE.VALUE;
-			state.event.DOM = DOM.IDLE;
-			store.set(state);
+			next.event.MUTATE = MUTATE.VALUE;
+			next.event.DOM = DOM.IDLE;
+			store.set(next);
 		},
 		condition: (value) => {
-			const state = store.get();
-			const prev = state.condition;
-			const next = typeof value === "function" ? value(prev) : value;
-			state.condition = { ...prev, ...next };
-			state.__internal.manual = true;
+			const next = { ...store.get() };
+			const prev = next.condition;
+			const vv = typeof value === "function" ? value(prev) : value;
+			next.condition = { ...prev, ...vv };
+			next.__internal.manual = true;
 			// state.__internal.preprocess = configs?.preprocess;
 			//
-			state.event.MUTATE = MUTATE.CONDITION;
-			state.event.DOM = DOM.IDLE;
-			store.set(state);
+			next.event.MUTATE = MUTATE.CONDITION;
+			next.event.DOM = DOM.IDLE;
+			store.set(next);
 		},
 		element: (value, configs) => {
-			const state = store.get();
-			const prev = state.element;
-			const next = typeof value === "function" ? value(prev) : value;
-			state.element = { ...prev, ...next };
-			state.__internal.manual = true;
-			state.__internal.noValidation = configs?.noValidate;
+			const next = { ...store.get() };
+			const prev = next.element;
+			const vv = typeof value === "function" ? value(prev) : value;
+			next.element = { ...prev, ...vv };
+			next.__internal.manual = true;
+			next.__internal.noValidation = configs?.noValidate;
 			// state.__internal.preprocess = configs?.preprocess;
-			state.event.MUTATE = MUTATE.ELEMENT;
-			state.event.DOM = DOM.IDLE;
-			store.set(state);
+			next.event.MUTATE = MUTATE.ELEMENT;
+			next.event.DOM = DOM.IDLE;
+			store.set(next);
 		},
 		props: (value) => {
-			const state = store.get();
-			const prev = state.props;
-			const next = typeof value === "function" ? (value as any)(prev) : value;
-			state.props = next;
-			state.__internal.manual = true;
+			const next = { ...store.get() };
+			const prev = next.props;
+			const vv = typeof value === "function" ? (value as any)(prev) : value;
+			next.props = vv;
+			next.__internal.manual = true;
 			// state.__internal.preprocess = configs?.preprocess;
-			state.event.MUTATE = MUTATE.PROPS;
-			state.event.DOM = DOM.IDLE;
-			store.set(state);
+			next.event.MUTATE = MUTATE.PROPS;
+			next.event.DOM = DOM.IDLE;
+			store.set(next);
 		},
+		cycle: (cycle) => {
+			const next = { ...store.get() };
+			const prev = next.event.CYCLE;
+			if (cycle <= CYCLE.MOUNT && prev >= CYCLE.MOUNT) {
+				throw new Error("qform: cannot move to mount cycle after <change> has been instilled!");
+			}
+			next.event.CYCLE = cycle;
+			next.event.MUTATE = MUTATE.CYCLE;
+			next.event.DOM = DOM.IDLE;
+			cycle_tracker++;
+			store.set(next);
+			// console.log("tracker :: ", cycle, " :: ", cycle_tracker);
+			return () => {
+				const next = { ...store.get() };
+				cycle_tracker--;
+				// console.log("tracker done :: ", cycle, " :: ", cycle_tracker);
+				if (cycle_tracker > 0) {
+					return;
+				}
+				cycle_tracker = 0;
+				next.event.CYCLE = CYCLE.CHANGE;
+				next.event.MUTATE = MUTATE.CYCLE;
+				next.event.DOM = DOM.IDLE;
+				store.set(next);
+			};
+		},
+		select: (value) => {
+			const next = { ...store.get() };
+			const prev = next.extras;
+			const vv = typeof value === "function" ? (value as any)(prev) : value;
+			next.extras = { ...prev, ...vv };
+			next.__internal.manual = true;
+			// state.__internal.preprocess = configs?.preprocess;
+			next.event.MUTATE = MUTATE.EXTRAS;
+			next.event.DOM = DOM.IDLE;
+			store.set(next);
+		},
+		checkbox: (value) => {
+			const next = { ...store.get() };
+			const prev = next.extras;
+			const vv = typeof value === "function" ? (value as any)(prev) : value;
+			next.extras = { ...prev, ...vv };
+			next.__internal.manual = true;
+			// state.__internal.preprocess = configs?.preprocess;
+			next.event.MUTATE = MUTATE.EXTRAS;
+			next.event.DOM = DOM.IDLE;
+			store.set(next);
+		},
+		// cycleUnsafe(cycle) {
+		// 	const state = store.get();
+		// 	const prev = state.event.CYCLE;
+		// 	if (prev >= CYCLE.MOUNT && cycle === CYCLE.MOUNT) {
+		// 		throw new Error("qform: cannot move to mount cycle after <change> has been instilled!");
+		// 	}
+		// 	state.event.CYCLE = cycle;
+		// 	state.event.MUTATE = MUTATE.CYCLE;
+		// 	state.event.DOM = DOM.IDLE;
+		// 	store.set({ ...state });
+		// 	cycle_tracker.push(prev);
+		// },
+		// validation() {
+		// 	return (func: Field.Validate) => {
+		// 		if (func == null || typeof func !== "function") {
+		// 			return null;
+		// 		}
+		// 		let idx = null as number | null;
+		// 		if (setup.validate == null) {
+		// 			setup.validate = func;
+		// 		} else if (Array.isArray(setup.validate)) {
+		// 			idx = setup.validate.push(func);
+		// 			idx--;
+		// 		} else {
+		// 			setup.validate = [setup.validate, func];
+		// 			idx = 1;
+		// 		}
+		// 		return () => {
+		// 			if (typeof setup.validate === "function") {
+		// 				setup.validate = null;
+		// 			} else {
+		// 				if (setup.validate != null) {
+		// 					setup.validate = setup.validate.filter((_item, index) => index !== idx);
+		// 					if (setup.validate.length <= 0) {
+		// 						setup.validate = null;
+		// 					}
+		// 				}
+		// 			}
+		// 		};
+		// 	};
+		// },
 	};
 }
