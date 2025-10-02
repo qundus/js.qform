@@ -18,8 +18,9 @@ export default defineConfig((options) => {
 			"src/index.ts",
 			"src/converters/index.ts",
 			"src/validators/index.ts",
+			"src/const/index.ts",
 			//
-			"src/const.ts",
+			// "src/country_dial_info.json",
 		],
 		external: [
 			"@qundus/qstate",

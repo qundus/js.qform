@@ -23,5 +23,5 @@ export function processCheckboxValue<S extends Field.Setup<"checkbox">, O extend
 	}
 
 	$next.extras = extras;
-	return extras.checked ? extras.yes : extras.no;
+	return extras.checked ? (extras.yes ?? true) : (extras.no ?? false);
 }

@@ -16,10 +16,17 @@ export const cities = createField("cities", {
 	},
 });
 export const radio = createField("radio", "select.radio");
+export const tel = createField("tel", {
+	type: "tel",
+	validate: ({ extras }) => {
+		//
+	},
+	tel: {},
+});
 
 // radio.render.preact.
 
-cities.store.get().value;
+tel.store.get().value;
 // cities.store.get().element.select.options.map((item) => {
 // 	// item.
 // });

@@ -58,6 +58,7 @@ export function prepareInit<S extends Field.Setup, O extends Form.Options>(
 		case "select.radio":
 		case "file":
 		case "checkbox":
+		case "tel":
 			init.value = processValue(fieldProps, {
 				$next: init,
 				el: undefined,

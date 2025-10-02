@@ -38,7 +38,7 @@ export function changeCycle<
 		}
 		const _DOM = $next.event.DOM;
 		const _MUTATE = $next.event.MUTATE;
-		const _CYCLE = $next.event.CYCLE;
+		// const _CYCLE = $next.event.CYCLE;
 		const MANUAL_UPDATE = $next.__internal.manual;
 		const PREPROCESS_VALUE = ($next.__internal.preprocess ??
 			$next.element.preprocessValue) as boolean;
@@ -125,14 +125,14 @@ export function changeCycle<
 		}
 
 		// validate on update of type value
-		if (SHOULD_VALIDATE && !NO_VALIDATION) {
+		if (SHOULD_VALIDATE && !NO_VALIDATION && $next.event.MUTATE !== MUTATE.__ABORT_VALIDATION) {
 			$next.errors = [];
 			// first check for user validation functions
 			if (setup.validate != null) {
 				if (!MANUAL_UPDATE || (MANUAL_UPDATE && VMCM === "normal")) {
 					const validations = Array.isArray(setup.validate) ? setup.validate : [setup.validate];
 					for (const validation of validations) {
-						const err = validation({ value: $next.value, prev, form });
+						const err = validation({ prev, form, value: $next.value, extras: $next.extras });
 						if (Array.isArray(err)) {
 							if (err.length < 0) {
 								continue;

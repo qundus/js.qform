@@ -51,10 +51,11 @@ export namespace Field {
 		by: false | "user" | "manual"; // last modification by user or manual
 	};
 	export type Errors = string[] | null | undefined;
-	export type Validate = (props: {
+	export type Validate<T extends Type> = (props: {
 		value: any;
 		prev: any;
-		form: Form.StoreObject<Form.Fields, Form.Options> | undefined;
+		readonly extras: Extras.Factory<Setup<T>>;
+		readonly form: Form.StoreObject<Form.Fields, Form.Options> | undefined;
 	}) => string | string[] | undefined | null | void;
 	export type VMCM = "normal" | "bypass" | "force-valid";
 	export type ValidateOn = "input" | "change";
@@ -116,7 +117,7 @@ export namespace Field {
 		labelReplace?: string | string[];
 		//## validations
 		/** validate value function or array of functions */
-		validate?: Validate | Validate[] | null; //| FieldValidate[];
+		validate?: Validate<T> | Validate<T>[] | null; //| FieldValidate[];
 		/**
 		 * some developers like to validate on field.blur and others on field.change.
 		 * @option {change} run checks only on field.blur
@@ -194,6 +195,7 @@ export namespace Field {
 
 		//## type specific as extra
 		// radio?: T extends "select.radio" ? RadioSetup : never;
+		tel?: T extends "tel" ? Extras.Tel : never;
 		select?: T extends "select" | "select.radio" ? Extras.Select : never;
 		checkbox?: T extends "checkbox" ? Extras.Checkbox : never;
 	};
@@ -203,7 +205,11 @@ export namespace Field {
 		? // TODO: figure out how to display this in options but hide it from final object value type
 			FileList // | string | string[] | {name: string; url: string;} | {name: string; url:string}[]
 		: T extends "checkbox"
-			? boolean
+			? S["checkbox"] extends Extras.Checkbox
+				?
+						| (undefined | unknown extends S["checkbox"]["yes"] ? true : S["checkbox"]["yes"])
+						| (undefined | unknown extends S["checkbox"]["no"] ? false : S["checkbox"]["no"])
+				: boolean
 			: T extends "select" | "select.radio"
 				? (
 						Extras.Factory<S, "select" | "select.radio">["options"][number] extends infer G
@@ -215,7 +221,11 @@ export namespace Field {
 						: G
 					: never
 				: T extends "tel"
-					? number | string
+					? S["tel"] extends Extras.Tel
+						? S["tel"]["valueAsNumber"] extends true
+							? number
+							: string
+						: string
 					: string; // default/fallback data type
 	export type ValueFromOptions<T extends Type, V, S extends Setup<T, V> = Setup<T, V>> = (
 		true extends Check.IsUnknown<V> | Check.IsUndefined<V> | Check.IsNull<V>
@@ -346,6 +356,16 @@ export namespace Extras {
 		yes?: Y;
 		no?: N;
 	};
+	export type Tel = {
+		valueAsNumber?: boolean;
+		/**
+		 * international numbers prefixes, use this if your field accepts
+		 * weird international prefixes like (00) or (+00). this option replaces defaults.
+		 * @default ["+", "00", "+(00)"]
+		 */
+		internationalPrefixes?: string[] | string;
+		internationalPrefixNormalization?: boolean;
+	};
 
 	// processed
 	export type FileOut<S extends Field.Setup> = {
@@ -395,6 +415,25 @@ export namespace Extras {
 		checked: boolean;
 		yes?: Exclude<S["checkbox"], undefined>["yes"];
 		no?: Exclude<S["checkbox"], undefined>["no"];
+	};
+	export type TelOut = {
+		valueAsNumber: boolean;
+		internationalPrefix: string | undefined;
+		internationalPrefixes: string | string[] | undefined;
+		internationalPrefixNormalization: boolean | undefined;
+		isInternational: boolean;
+		country:
+			| undefined
+			| {
+					name: string;
+					flag: string;
+					code: string;
+					dial_code: string;
+					index: number;
+					dial_code_no_id: number;
+			  };
+		valueNoId: string | null;
+		valueNoCode: string | null;
 	};
 
 	/**

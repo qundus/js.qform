@@ -3,6 +3,7 @@ import type { Field, Form, FunctionProps } from "../../../_model";
 import { processCheckboxValue } from "./checkbox";
 import { processFileValue } from "./file";
 import { processNumberValue } from "./number";
+import { processTelValue } from "./tel";
 import { processSelectValue } from "./select";
 
 export function processValue<S extends Field.Setup, O extends Form.Options>(
@@ -13,7 +14,7 @@ export function processValue<S extends Field.Setup, O extends Form.Options>(
 	const { el, manualUpdate } = processor;
 
 	//
-	let value = processor.value;
+	let value = null as any;
 	if (setup.type.startsWith("select")) {
 		value = processSelectValue(props as any, processor as any);
 	} else if (setup.type === "checkbox") {
@@ -22,8 +23,9 @@ export function processValue<S extends Field.Setup, O extends Form.Options>(
 		value = processFileValue(props as any, processor as any);
 	} else if (setup.type === "number") {
 		value = processNumberValue(props, processor);
+	} else if (setup.type === "tel") {
+		value = processTelValue(props, processor);
 	} else {
-		const el = event?.target as any;
 		value = !manualUpdate ? el?.value : value;
 	}
 

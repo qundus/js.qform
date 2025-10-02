@@ -84,13 +84,19 @@ export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToS
 				}
 			}
 		}
-	}
-	if (setup.type === "checkbox") {
+	} else if (setup.type === "checkbox") {
 		if (setup.checkbox == null) {
 			setup.checkbox = {};
 		}
 		setup.checkbox.yes = setup.checkbox.yes ?? true;
 		setup.checkbox.no = setup.checkbox.no ?? false;
+	} else if (setup.type === "tel") {
+		if (setup.tel == null) {
+			setup.tel = {};
+		}
+		setup.tel.valueAsNumber = setup.tel.valueAsNumber ?? false;
+		setup.tel.internationalPrefixNormalization =
+			setup.tel.internationalPrefixNormalization ?? false;
 	}
 
 	// vital checks

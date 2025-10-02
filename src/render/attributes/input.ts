@@ -1,4 +1,4 @@
-import type { Field, Form, FunctionProps, Render } from "../../_model";
+import type { Extras, Field, Form, FunctionProps, Render } from "../../_model";
 import { DOM, MUTATE } from "../../const";
 
 export function renderAttributesInput<
@@ -60,6 +60,12 @@ export function renderAttributesInput<
 		attrs.value = state?.value ?? "";
 	}
 
+	// type
+	// if (setup.type === "tel") {
+	// 	const extras = state.extras as unknown as Extras.TelOut;
+	// 	attrs.type = extras.valueAsString ? "tel" : "number";
+	// }
+
 	// event listener id
 	let listenerId = undefined as string | undefined;
 	if (state.element.validateOn === "change") {
@@ -79,8 +85,9 @@ export function renderAttributesInput<
 		//
 		next.event.DOM = DOM.IDLE; // questionable?
 		next.event.MUTATE = MUTATE.VALUE;
+		const value = (event.target as any).value;
 		next.event.ev = {
-			value: (event.target as any).value,
+			value: value === "" ? undefined : value,
 			checked: (event.target as any).checked,
 			files: (event.target as any).files,
 		};

@@ -7,6 +7,7 @@ export function processNumberValue<S extends Field.Setup, O extends Form.Options
 	const { el } = processor;
 	const { manualUpdate, preprocessValue } = processor;
 	const value = !manualUpdate ? el?.value : processor.value;
+
 	if (!preprocessValue) {
 		return value;
 	}
