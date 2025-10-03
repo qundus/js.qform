@@ -2,6 +2,7 @@ import type { Field, Form, FunctionProps, Integration, Render } from "../_model"
 import { renderAttributesInput } from "../render/attributes/input";
 import { renderAttributesTrigger } from "../render/attributes/trigger";
 import { renderAttributesOption } from "../render/attributes/option";
+import { renderAttributesDate } from "../render/attributes/date";
 
 export type IntegrationPreact<
 	S extends Field.Setup,
@@ -14,6 +15,9 @@ export type IntegrationPreact<
 		input: <D extends Render.Attributes.Type = "vdom">(props?: {
 			attrType?: D;
 		}) => Render.Attributes.Input<S, O, D>;
+		date: <D extends Render.Attributes.Type = "vdom">(props?: {
+			attrType?: D;
+		}) => Render.Attributes.Date<S, O, D>;
 		select: {
 			trigger: <D extends Render.Attributes.Type = "vdom">(props?: {
 				attrType?: D;
@@ -54,6 +58,17 @@ export function preactIntegration<S extends Field.Setup, O extends Form.Options>
 				return renderAttributesOption(basic, { attrType, reactive, optionValue: value }) as any;
 			},
 		} as any;
+	} else if (setup.type === "date") {
+		result = (props) => {
+			if (store.hooksUsed().preact == null) {
+				throw new Error(
+					"qform: preact hook does not exist, please add it to options.storeHooks option!",
+				);
+			}
+			const reactive = store.hooksUsed().preact?.call();
+			const attrType = props?.attrType ?? "vdom"; //as typeof props.attrType;
+			return renderAttributesDate(basic, { attrType, reactive }) as any;
+		};
 	} else {
 		result = (props) => {
 			if (store.hooksUsed().preact == null) {

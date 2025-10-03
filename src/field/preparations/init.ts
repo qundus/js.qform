@@ -1,6 +1,6 @@
 import type { Field, Form, FunctionProps } from "../../_model";
 import { isFieldIncomplete } from "../checks/is-field-incomplete";
-import { IGNORED_SETUP_KEYS, CYCLE, DOM, MUTATE } from "../../const";
+import { IGNORED_SETUP_KEYS, FIELD } from "../../const";
 import { processValue } from "../processors/value";
 
 // TODO: atom store may become inconsistent with onchange function
@@ -20,9 +20,9 @@ export function prepareInit<S extends Field.Setup, O extends Form.Options>(
 			preprocess: true,
 		},
 		event: {
-			DOM: DOM.INIT,
-			CYCLE: CYCLE.INIT,
-			MUTATE: MUTATE.INIT,
+			DOM: FIELD.DOM.INIT,
+			CYCLE: FIELD.CYCLE.INIT,
+			MUTATE: FIELD.MUTATE.INIT,
 			ev: undefined,
 		},
 		value: setup.value,
@@ -59,6 +59,7 @@ export function prepareInit<S extends Field.Setup, O extends Form.Options>(
 		case "file":
 		case "checkbox":
 		case "tel":
+			// case "date":
 			init.value = processValue(fieldProps, {
 				$next: init,
 				el: undefined,

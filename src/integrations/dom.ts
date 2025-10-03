@@ -2,6 +2,7 @@ import type { Field, Form, FunctionProps, Integration, Render } from "../_model"
 import { renderAttributesInput } from "../render/attributes/input";
 import { renderAttributesTrigger } from "../render/attributes/trigger";
 import { renderAttributesOption } from "../render/attributes/option";
+import { renderAttributesDate } from "../render/attributes/date";
 
 export type IntegrationDom<
 	S extends Field.Setup,
@@ -14,6 +15,9 @@ export type IntegrationDom<
 		input: <D extends Render.Attributes.Type = "dom">(props?: {
 			attrType?: D;
 		}) => Render.Attributes.Input<S, O, D>;
+		date: <D extends Render.Attributes.Type = "dom">(props?: {
+			attrType?: D;
+		}) => Render.Attributes.Date<S, O, D>;
 		select: {
 			trigger: <D extends Render.Attributes.Type = "dom">(props?: {
 				attrType?: D;
@@ -43,6 +47,12 @@ export function domIntegration<S extends Field.Setup, O extends Form.Options>(
 				const attrType = props?.attrType ?? "dom"; //as typeof props.attrType;
 				return renderAttributesOption(basic, { attrType, reactive, optionValue: value }) as any;
 			},
+		};
+	} else if (setup.type === "date") {
+		result = (props) => {
+			const reactive = store.get();
+			const attrType = props?.attrType ?? "dom"; //as typeof props.attrType;
+			return renderAttributesDate(basic, { attrType, reactive }) as any;
 		};
 	} else {
 		result = (props) => {

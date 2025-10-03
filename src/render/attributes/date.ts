@@ -1,7 +1,8 @@
-import type { Field, Form, FunctionProps, Render } from "../../_model";
+import type { Extras, Field, Form, FunctionProps, Render } from "../../_model";
 import { FIELD } from "../../const";
+import dp from "air-datepicker";
 
-export function renderAttributesInput<
+export function renderAttributesDate<
 	S extends Field.Setup,
 	O extends Form.Options,
 	A extends Render.Attributes.Type,
@@ -18,48 +19,62 @@ export function renderAttributesInput<
 		required: state?.element.required,
 		disabled: state?.element.disabled,
 		[attrType !== "vdom" ? "autocomplete" : "autoComplete"]: "off",
-		[attrType !== "vdom" ? "onfocus" : "onFocus"]: (event: FocusEvent) => {
-			event.preventDefault();
-			event.stopImmediatePropagation();
-			event.stopPropagation();
-			//
-			const next = { ...store.get() };
-			next.element.focused = true;
-			next.element.visited = true;
-			next.__internal.manual = false;
-			//
-			next.event.DOM = FIELD.DOM.FOCUS;
-			next.event.MUTATE = FIELD.MUTATE.IDLE;
-			next.event.ev = {
-				value: (event.target as any).value,
-				checked: (event.target as any).checked,
-				files: (event.target as any).files,
-			};
 
-			store.set(next);
-		},
-		[attrType !== "vdom" ? "onblur" : "onBlur"]: (event: Event) => {
-			event.preventDefault();
-			event.stopImmediatePropagation();
-			event.stopPropagation();
-			const next = { ...store.get() };
-			next.element.focused = false;
-			next.element.visited = true;
-			next.__internal.manual = false;
-			//
-			next.event.DOM = FIELD.DOM.BLUR;
-			next.event.MUTATE = FIELD.MUTATE.IDLE;
-			next.event.ev = undefined;
-			store.set(next);
-		},
+		// [attrType !== "vdom" ? "onfocus" : "onFocus"]: (event: FocusEvent) => {
+		// 	event.preventDefault();
+		// 	event.stopImmediatePropagation();
+		// 	event.stopPropagation();
+		// 	//
+		// 	const next = { ...store.get() };
+		// 	next.element.focused = true;
+		// 	next.element.visited = true;
+		// 	next.__internal.manual = false;
+		// 	//
+		// 	next.event.DOM = FIELD.DOM.FOCUS;
+		// 	next.event.MUTATE = FIELD.MUTATE.IDLE;
+		// 	next.event.ev = {
+		// 		value: (event.target as any).value,
+		// 		checked: (event.target as any).checked,
+		// 		files: (event.target as any).files,
+		// 	};
+
+		// 	store.set(next);
+		// },
+		// [attrType !== "vdom" ? "onblur" : "onBlur"]: (event: Event) => {
+		// 	event.preventDefault();
+		// 	event.stopImmediatePropagation();
+		// 	event.stopPropagation();
+		// 	const next = { ...store.get() };
+		// 	next.element.focused = false;
+		// 	next.element.visited = true;
+		// 	next.__internal.manual = false;
+		// 	//
+		// 	next.event.DOM = FIELD.DOM.BLUR;
+		// 	next.event.MUTATE = FIELD.MUTATE.IDLE;
+		// 	next.event.ev = undefined;
+		// 	store.set(next);
+		// },
 	} as any;
 
-	// check if value should be added to object
-	if (setup.type === "checkbox") {
-		// attrs.checked = (state.extras as any).checked ? true : false;
-	} else {
-		attrs.value = state?.value ?? "";
+	// if (state.extras.)
+
+	let element = null as null | HTMLElement;
+	while (element == null) {
+		element = document.querySelector(`[data-qform-const="${setup.type}.${setup.label}"]`);
+		// console.log("element :: ", element);
 	}
+	new dp(element, {
+		...setup.date,
+		onSelect(props) {
+			const { date, formattedDate, datepicker } = props;
+			let value = setup.date?.onSelect?.(props);
+			if (value == null) {
+				value = formattedDate as any;
+			}
+
+			console.log("selected :: ", date);
+		},
+	});
 
 	// type
 	// event listener id
@@ -97,5 +112,5 @@ export function renderAttributesInput<
 	setup.onRender?.(processProps);
 
 	// console.log("element input :: ", key, " :: ", result.value);
-	return attrs as Render.Attributes.Input<S, O, A>;
+	return attrs as Render.Attributes.Date<S, O, A>;
 }

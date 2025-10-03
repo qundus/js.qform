@@ -1,5 +1,5 @@
-import type { Extras, Field, Form, FunctionProps, Render } from "../../_model";
-import { DOM, MUTATE } from "../../const";
+import type { Field, Form, FunctionProps, Render } from "../../_model";
+import { FIELD } from "../../const";
 
 export function renderAttributesOption<
 	S extends Field.Setup,
@@ -151,8 +151,8 @@ export function renderAttributesOption<
 								next.element.visited = true;
 								next.__internal.manual = false;
 								//
-								next.event.DOM = DOM.BLUR;
-								next.event.MUTATE = MUTATE.IDLE;
+								next.event.DOM = FIELD.DOM.BLUR;
+								next.event.MUTATE = FIELD.MUTATE.IDLE;
 								next.event.ev = undefined;
 								store.set(next);
 							}
@@ -165,8 +165,9 @@ export function renderAttributesOption<
 
 			next.__internal.manual = false;
 			//
-			next.event.DOM = event.pointerType === "touch" ? DOM.TOUCH_OPTION : DOM.CLICK_OPTION;
-			next.event.MUTATE = MUTATE.VALUE;
+			next.event.DOM =
+				event.pointerType === "touch" ? FIELD.DOM.TOUCH_OPTION : FIELD.DOM.CLICK_OPTION;
+			next.event.MUTATE = FIELD.MUTATE.VALUE;
 			next.event.ev = {
 				value: (event.target as any).value,
 				// checked: event.target.value,
@@ -187,13 +188,8 @@ export function renderAttributesOption<
 	// process trigger
 	type PP = Parameters<Field.OnRender<Field.Type>>[0];
 	const processProps: PP = { key, data: reactive, attrType, attrs, attrFor: "option" };
-	if (options?.onFieldElementOrder === "before") {
-		options?.onFieldRender?.(processProps);
-	}
-	setup.onRender?.(processProps);
-	if (options?.onFieldElementOrder === "after") {
-		options?.onFieldRender?.(processProps);
-	}
 
+	options?.onFieldRender?.(processProps);
+	setup.onRender?.(processProps);
 	return attrs as Render.Attributes.Option<S, O, A>;
 }

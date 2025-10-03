@@ -1,21 +1,5 @@
 import type { Field } from "../_model";
-export { default as COUNTRIES } from "./countries-and-codes";
-
-export const PLACEHOLDERS = {
-	get select() {
-		return {
-			value: "",
-			disabled: true,
-			selected: true,
-		};
-	},
-	get selectButton() {
-		return {
-			value: "$$button$$",
-			// selected: true,
-		};
-	},
-};
+import { default as COUNTRIES_ } from "./countries-and-codes";
 
 export const IGNORED_SETUP_KEYS = {
 	type: "text",
@@ -55,46 +39,79 @@ export const IGNORED_SETUP_KEYS = {
 	// | "selectionsLabelKey"
 >;
 
-export enum CYCLE {
-	INIT = 0,
-	MOUNT = 1,
-	CHANGE = 2,
-	SUBMIT = 3,
-	// extra
-	LOAD = 4,
-	SKELETON = 5,
+export namespace FORM {
+	export enum STATUS {
+		INIT = 0,
+		IDLE = 1,
+		//
+		INCOMPLETE = 2,
+		ERROR = 3,
+		VALID = 4,
+		//
+		SUBMIT = 5,
+	}
 }
 
-export enum DOM {
-	INIT = "DOM.INIT",
-	IDLE = "DOM.IDLE",
-	//
-	FOCUS = "DOM.FOCUS",
-	BLUR = "DOM.BLUR",
-	INPUT = "DOM.INPUT",
-	CHANGE = "DOM.CHANGE",
-	CLICK = "DOM.CLICK",
-	CLICK_OPTION = "DOM.CLICK.OPTION",
-	// down
-	TOUCH = "DOM.TOUCH",
-	TOUCH_OPTION = "DOM.CLICK.OPTION",
-	// file
-	FILE_PROGRESS = "DOM.FILE.PROGRESS",
-	FILE_DONE = "DOM.FILE.DONE",
+export namespace FIELD {
+	export enum CYCLE {
+		INIT = 0,
+		IDLE = 1,
+		// extra
+		SUBMIT = 2,
+		LOAD = 3,
+		SKELETON = 4,
+	}
+
+	export enum DOM {
+		INIT = "DOM.INIT",
+		IDLE = "DOM.IDLE",
+		//
+		FOCUS = "DOM.FOCUS",
+		BLUR = "DOM.BLUR",
+		INPUT = "DOM.INPUT",
+		CHANGE = "DOM.CHANGE",
+		CLICK = "DOM.CLICK",
+		CLICK_OPTION = "DOM.CLICK.OPTION",
+		// down
+		TOUCH = "DOM.TOUCH",
+		TOUCH_OPTION = "DOM.CLICK.OPTION",
+		// file
+		FILE_PROGRESS = "DOM.FILE.PROGRESS",
+		FILE_DONE = "DOM.FILE.DONE",
+	}
+
+	export enum MUTATE {
+		INIT = "MUTATE.INIT",
+		IDLE = "MUTATE.IDLE",
+		//
+		VALUE = "MUTATE.VALUE",
+		CONDITION = "MUTATE.CONDITION",
+		ELEMENT = "MUTATE.ELEMENT",
+		CYCLE = "MUTATE.CYCLE",
+		PROPS = "MUTATE.PROPS",
+		EXTRAS = "MUTATE.EXTRAS",
+		// internals
+		__EXTRAS = "MUTATE.__EXTRAS",
+		__RESET = "MUTATE.__RESET",
+		__ABORT_VALIDATION = "MUTATE.__ABORT_VALIDATION",
+	}
 }
 
-export enum MUTATE {
-	INIT = "MUTATE.INIT",
-	IDLE = "MUTATE.IDLE",
-	//
-	VALUE = "MUTATE.VALUE",
-	CONDITION = "MUTATE.CONDITION",
-	ELEMENT = "MUTATE.ELEMENT",
-	CYCLE = "MUTATE.CYCLE",
-	PROPS = "MUTATE.PROPS",
-	EXTRAS = "MUTATE.EXTRAS",
-	// internals
-	__EXTRAS = "MUTATE.__EXTRAS",
-	__RESET = "MUTATE.__RESET",
-	__ABORT_VALIDATION = "MUTATE.__ABORT_VALIDATION",
+export namespace MISC {
+	export const PLACEHOLDERS = {
+		get select() {
+			return {
+				value: "",
+				disabled: true,
+				selected: true,
+			};
+		},
+		get selectButton() {
+			return {
+				value: "$$button$$",
+				// selected: true,
+			};
+		},
+	};
+	export const COUNTRIES = COUNTRIES_;
 }

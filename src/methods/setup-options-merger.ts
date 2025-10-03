@@ -37,17 +37,17 @@ export function setupOptionsMerger<G extends Form.Options>(_base?: G) {
 		}
 
 		// field events
-		if (base?.onFieldChange != null || target?.onFieldChange != null) {
-			merged.onFieldChange = (props) => {
-				base?.onFieldChange?.(props);
-				target?.onFieldChange?.(props);
+		if (base?.fieldsOnChange != null || target?.fieldsOnChange != null) {
+			merged.fieldsOnChange = (props) => {
+				base?.fieldsOnChange?.(props);
+				target?.fieldsOnChange?.(props);
 			};
 		}
 
-		if (base?.onFieldRender != null || target?.onFieldRender != null) {
-			merged.onFieldRender = (props) => {
-				base?.onFieldRender?.(props);
-				target?.onFieldRender?.(props);
+		if (base?.fieldsOnRender != null || target?.fieldsOnRender != null) {
+			merged.fieldsOnRender = (props) => {
+				base?.fieldsOnRender?.(props);
+				target?.fieldsOnRender?.(props);
 			};
 		}
 

@@ -1,7 +1,7 @@
 import { onMount, task } from "@qundus/qstate";
 import type { Addon, Field, Form, FunctionProps } from "../../_model";
 import { isServerSide } from "@qundus/qstate/checks";
-import { CYCLE } from "../../const";
+import { FIELD } from "../../const";
 
 export function mountCycle<F extends Form.Fields, O extends Form.Options<F>>(
 	props: FunctionProps.FormCycle<F, O>,
@@ -40,12 +40,12 @@ export function mountCycle<F extends Form.Fields, O extends Form.Options<F>>(
 
 function waitForLoading(store: Field.Store<any, any>): Promise<void> {
 	const cycle = store.get().event.CYCLE;
-	if (cycle > CYCLE.MOUNT) return Promise.resolve();
+	if (cycle > FIELD.CYCLE.IDLE) return Promise.resolve();
 
 	return new Promise((resolve) => {
 		const unsubscribe = store.subscribe((state) => {
 			const cycle = state.event.CYCLE;
-			if (cycle > CYCLE.MOUNT) {
+			if (cycle > FIELD.CYCLE.IDLE) {
 				unsubscribe();
 				resolve();
 			}

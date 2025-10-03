@@ -8,13 +8,13 @@ import { prepareStore } from "./preparations/store";
 //
 import { changeCycle } from "./cycles/change";
 import { createRender } from "../render";
-import { CYCLE, DOM, MUTATE, PLACEHOLDERS } from "../const";
 import { mountCycle } from "./cycles/mount";
 //
 import { fieldAddonRemove } from "../addons/field/remove";
 import { fieldAddonUpdate } from "../addons/field/update";
 import { fieldAddonReset } from "../addons/field/reset";
 import { prepareInit } from "./preparations/init";
+import { isServerSide } from "@qundus/qstate/checks";
 
 //
 export function createField<
@@ -53,18 +53,5 @@ export function createField<
 		update: update as any,
 		remove,
 		reset,
-		// const
-		// get CYCLE() {
-		// 	return CYCLE;
-		// },
-		// get DOM() {
-		// 	return DOM;
-		// },
-		// get MUTATE() {
-		// 	return MUTATE;
-		// },
-		// get PLACEHOLDERS() {
-		// 	return PLACEHOLDERS;
-		// },
 	};
 }

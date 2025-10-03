@@ -1,5 +1,5 @@
 import type { Extras, Field, Form, FunctionProps } from "../../../_model";
-import { COUNTRIES, MUTATE } from "../../../const";
+import { FIELD, MISC } from "../../../const";
 
 const PREFIX = ["+", "00", "+(00)"];
 function parsePhone3(
@@ -150,6 +150,7 @@ export function processTelValue<S extends Field.Setup, O extends Form.Options>(
 
 	extras.value = {
 		number: parsed?.phone,
+		preserved: parsed?.phonePreserved,
 		numberNoZero: parsed?.phone?.startsWith("0") ? parsed?.phone.substring(1) : parsed?.phone,
 		preservedNoZero: parsed?.phonePreserved?.startsWith("0")
 			? parsed?.phonePreserved.substring(1)
@@ -183,8 +184,8 @@ export function processTelValue<S extends Field.Setup, O extends Form.Options>(
 		if (parsed.phone && parsed.phone.length > 0) {
 			extras.international.country = null;
 			const phone = `+${parsed.phone}`;
-			for (let i = 0; i < COUNTRIES.length; i++) {
-				const country = COUNTRIES[i];
+			for (let i = 0; i < MISC.COUNTRIES.length; i++) {
+				const country = MISC.COUNTRIES[i];
 				if (phone.startsWith(country.dial_code)) {
 					extras.international.country = country as Exclude<
 						Extras.TelOut<S>["international"]["country"],
@@ -215,7 +216,7 @@ export function processTelValue<S extends Field.Setup, O extends Form.Options>(
 			extras.value.numberNoZero = `${country.dial_code_no_id}${extras.value.numberNoCodeNoZero}`;
 		}
 		if (preserved) {
-			// extras.value.preserved = phone
+			extras.value.preserved = preserved;
 			extras.value.preservedNoCode = preserved.replace(country.dial_code_no_id, "");
 			extras.value.preservedNoCodeNoZero = extras.value.preservedNoCode.startsWith("0")
 				? extras.value.preservedNoCode.substring(1)

@@ -1,5 +1,5 @@
 import type { Extras, Field, Form, FunctionProps } from "../../../_model";
-import { DOM, MUTATE } from "../../../const";
+import { FIELD } from "../../../const";
 import { populateFileReader } from "../../../methods/populate-file-reader";
 
 export function processFileValue<S extends Field.Setup<"file">, O extends Form.Options>(
@@ -124,8 +124,8 @@ export function processFileValue<S extends Field.Setup<"file">, O extends Form.O
 				}
 				next.extras.files[idx] = file;
 				next.__internal.manual = false;
-				next.event.DOM = DOM.FILE_PROGRESS;
-				next.event.MUTATE = MUTATE.__EXTRAS;
+				next.event.DOM = FIELD.DOM.FILE_PROGRESS;
+				next.event.MUTATE = FIELD.MUTATE.__EXTRAS;
 
 				console.log("update progress :: ");
 				store.set(next);
@@ -160,8 +160,8 @@ export function processFileValue<S extends Field.Setup<"file">, O extends Form.O
 				}
 				next.extras.files[idx] = file;
 				next.__internal.manual = false;
-				next.event.DOM = DOM.FILE_DONE;
-				next.event.MUTATE = MUTATE.__EXTRAS;
+				next.event.DOM = FIELD.DOM.FILE_DONE;
+				next.event.MUTATE = FIELD.MUTATE.__EXTRAS;
 				store.set(next);
 			},
 		});

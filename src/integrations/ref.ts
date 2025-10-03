@@ -2,6 +2,7 @@ import type { Field, Form, FunctionProps, Integration, Render } from "../_model"
 import { renderAttributesInput } from "../render/attributes/input";
 import { renderAttributesTrigger } from "../render/attributes/trigger";
 import { renderAttributesOption } from "../render/attributes/option";
+import { renderAttributesDate } from "../render/attributes/date";
 
 export type IntegrationRef<
 	S extends Field.Setup,
@@ -12,6 +13,7 @@ export type IntegrationRef<
 	"REF",
 	{
 		input: (ref: any) => void;
+		date: (ref: any) => void;
 		select: {
 			trigger: (ref: any) => void;
 			option: (ref: any, option: any) => void;
@@ -50,6 +52,18 @@ export function refIntegration<S extends Field.Setup, O extends Form.Options>(
 				}
 			},
 		} as any;
+	} else if (setup.type === "date") {
+		result = (ref) => {
+			if (ref == null || ref.name === key) {
+				return;
+			}
+			const reactive = store.get();
+			const attrType = "dom";
+			const attrs = renderAttributesDate(basic, { attrType, reactive }) as any;
+			for (const k in attrs) {
+				ref[k] = attrs[k];
+			}
+		};
 	} else {
 		result = (ref) => {
 			if (ref == null || ref.name === key) {

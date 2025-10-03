@@ -1,5 +1,5 @@
 import type * as _QSTATE from "@qundus/qstate";
-import type { PLACEHOLDERS, IGNORED_SETUP_KEYS, CYCLE, DOM, MUTATE } from "./const";
+import type { IGNORED_SETUP_KEYS, FIELD, FORM } from "./const";
 import type { deriveAddon, hooksInUseAddon } from "@qundus/qstate/addons";
 import type { JSX as PJSX } from "preact";
 
@@ -21,10 +21,10 @@ export namespace Field {
 	// | "submit"
 	export type Type =
 		// | "hidden" // replaced by hidden option
+		// | "datetime-local" // unnecessary complication, date setup configuration is more than enough
 		| "checkbox"
 		| "color"
 		| "date"
-		| "datetime-local"
 		| "email"
 		| "file"
 		| "image"
@@ -63,7 +63,7 @@ export namespace Field {
 	export type OnMount<T extends Type, V> = (props: {
 		setup: Setup;
 		update: Addon.FieldUpdate<Setup, Form.Options>;
-		CYCLE: typeof CYCLE;
+		isServerSide: () => boolean;
 	}) => void | (() => void) | Promise<void | (() => void)>;
 	export type OnChange<T extends Type, V> = (props: {
 		$next: StoreObject<Setup>;
@@ -71,9 +71,7 @@ export namespace Field {
 		setup: Setup;
 		form: Form.StoreObject<any, any> | undefined;
 		update: Addon.FieldUpdate<Setup, Form.Options>;
-		DOM: typeof DOM;
-		MUTATE: typeof MUTATE;
-		CYCLE: typeof CYCLE;
+		isServerSide: () => boolean;
 		// prevForm: Form.StoreObject<Form.Fields>;
 	}) => void | Promise<void>;
 	export type OnRender<T extends Type> = (
@@ -149,6 +147,13 @@ export namespace Field {
 		 * can be used for when a field is mandatory, like a checkbox.
 		 */
 		mandatory?: boolean;
+		/**
+		 * usually the cycle starts with INIT then IDLE moving to whatever developer logic
+		 * prefers to set through onMount function, this alters the MOUNT cycle allowing for any
+		 * cycle to replace it.
+		 * @default CYCLE.IDLE
+		 */
+		initCycle?: FIELD.CYCLE;
 
 		//## value effects
 		/**
@@ -198,6 +203,7 @@ export namespace Field {
 		tel?: T extends "tel" ? Extras.Tel : never;
 		select?: T extends "select" | "select.radio" ? Extras.Select : never;
 		checkbox?: T extends "checkbox" ? Extras.Checkbox : never;
+		date?: T extends "date" ? Extras.Date : never;
 	};
 
 	// converters
@@ -277,9 +283,9 @@ export namespace Field {
 			noValidation?: boolean;
 		};
 		readonly event: {
-			DOM: DOM;
-			MUTATE: MUTATE;
-			CYCLE: CYCLE;
+			DOM: FIELD.DOM;
+			MUTATE: FIELD.MUTATE;
+			CYCLE: FIELD.CYCLE;
 			ev: undefined | Event;
 		};
 		// user
@@ -321,11 +327,6 @@ export namespace Field {
 		readonly update: Addon.FieldUpdate<S, O>;
 		readonly remove: Addon.FieldRemove<S, O>;
 		readonly reset: Addon.FieldReset<S, O>;
-		// const
-		// readonly CYCLE: typeof CYCLE;
-		// readonly DOM: typeof DOM;
-		// readonly MUTATE: typeof MUTATE;
-		// readonly PLACEHOLDERS: typeof PLACEHOLDERS;
 	};
 }
 
@@ -383,6 +384,7 @@ export namespace Extras {
 			displayMode?: "normal" | "no-prefix" | "keep-prefix";
 		};
 	};
+	export type Date = AirDatepickerOptions<HTMLElement> | undefined;
 
 	// processed
 	export type FileOut<S extends Field.Setup> = {
@@ -457,12 +459,13 @@ export namespace Extras {
 			numberNoZero?: string | null;
 			numberNoCodeNoZero?: string | null;
 			//
-			// preserved: string;
+			preserved?: string | null;
 			preservedNoCode?: string | null;
 			preservedNoZero?: string | null;
 			preservedNoCodeNoZero?: string | null;
 		};
 	};
+	// export type DateOut<S extends Field.Setup> = AirDatepickerOptions<HTMLElement> | undefined
 
 	/**
 	 * sometimes some field types require additional information beyond the
@@ -482,7 +485,7 @@ export namespace Extras {
 
 export namespace Form {
 	//
-	export type Status = "mount" | "idle" | "incomplete" | "error" | "valid" | "submit";
+	// export type Status = "mount" | "idle" | "incomplete" | "error" | "valid" | "submit";
 	export type FieldsIn = Record<string, Field.SetupIn> | undefined | null;
 	export type Fields<I extends FieldsIn = FieldsIn, O extends Options = Options> = I extends Record<
 		string,
@@ -564,38 +567,40 @@ export namespace Form {
 			readonly prev: StoreObject<F, Options<F>>;
 			readonly fields: F;
 		}) => void;
-		/**
-		 * abort state changes when an exception is thrown from onChange
-		 * method or not
-		 * @default false
-		 */
-		abortOnChangeException?: boolean;
 
-		//## conditions
+		//## fields
 		/**
-		 * normal behavior of form is to consider all fields required
-		 * and mark optional ones through "require" setting,
-		 * this alters that behavior and forces all fields to be optional.
-		 * the user then has the ability to make required fields through
-		 * setting "required" to true
+		 * default behavior of form is to consider all fields required,
+		 * use this to change that default, indvidual fields 'required'
+		 * options supercedes this.
 		 * @default true
 		 */
-		allFieldsRequired?: boolean;
-		allFieldsDisabled?: boolean;
+		fieldsRequired?: boolean;
+		/**
+		 * default behavior of form is to consider all fields enabled,
+		 * use this to change that default, indvidual fields 'disabled'
+		 * options supercedes this.
+		 * @default true
+		 */
+		fieldsDisabled?: boolean;
+		/**
+		 * default behavior of form is to start with CYCLES.IDLE,
+		 * use this to change that default, indvidual fields 'initCycle'
+		 * options supercedes this.
+		 * @default true
+		 */
+		fieldsInitCycle?: FIELD.CYCLE;
 
-		//## field events
-		onFieldChange?: Field.OnChange<Field.Type, any>;
+		/**
+		 * listen to all changes occured on any field and alter it's data if necessary,
+		 * this gets called before the individual field's onChange method if any.
+		 */
+		fieldsOnChange?: Field.OnChange<Field.Type, any>;
 		/**
 		 * global per element render listener, gets called before or after field's specific
 		 * onElement based on onFieldElementOrder option.
 		 */
-		onFieldRender?: Field.OnRender<Field.Type>;
-		/**
-		 * determines wheather global onFieldElement is going to take place before or after
-		 * field's specific onFieldElementOrder
-		 * @default "after"
-		 */
-		onFieldElementOrder?: "before" | "after";
+		fieldsOnRender?: Field.OnRender<Field.Type>;
 		//## exportation and usage
 		/**
 		 * the last step of checking for form validity is to check for
@@ -674,7 +679,7 @@ export namespace Form {
 		};
 		props: O["props"];
 		incomplete: string[];
-		status: Status;
+		status: FORM.STATUS;
 		// changed: undefined | { root: keyof StoreObject<F>; key?: keyof F; value: any };
 	}
 	export type StoreState<F extends Fields, O extends Options<F>> = _QSTATE.Nano.Map<
@@ -779,6 +784,8 @@ import type { IntegrationPreact } from "./integrations/preact";
 import type { IntegrationReact } from "./integrations/react";
 import type { IntegrationSolid } from "./integrations/solid";
 import type { IntegrationSvelte } from "./integrations/svelte";
+import type { AirDatepickerOptions } from "air-datepicker";
+
 export namespace Render {
 	export namespace Attributes {
 		// /**
@@ -849,6 +856,22 @@ export namespace Render {
 			? (A extends "dom" ? OptionDom : OptionVdom) & Record<string, unknown>
 			: (A extends "dom" ? OptionRadioDom : OptionRadioVdom) & Record<string, unknown>;
 
+		// date
+		export type DateDom = ToDom<InputVdom>;
+		export type DateVdom = {
+			id: string;
+			required: boolean;
+			disabled: boolean;
+			autoComplete: "on" | "off";
+			type: string; // not linking to Field.Type to avoid issues with html.input.type
+			name: string;
+		};
+		export type Date<
+			S extends Field.Setup,
+			O extends Form.Options,
+			A extends Type,
+		> = (A extends "dom" ? DateDom : DateVdom) & Record<string, unknown>;
+
 		// all
 		export type AllInputDom = HTMLInputElement;
 		export type AllInputVdom = PJSX.IntrinsicElements["input"];
@@ -872,6 +895,7 @@ export namespace Integration {
 			// 	...args: [value: any, ...any[]]
 			// ) => Render.Attributes.Option<S, O, Render.Attributes.Type> | void;
 		};
+		date: any;
 	};
 
 	//
@@ -880,7 +904,11 @@ export namespace Integration {
 		O extends Form.Options,
 		N extends string,
 		T extends Template<S, O>,
-	> = (S extends { type: "select" } | { type: "select.radio" } ? T["select"] : T["input"]) & {
+	> = (S extends { type: "select" } | { type: "select.radio" }
+		? T["select"]
+		: S extends { type: "date" }
+			? T["date"]
+			: T["input"]) & {
 		__integrationFor: N;
 		__integrationName: `${N}-RENDER`;
 	};

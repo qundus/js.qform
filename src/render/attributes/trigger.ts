@@ -1,5 +1,5 @@
 import type { Field, Form, FunctionProps, Render } from "../../_model";
-import { DOM, MUTATE } from "../../const";
+import { FIELD } from "../../const";
 
 export function renderAttributesTrigger<
 	S extends Field.Setup,
@@ -42,8 +42,8 @@ export function renderAttributesTrigger<
 							next.element.visited = true;
 							next.__internal.manual = false;
 							//
-							next.event.DOM = DOM.BLUR;
-							next.event.MUTATE = MUTATE.IDLE;
+							next.event.DOM = FIELD.DOM.BLUR;
+							next.event.MUTATE = FIELD.MUTATE.IDLE;
 							next.event.ev = undefined;
 							store.set(next);
 						}
@@ -58,8 +58,8 @@ export function renderAttributesTrigger<
 			//
 			// const ischildclick = event.target !== event.currentTarget;
 			// console.log("is child click :: ", ischildclick);
-			next.event.DOM = pointer === "touch" ? DOM.TOUCH : DOM.CLICK;
-			next.event.MUTATE = MUTATE.IDLE;
+			next.event.DOM = pointer === "touch" ? FIELD.DOM.TOUCH : FIELD.DOM.CLICK;
+			next.event.MUTATE = FIELD.MUTATE.IDLE;
 			next.event.ev = {
 				value: (event.target as any).value,
 				// checked: event.target.value,
@@ -71,12 +71,8 @@ export function renderAttributesTrigger<
 	// process trigger
 	type PP = Parameters<Field.OnRender<Field.Type>>[0];
 	const processProps: PP = { key, data: reactive, attrType, attrs, attrFor: "trigger" };
-	if (options?.onFieldElementOrder === "before") {
-		options?.onFieldRender?.(processProps);
-	}
+
+	options?.fieldsOnRender?.(processProps);
 	setup.onRender?.(processProps);
-	if (options?.onFieldElementOrder === "after") {
-		options?.onFieldRender?.(processProps);
-	}
 	return attrs as Render.Attributes.Trigger<S, O, A>;
 }

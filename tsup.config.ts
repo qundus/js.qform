@@ -19,6 +19,7 @@ export default defineConfig((options) => {
 			"src/converters/index.ts",
 			"src/validators/index.ts",
 			"src/const/index.ts",
+			"src/styles/index.ts",
 			//
 			// "src/country_dial_info.json",
 		],

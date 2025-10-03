@@ -1,13 +1,13 @@
 import { onMount, task } from "@qundus/qstate";
 import type { Addon, Field, Form, FunctionProps } from "../../_model";
-import { CYCLE } from "../../const";
+import { isServerSide } from "@qundus/qstate/checks";
 
 export function mountCycle<S extends Field.Setup, O extends Form.Options>(
 	props: FunctionProps.Field<S, O>,
 	update: Addon.FieldUpdate<S, O>,
 ) {
 	const { setup, store } = props;
-	const next_cycle = update.cycle(CYCLE.MOUNT);
+	const next_cycle = update.cycle(setup.initCycle);
 	onMount(store, () => {
 		let ureturns = null as null | void | (() => void);
 		if (setup.onMount) {
@@ -15,14 +15,12 @@ export function mountCycle<S extends Field.Setup, O extends Form.Options>(
 				ureturns = await setup?.onMount?.({
 					setup,
 					update: update as any,
-					get CYCLE() {
-						return CYCLE;
-					},
+					isServerSide,
 				});
-				next_cycle();
+				next_cycle?.();
 			});
 		} else {
-			next_cycle();
+			next_cycle?.();
 		}
 		return () => {
 			if (ureturns != null && typeof ureturns === "function") {

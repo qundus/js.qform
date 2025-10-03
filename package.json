@@ -60,6 +60,12 @@
 			"import": "./dist/const/index.mjs",
 			"module": "./dist/const/index.mjs",
 			"require": "./dist/const/index.cjs"
+		},
+		"./styles": {
+			"types": "./dist/styles/index.d.ts",
+			"import": "./dist/styles/index.mjs",
+			"module": "./dist/styles/index.mjs",
+			"require": "./dist/styles/index.cjs"
 		}
 	},
 	"scripts": {
@@ -80,14 +86,13 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.1.1",
+		"@qundus/qstate": "link:../js.qstate",
 		"@types/node": "^24.0.14",
 		"lefthook": "^1.12.2",
 		"terser": "^5.43.1",
 		"tsup": "^8.5.0",
-		"typescript": "^5.8.3",
-		"@qundus/qstate": "link:../js.qstate"
+		"typescript": "^5.8.3"
 	},
-	"peerDependencies": {},
 	"optionalDependencies": {
 		"astro": ">=4",
 		"preact": ">=8.5.2",
@@ -95,7 +100,10 @@
 		"react-dom": ">=16.6.3",
 		"solid-js": ">=1.6",
 		"svelte": ">=2.16.1",
-		"zod": ">=3",
-		"vue": ">=2.6.14"
+		"vue": ">=2.6.14",
+		"zod": ">=3"
+	},
+	"dependencies": {
+		"air-datepicker": "^3.6.0"
 	}
 }

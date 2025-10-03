@@ -2,7 +2,8 @@ import { onSet } from "@qundus/qstate";
 import type { Addon, Field, Form, FunctionProps } from "../../_model";
 import { isFieldIncomplete } from "../checks/is-field-incomplete";
 import { processValue } from "../processors/value";
-import { CYCLE, DOM, MUTATE } from "../../const";
+import { FIELD } from "../../const";
+import { isServerSide } from "@qundus/qstate/checks";
 
 const REFRESH = "__REFRESH";
 export function changeCycle<
@@ -32,7 +33,7 @@ export function changeCycle<
 		if ($next.__internal[REFRESH]) {
 			delete $next.__internal[REFRESH];
 			return $next;
-		} else if ($next.event.CYCLE > CYCLE.CHANGE) {
+		} else if ($next.event.CYCLE > FIELD.CYCLE.IDLE) {
 			// console.log("current cycle :: ", $next.event.CYCLE);
 			return $next;
 		}
@@ -45,10 +46,10 @@ export function changeCycle<
 		const VMCM = (MANUAL_UPDATE ? $next.element.vmcm : "normal") as Field.VMCM;
 		const NO_VALIDATION = $next.__internal.noValidation ?? false;
 		const SHOULD_VALIDATE =
-			_MUTATE === MUTATE.VALUE ||
-			_MUTATE === MUTATE.ELEMENT ||
-			_DOM === DOM.CLICK_OPTION ||
-			_MUTATE === MUTATE.EXTRAS;
+			_MUTATE === FIELD.MUTATE.VALUE ||
+			_MUTATE === FIELD.MUTATE.ELEMENT ||
+			_DOM === FIELD.DOM.CLICK_OPTION ||
+			_MUTATE === FIELD.MUTATE.EXTRAS;
 		//
 		const prev = store.value;
 		const form = formStore?.get();
@@ -90,16 +91,12 @@ export function changeCycle<
 				prev: prev as any,
 				$next: $next as any,
 				update: update as any,
-				get DOM() {
-					return DOM;
-				},
-				get MUTATE() {
-					return MUTATE;
-				},
-				get CYCLE() {
-					return CYCLE;
-				},
+				isServerSide,
 			};
+			// global onchange field if any
+			if (options?.fieldsOnChange != null && typeof options?.fieldsOnChange === "function") {
+				await options.fieldsOnChange(onchangeprops);
+			}
 			if (typeof setup?.onChange === "function") {
 				await setup?.onChange?.(onchangeprops);
 			} else {
@@ -108,10 +105,6 @@ export function changeCycle<
 						await processor?.(onchangeprops);
 					}
 				}
-			}
-			// global onchange field if any
-			if (options?.onFieldChange != null && typeof options?.onFieldChange === "function") {
-				await options.onFieldChange(onchangeprops);
 			}
 		} catch (err: any) {
 			console.error(
@@ -125,7 +118,11 @@ export function changeCycle<
 		}
 
 		// validate on update of type value
-		if (SHOULD_VALIDATE && !NO_VALIDATION && $next.event.MUTATE !== MUTATE.__ABORT_VALIDATION) {
+		if (
+			SHOULD_VALIDATE &&
+			!NO_VALIDATION &&
+			$next.event.MUTATE !== FIELD.MUTATE.__ABORT_VALIDATION
+		) {
 			$next.errors = [];
 			// first check for user validation functions
 			if (setup.validate != null) {

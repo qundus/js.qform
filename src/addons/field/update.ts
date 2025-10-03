@@ -1,5 +1,5 @@
 import type { Extras, Field, Form, FunctionProps } from "../../_model";
-import { type COUNTRIES, CYCLE, DOM, MUTATE } from "../../const";
+import { FIELD, type MISC } from "../../const";
 
 export type FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> = {
 	value: (
@@ -16,12 +16,21 @@ export type FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> = {
 	props: <G extends S["props"]>(
 		value: Partial<G> | ((prev: G) => Partial<G> | undefined) | undefined,
 	) => void;
-	cycle: (cycle: CYCLE) => () => void;
+	/**
+	 * update current cycle to send signal to field listeners of what cycle this field
+	 * is in.
+	 * @param cycle the requested cycle, updated immediatly.
+	 * @returns a function to end the requested cycle and go back to CHANGE cycle only if no
+	 * other requests have been made
+	 */
+	cycle: <G extends FIELD.CYCLE>(
+		cycle: G | undefined | null,
+	) => G extends FIELD.CYCLE.IDLE ? void : () => void;
 	// extras indvidually
 	select: <E extends Extras.Select>(props: Partial<E> | ((prev: E) => Partial<E>)) => void;
 	checkbox: <E extends Extras.Checkbox>(props: Partial<E> | ((prev: E) => Partial<E>)) => void;
 	tel: (
-		props: { country?: (typeof COUNTRIES)[number] | string; value?: string },
+		props: { country?: (typeof MISC.COUNTRIES)[number] | string; value?: string },
 		configs?: { preprocess?: boolean; noValidate?: boolean },
 	) => void;
 	// cycleUnsafe:  (cycle: CYCLE) => void;
@@ -45,8 +54,8 @@ export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 			next.__internal.preprocess = configs?.preprocess;
 			next.__internal.noValidation = configs?.noValidate;
 			//
-			next.event.MUTATE = MUTATE.VALUE;
-			next.event.DOM = DOM.IDLE;
+			next.event.MUTATE = FIELD.MUTATE.VALUE;
+			next.event.DOM = FIELD.DOM.IDLE;
 			store.set(next);
 		},
 		condition: (value) => {
@@ -57,8 +66,8 @@ export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 			next.__internal.manual = true;
 			// state.__internal.preprocess = configs?.preprocess;
 			//
-			next.event.MUTATE = MUTATE.CONDITION;
-			next.event.DOM = DOM.IDLE;
+			next.event.MUTATE = FIELD.MUTATE.CONDITION;
+			next.event.DOM = FIELD.DOM.IDLE;
 			store.set(next);
 		},
 		element: (value, configs) => {
@@ -69,8 +78,8 @@ export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 			next.__internal.manual = true;
 			next.__internal.noValidation = configs?.noValidate;
 			// state.__internal.preprocess = configs?.preprocess;
-			next.event.MUTATE = MUTATE.ELEMENT;
-			next.event.DOM = DOM.IDLE;
+			next.event.MUTATE = FIELD.MUTATE.ELEMENT;
+			next.event.DOM = FIELD.DOM.IDLE;
 			store.set(next);
 		},
 		props: (value) => {
@@ -80,33 +89,46 @@ export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 			next.props = vv;
 			next.__internal.manual = true;
 			// state.__internal.preprocess = configs?.preprocess;
-			next.event.MUTATE = MUTATE.PROPS;
-			next.event.DOM = DOM.IDLE;
+			next.event.MUTATE = FIELD.MUTATE.PROPS;
+			next.event.DOM = FIELD.DOM.IDLE;
 			store.set(next);
 		},
 		cycle: (cycle) => {
+			if (cycle == null) {
+				return;
+			}
 			const next = { ...store.get() };
 			const prev = next.event.CYCLE;
-			if (cycle <= CYCLE.MOUNT && prev >= CYCLE.MOUNT) {
-				throw new Error("qform: cannot move to mount cycle after <change> has been instilled!");
+			if (cycle === FIELD.CYCLE.INIT && prev > FIELD.CYCLE.INIT) {
+				throw new Error("qform: cannot move to INIT cycle after IDLE has been instilled!");
 			}
 			next.event.CYCLE = cycle;
-			next.event.MUTATE = MUTATE.CYCLE;
-			next.event.DOM = DOM.IDLE;
-			cycle_tracker++;
-			store.set(next);
+			next.event.MUTATE = FIELD.MUTATE.CYCLE;
+			next.event.DOM = FIELD.DOM.IDLE;
+			if (cycle === FIELD.CYCLE.IDLE) {
+				if (cycle_tracker > 0) {
+					// means that there's a cycle controlled by user and will go back
+					// to IDLE once done, if not, user should know they're in control of this
+					return null as any;
+				}
+				store.set(next);
+				return null as any;
+			} else {
+				store.set(next);
+			}
 			// console.log("tracker :: ", cycle, " :: ", cycle_tracker);
+			cycle_tracker++;
 			return () => {
 				const next = { ...store.get() };
 				cycle_tracker--;
 				// console.log("tracker done :: ", cycle, " :: ", cycle_tracker);
-				if (cycle_tracker > 0) {
+				if (cycle_tracker > 0 || next.event.CYCLE === FIELD.CYCLE.IDLE) {
 					return;
 				}
 				cycle_tracker = 0;
-				next.event.CYCLE = CYCLE.CHANGE;
-				next.event.MUTATE = MUTATE.CYCLE;
-				next.event.DOM = DOM.IDLE;
+				next.event.CYCLE = FIELD.CYCLE.IDLE;
+				next.event.MUTATE = FIELD.MUTATE.CYCLE;
+				next.event.DOM = FIELD.DOM.IDLE;
 				store.set(next);
 			};
 		},
@@ -117,8 +139,8 @@ export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 			next.extras = { ...prev, ...vv };
 			next.__internal.manual = true;
 			// state.__internal.preprocess = configs?.preprocess;
-			next.event.MUTATE = MUTATE.EXTRAS;
-			next.event.DOM = DOM.IDLE;
+			next.event.MUTATE = FIELD.MUTATE.EXTRAS;
+			next.event.DOM = FIELD.DOM.IDLE;
 			store.set(next);
 		},
 		checkbox: (value) => {
@@ -128,8 +150,8 @@ export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 			next.extras = { ...prev, ...vv };
 			next.__internal.manual = true;
 			// state.__internal.preprocess = configs?.preprocess;
-			next.event.MUTATE = MUTATE.EXTRAS;
-			next.event.DOM = DOM.IDLE;
+			next.event.MUTATE = FIELD.MUTATE.EXTRAS;
+			next.event.DOM = FIELD.DOM.IDLE;
 			store.set(next);
 		},
 		tel(props, configs) {
@@ -156,8 +178,9 @@ export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 			next.__internal.preprocess = configs?.preprocess;
 			next.__internal.noValidation = configs?.noValidate;
 			// state.__internal.preprocess = configs?.preprocess;
-			next.event.MUTATE = MUTATE.EXTRAS;
-			next.event.DOM = DOM.IDLE;
+			next.event.MUTATE = FIELD.MUTATE.EXTRAS;
+
+			next.event.DOM = FIELD.DOM.IDLE;
 			store.set(next);
 		},
 		// cycleUnsafe(cycle) {

@@ -1,5 +1,5 @@
 import type { Field, Form, FunctionProps } from "../../_model";
-import { DOM, MUTATE } from "../../const";
+import { FIELD } from "../../const";
 
 export type FieldAddonRemove<_S extends Field.Setup, _O extends Form.Options> = {
 	option: (option: any) => void;
@@ -33,8 +33,8 @@ export function fieldAddonRemove<S extends Field.Setup, O extends Form.Options>(
 			next.__internal.preprocess = true;
 			next.event.ev = undefined;
 			//
-			next.event.DOM = DOM.IDLE;
-			next.event.MUTATE = MUTATE.ELEMENT;
+			next.event.DOM = FIELD.DOM.IDLE;
+			next.event.MUTATE = FIELD.MUTATE.ELEMENT;
 			store.set(next as any);
 		},
 		optionByIndex: (index) => {

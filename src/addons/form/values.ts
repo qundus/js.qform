@@ -1,5 +1,4 @@
-import type { Check, Field, Form, FunctionProps } from "../../_model";
-import { PLACEHOLDERS } from "../../const";
+import type { Check, Extras, Field, Form, FunctionProps } from "../../_model";
 
 export type FormAddonValues<F extends Form.Fields, O extends Form.Options<F>> = ReturnType<
 	typeof formValuesAddon<F, O>
@@ -64,26 +63,26 @@ function _getValues<
 		// }
 		if (value != null) {
 			if (field.setup.type.startsWith("select")) {
-				if (Array.isArray(value)) {
-					value.forEach((item, idx, arr) => {
-						const next = {};
-						for (const key in item) {
-							if (key.startsWith("__")) {
-								continue;
-							}
-							next[key] = value[key];
-						}
-						arr[idx] = next;
-					});
-				} else {
-					const next = {} as any;
-					for (const key in value) {
+				const isArray = Array.isArray(value);
+				value = (isArray ? value : [value]) as Extras.SelectOut<Field.Setup<"select">>["options"];
+				value.forEach((item, idx, arr) => {
+					const next = {};
+					for (const key in item) {
 						if (key.startsWith("__")) {
 							continue;
 						}
-						next[key] = value[key];
+						next[key] = item[key];
 					}
-					value = next;
+					arr[idx] = next;
+				});
+				value = isArray ? value : value[0];
+			} else if (field.setup.type === "tel") {
+				const extras = field.store.value?.extras as Extras.TelOut<Field.Setup<"tel">>;
+				if (extras) {
+					const prefix = extras.international?.prefix;
+					// const country = extras.international?.country;
+					const phone = extras.value.preserved;
+					value = `${prefix ?? ""}${phone ?? ""}`;
 				}
 			}
 		}

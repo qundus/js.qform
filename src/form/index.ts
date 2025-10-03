@@ -1,5 +1,4 @@
 import type { Form, FunctionProps } from "../_model";
-import { PLACEHOLDERS } from "../const";
 
 // addons
 import { formSubmitAddon } from "../addons/form/submit";

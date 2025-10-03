@@ -1,4 +1,5 @@
 import type { Field, Form } from "../../_model";
+import { FIELD } from "../../const";
 import { mergeFieldProps } from "../../methods/merge-field-props";
 
 export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToSetup<F>>(
@@ -28,8 +29,8 @@ export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToS
 	// manage general and field specific options
 	// field.label = field.label ?? key;
 	setup.vmcm = setup.vmcm ?? options?.vmcm ?? "normal";
-	setup.required = setup.required ?? options?.allFieldsRequired ?? true;
-	setup.disabled = setup.disabled ?? options?.allFieldsDisabled ?? false;
+	setup.required = setup.required ?? options?.fieldsRequired ?? true;
+	setup.disabled = setup.disabled ?? options?.fieldsDisabled ?? false;
 	setup.hidden = setup.hidden ?? false;
 	setup.valueNullable = setup.valueNullable ?? false;
 	setup.preprocessValue = setup.preprocessValue ?? options?.preprocessValues ?? true;
@@ -38,6 +39,7 @@ export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToS
 	setup.multiple = setup.multiple ?? false;
 	setup.onChangeException = setup.onChangeException ?? false;
 	setup.props = mergeFieldProps(setup.props, options?.props, options?.propsMergeStrategy) as any;
+	setup.initCycle = setup.initCycle ?? options?.fieldsInitCycle ?? FIELD.CYCLE.IDLE;
 
 	// SPECIAL ASSIGNMENTS
 	// label

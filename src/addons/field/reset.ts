@@ -1,5 +1,5 @@
 import type { Extras, Field, Form, FunctionProps } from "../../_model";
-import { DOM, MUTATE } from "../../const";
+import { FIELD } from "../../const";
 import { prepareInit } from "../../field/preparations/init";
 
 export type FieldAddonReset<_S extends Field.Setup, _O extends Form.Options> = {
@@ -8,6 +8,11 @@ export type FieldAddonReset<_S extends Field.Setup, _O extends Form.Options> = {
 	tel: (configs?: { clear?: boolean; keepCountry?: boolean }) => void;
 	/** reset all data to field start setup */
 	origin: () => void;
+	/**
+	 * simple method to
+	 * @returns
+	 */
+	// cycle: () => void;
 };
 export function fieldAddonReset<S extends Field.Setup, O extends Form.Options>(
 	props: FunctionProps.FieldAddon<S, O>,
@@ -20,8 +25,8 @@ export function fieldAddonReset<S extends Field.Setup, O extends Form.Options>(
 			next.__internal.preprocess = true;
 			next.event.ev = undefined;
 			//
-			next.event.DOM = DOM.IDLE;
-			next.event.MUTATE = MUTATE.__RESET;
+			next.event.DOM = FIELD.DOM.IDLE;
+			next.event.MUTATE = FIELD.MUTATE.__RESET;
 			store.set(next);
 		},
 		value: (configs) => {
@@ -31,8 +36,8 @@ export function fieldAddonReset<S extends Field.Setup, O extends Form.Options>(
 			next.__internal.preprocess = true;
 			next.event.ev = undefined;
 			//
-			next.event.DOM = DOM.IDLE;
-			next.event.MUTATE = MUTATE.VALUE;
+			next.event.DOM = FIELD.DOM.IDLE;
+			next.event.MUTATE = FIELD.MUTATE.VALUE;
 			store.set(next);
 		},
 		tel: (configs) => {
@@ -54,8 +59,8 @@ export function fieldAddonReset<S extends Field.Setup, O extends Form.Options>(
 			next.__internal.preprocess = true;
 			next.event.ev = undefined;
 			//
-			next.event.DOM = DOM.IDLE;
-			next.event.MUTATE = MUTATE.VALUE;
+			next.event.DOM = FIELD.DOM.IDLE;
+			next.event.MUTATE = FIELD.MUTATE.VALUE;
 			store.set(next);
 		},
 	};

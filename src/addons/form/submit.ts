@@ -1,5 +1,5 @@
 import type { Form, FunctionProps } from "../../_model";
-import { CYCLE } from "../../const";
+import { FIELD, FORM } from "../../const";
 
 export type FormAddonSubmit<F extends Form.Fields, O extends Form.Options<F>> = ReturnType<
 	typeof formSubmitAddon<F, O>
@@ -10,17 +10,17 @@ export function formSubmitAddon<F extends Form.Fields, O extends Form.Options<F>
 	const { store, fields } = props;
 	function canSubmit() {
 		const status = store.get().status;
-		if (status === "submit") {
+		if (status === FORM.STATUS.SUBMIT) {
 			return false;
 		}
-		return status === "valid"; // || status === "submitting";
+		return status === FORM.STATUS.VALID; // || status === "submitting";
 	}
 
 	function startFieldsSubmitting() {
 		const cycles = [] as (() => void)[];
 		for (const key in fields) {
 			const field = fields[key];
-			cycles.push(field.update.cycle(CYCLE.SUBMIT));
+			cycles.push(field.update.cycle(FIELD.CYCLE.SUBMIT));
 		}
 		return () => {
 			cycles.forEach((next) => next());
@@ -44,13 +44,13 @@ export function formSubmitAddon<F extends Form.Fields, O extends Form.Options<F>
 				return null;
 			}
 			const end = startFieldsSubmitting();
-			store.set({ ...store.get(), status: "submit" });
+			store.set({ ...store.get(), status: FORM.STATUS.SUBMIT });
 			return () => {
 				end();
-				if (store.get().status !== "submit") {
+				if (store.get().status !== FORM.STATUS.SUBMIT) {
 					return;
 				}
-				store.set({ ...store.get(), status: "valid" });
+				store.set({ ...store.get(), status: FORM.STATUS.VALID });
 			};
 		},
 		/**
@@ -69,13 +69,13 @@ export function formSubmitAddon<F extends Form.Fields, O extends Form.Options<F>
 			}
 			const end = startFieldsSubmitting();
 			try {
-				store.set({ ...store.get(), status: "submit" });
+				store.set({ ...store.get(), status: FORM.STATUS.SUBMIT });
 				const w = await runner?.();
-				store.set({ ...store.get(), status: "valid" });
+				store.set({ ...store.get(), status: FORM.STATUS.VALID });
 				end();
 				return [w, null];
 			} catch (e: any) {
-				store.set({ ...store.get(), status: "valid" });
+				store.set({ ...store.get(), status: FORM.STATUS.VALID });
 				end();
 				// error?.(e);
 				return [null, e];

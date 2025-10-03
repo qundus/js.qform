@@ -1,6 +1,6 @@
 import { effect, task, batched, computed } from "@qundus/qstate";
 import type { Addon, Field, Form, FunctionProps } from "../../_model";
-import { CYCLE } from "../../const";
+import { FIELD, FORM } from "../../const";
 import { isServerSide } from "@qundus/qstate/checks";
 
 export function changeCycle<F extends Form.Fields, O extends Form.Options<F>>(
@@ -34,7 +34,7 @@ export function changeCycle<F extends Form.Fields, O extends Form.Options<F>>(
 				continue;
 			}
 			//
-			count.mounted += store.event.CYCLE > CYCLE.MOUNT ? 1 : 0;
+			count.mounted += store.event.CYCLE >= FIELD.CYCLE.IDLE ? 1 : 0;
 			// @ts-expect-error
 			$next.values[key] = store.value;
 			// @ts-expect-error
@@ -73,11 +73,11 @@ export function changeCycle<F extends Form.Fields, O extends Form.Options<F>>(
 
 		// finally, assign form status
 		if (count.incompletes > 0 || count.errors > 0) {
-			$next.status = count.errors > 0 ? "error" : "incomplete";
+			$next.status = count.errors > 0 ? FORM.STATUS.ERROR : FORM.STATUS.INCOMPLETE;
 		} else if (count.invalids > 0) {
-			$next.status = "idle";
+			$next.status = FORM.STATUS.IDLE;
 		} else {
-			$next.status = "valid";
+			$next.status = FORM.STATUS.VALID;
 		}
 
 		const eventprops = {
@@ -88,7 +88,7 @@ export function changeCycle<F extends Form.Fields, O extends Form.Options<F>>(
 			getForm: () => store.get(),
 			update,
 		};
-		if (eventprops.prev.status === "mount") {
+		if (eventprops.prev.status === FORM.STATUS.INIT) {
 			task(async () => {
 				await options?.onMount?.(eventprops, (stores, func) => {
 					if (isServerSide()) {

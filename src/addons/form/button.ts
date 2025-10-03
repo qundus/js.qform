@@ -1,9 +1,9 @@
 import type { Form, FunctionProps } from "../../_model";
-import { atom } from "@qundus/qstate";
 import type * as _QSTATE from "@qundus/qstate";
+import { FORM } from "../../const";
 
 type ButtonObject = {
-	status: Form.Status;
+	status: FORM.STATUS;
 	disabled: boolean;
 	canSubmit: boolean;
 	submitting: boolean;
@@ -27,9 +27,9 @@ export function formButtonAddon<F extends Form.Fields, O extends Form.Options<F>
 		({ status }) =>
 			({
 				status: status,
-				disabled: status !== "valid",
-				canSubmit: status === "valid",
-				submitting: status === "submit",
+				disabled: status !== FORM.STATUS.VALID,
+				canSubmit: status === FORM.STATUS.VALID,
+				submitting: status === FORM.STATUS.SUBMIT,
 			}) as ButtonObject,
 	);
 
