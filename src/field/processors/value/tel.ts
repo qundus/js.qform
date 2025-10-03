@@ -2,8 +2,14 @@ import type { Extras, Field, Form, FunctionProps } from "../../../_model";
 import { COUNTRIES, MUTATE } from "../../../const";
 
 const PREFIX = ["+", "00", "+(00)"];
-function parsePhone3(_phone: string, prefixes: string[], preserveChars: string) {
+function parsePhone3(
+	_phone: string,
+	prefixes: string[],
+	_preserveChars: string | undefined | null,
+) {
 	let value = _phone as string;
+	const preserveChars =
+		_preserveChars != null && typeof _preserveChars === "string" ? _preserveChars : "";
 	if (_phone == null) {
 		return null;
 	} else if (typeof _phone !== "string") {
@@ -15,6 +21,7 @@ function parsePhone3(_phone: string, prefixes: string[], preserveChars: string) 
 	const result = {
 		prefix: null as null | string,
 		phone: null as null | string,
+		phonePreserved: null as null | string,
 		others: null as null | string,
 		// Sort prefixes by length (longest first) for proper matching
 		prefixes: [...prefixes].sort((a, b) => b.length - a.length),
@@ -24,55 +31,70 @@ function parsePhone3(_phone: string, prefixes: string[], preserveChars: string) 
 
 	value = value.trim();
 
-	// // Find the longest matching prefix
+	// Find the longest matching prefix
+	// let pending = undefined as any;
 	for (const prefix of result.prefixes) {
-		if (value.startsWith(prefix)) {
+		// check for full matches
+		if (value.startsWith(prefix) || value === prefix) {
 			result.prefix = prefix;
+			break;
+		} else if (result.pending == null && prefix.startsWith(value)) {
+			if (value === "0") {
+				continue;
+			}
+			// check for partial matches
+			result.pending = value === "" ? null : value;
 			break;
 		}
 	}
 
-	// // If no exact prefix match, check for partial matches
-	if (!result.prefix) {
-		for (const prefix of result.prefixes) {
-			if (prefix.startsWith(value)) {
-				// Entire input is a partial prefix
-				result.prefix = value === "" ? null : value;
-				return result;
-			}
-		}
+	// only assign pending if prefix doesn't exist
+	if (result.prefix == null && result.pending != null) {
+		result.prefix = result.pending;
+		result.pending = null;
+		// return result;
 	}
 
-	// const escapedPrefixes = prefixes.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-	// const prefixPattern = escapedPrefixes.join("|");
-	// const match = new RegExp(`^(?<prefix>${prefixPattern})?(?<rest>.*)$`).exec(value.trim());
-
-	// if (!match?.groups) return result.prefix == null ? null : result;
-
-	// const { prefix, rest } = match.groups;
 	const rest = result.prefix ? value.slice(result.prefix.length) : value;
-	// const cleanNumber = rest.replace(/\D/g, "") as string | null;
-	// const otherChars = rest.replace(/\d/g, "") as string | null;
-
-	const preservePattern = preserveChars
-		? `[^\\d${preserveChars.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}]`
-		: "\\D";
-	const cleanNumber = rest.replace(new RegExp(preservePattern, "g"), "");
+	const cleanNumber = rest.replace(/\D/g, "") as string | null;
+	const preservePattern =
+		preserveChars != null ? `[^\\d${preserveChars.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}]` : "\\D";
+	const cleanNumber2 = rest.replace(new RegExp(preservePattern, "g"), "");
 	const otherChars = rest.replace(
-		new RegExp(`[\\d${preserveChars.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}]`, "g"),
+		new RegExp(
+			`[\\d${preserveChars != null ? preserveChars.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") : ""}]`,
+			"g",
+		),
 		"",
 	);
 
-	// result.prefix = result.prefix ?? matchedPrefix ?? null;
+	// result.prefix = result.prefix ?? prefix ?? null;
 	result.phone = cleanNumber && cleanNumber.length > 0 ? cleanNumber : null;
+	result.phonePreserved = cleanNumber2 && cleanNumber2.length > 0 ? cleanNumber2 : null;
 	result.others = otherChars && otherChars.length > 0 ? otherChars : null;
 
-	for (const prefix of result.prefixes) {
-		if (result.others && prefix.includes(result.others)) {
-			result.pending = prefix;
-			break;
+	if (result.prefix == null && result.phone?.startsWith("00")) {
+		result.prefix = "00";
+		result.phone = result.phone.replace("00", "");
+		result.phonePreserved = result.phonePreserved?.replace("00", "") as any;
+		result.pending = null;
+	}
+
+	if (result.prefix == null) {
+		for (const prefix of result.prefixes) {
+			if (result.others && prefix.includes(result.others)) {
+				result.pending = prefix;
+				break;
+			}
 		}
 	}
+	// else if (result.prefix === result.others) {
+	// 	result.others = null;
+	// 	// result.pending = null;
+	// }
+
+	// console.log("parsed :: ", value, " :: ", result);
+
 	return result;
 }
 
@@ -83,81 +105,152 @@ export function processTelValue<S extends Field.Setup, O extends Form.Options>(
 	const { setup } = props;
 	const { el, manualUpdate, $next } = processor;
 	const _value = !manualUpdate ? el?.value : processor.value;
-	const extras = ($next.extras ?? setup.tel ?? {}) as unknown as Extras.TelOut; //<Field.Setup<'tel'>, any>
-	const prefixes: string[] = extras.internationalPrefixes
-		? typeof extras.internationalPrefixes === "string"
-			? [extras.internationalPrefixes]
-			: extras.internationalPrefixes
-		: PREFIX;
-	// light reseting due to possible heavy calculations
-	extras.valueAsNumber = extras.valueAsNumber ?? false;
+	const extras = ($next.extras ?? setup.tel ?? {}) as unknown as Extras.TelOut<S>; //<Field.Setup<'tel'>, any>
+
+	// setup
+	// extras.valueAsNumber = extras.valueAsNumber ?? false;
+	extras.international = (extras.international ?? {}) as Exclude<
+		Extras.TelOut<S>["international"],
+		null
+	>;
+	extras.international.prefixNormalization = extras.international.prefixNormalization ?? false;
+	extras.international.displayMode = extras.international.displayMode ?? "normal";
 
 	// process value
-	const parsed = parsePhone3(_value, prefixes, "-");
+	$next.extras = extras as any;
+	const prefixes: string[] = extras.international?.prefixes
+		? typeof extras.international.prefixes === "string"
+			? [extras.international.prefixes]
+			: extras.international.prefixes
+		: PREFIX;
+	let processed = _value;
+
+	if (extras.international.prefix) {
+		const prefix = extras.international.prefix;
+		const country = extras.international.country;
+		if (manualUpdate) {
+			extras.international.prefix = null;
+			extras.international.country = null;
+			// $next.event.MUTATE = MUTATE.__ABORT_VALIDATION
+		} else {
+			if (extras.international.displayMode === "no-prefix") {
+				processed =
+					country == null ? processed : `${prefix}${country.dial_code_no_id}${processed ?? ""}`;
+			} else if (extras.international.displayMode === "keep-prefix") {
+				// console.log("processed :: ", processed);
+				processed =
+					country == null || processed?.startsWith(prefix)
+						? processed
+						: `${prefix}${country.dial_code_no_id}${processed ?? ""}`;
+			}
+		}
+	}
+	//
+	const parsed = parsePhone3(processed, prefixes, extras.preserveChars);
+
+	extras.value = {
+		number: parsed?.phone,
+		numberNoZero: parsed?.phone?.startsWith("0") ? parsed?.phone.substring(1) : parsed?.phone,
+		preservedNoZero: parsed?.phonePreserved?.startsWith("0")
+			? parsed?.phonePreserved.substring(1)
+			: parsed?.phonePreserved,
+	};
+
+	//
 	if (parsed == null) {
+		extras.international.prefix = null;
+		extras.international.country = null;
+		$next.extras = extras as any;
 		return _value == null ? null : $next.value;
 	}
-	console.log("parsed :: ", parsed);
 
 	if (parsed.others != null) {
 		if (parsed.pending) {
 			return _value;
 		}
-		if (parsed.prefix == null) {
-			if (parsed.phone?.startsWith("00")) {
-				parsed.prefix = "+";
-				parsed.phone = parsed.phone.replace("00", "");
-			} else if (extras.valueAsNumber) {
-				parsed.prefix = "00";
-				// parsed.prefix = null as any;
-			}
-		}
 	}
 
 	//
 	if (parsed.prefix) {
-		extras.isInternational = true;
-		extras.internationalPrefix = parsed.prefix;
-		extras.valueNoId = parsed.phone;
-		extras.valueNoCode = parsed.phone;
+		extras.international.prefix = parsed.prefix;
 	} else {
-		extras.isInternational = false;
-		extras.internationalPrefix = undefined;
-		extras.valueNoId = null;
-		extras.valueNoCode = null;
-		extras.country = undefined;
+		extras.international.prefix = null;
+		extras.international.country = null;
 	}
 
 	// find country
-	if (extras.country == null && extras.isInternational && parsed.phone && parsed.phone.length > 0) {
-		extras.country = undefined;
-		const phone = `+${parsed.phone}`;
-		for (let i = 0; i < COUNTRIES.length; i++) {
-			const country = COUNTRIES[i];
-			if (phone.startsWith(country.dial_code)) {
-				extras.country = country as Exclude<Extras.TelOut["country"], undefined>;
-				extras.country.index = i;
-				extras.country.dial_code_no_id = Number(country.dial_code.replace("+", ""));
-				break;
+	if (extras.international.country == null && extras.international.prefix != null) {
+		if (parsed.phone && parsed.phone.length > 0) {
+			extras.international.country = null;
+			const phone = `+${parsed.phone}`;
+			for (let i = 0; i < COUNTRIES.length; i++) {
+				const country = COUNTRIES[i];
+				if (phone.startsWith(country.dial_code)) {
+					extras.international.country = country as Exclude<
+						Extras.TelOut<S>["international"]["country"],
+						null
+					>;
+					extras.international.country.index = i;
+					extras.international.country.dial_code_no_id = country.dial_code.replace("+", "");
+					break;
+				}
 			}
 		}
 	} else {
-		if (!parsed.phone?.startsWith(extras.country?.dial_code_no_id as any)) {
-			extras.country = undefined;
+		if (!parsed.phone?.startsWith(extras.international.country?.dial_code_no_id as any)) {
+			extras.international.country = null;
+		}
+	}
+
+	// offer more values for better exportation
+	if (extras.international.country) {
+		const country = extras.international.country;
+		const phone = parsed.phone == null ? null : parsed.phone;
+		const preserved = parsed.phonePreserved == null ? null : parsed.phonePreserved;
+		if (phone != null) {
+			extras.value.numberNoCode = phone.replace(country.dial_code_no_id, "");
+			extras.value.numberNoCodeNoZero = extras.value.numberNoCode.startsWith("0")
+				? extras.value.numberNoCode.substring(1)
+				: extras.value.numberNoCode;
+			extras.value.numberNoZero = `${country.dial_code_no_id}${extras.value.numberNoCodeNoZero}`;
+		}
+		if (preserved) {
+			// extras.value.preserved = phone
+			extras.value.preservedNoCode = preserved.replace(country.dial_code_no_id, "");
+			extras.value.preservedNoCodeNoZero = extras.value.preservedNoCode.startsWith("0")
+				? extras.value.preservedNoCode.substring(1)
+				: extras.value.preservedNoCode;
+			extras.value.preservedNoZero = `${country.dial_code_no_id}${extras.value.preservedNoCodeNoZero}`;
 		}
 	}
 
 	//
-	let result = parsed.phone;
-	if (extras.isInternational) {
-		if (extras.valueAsNumber) {
-			result = result == null ? Number("00") : (Number(`00${result ?? ""}`) as any);
-		} else {
-			result = `${extras.internationalPrefixNormalization ? "+" : (extras.internationalPrefix ?? "")}${result ?? ""}`;
+	// if (extras.valueAsNumber) { // find out a better way for valueAsNumber option
+	// 	result = parsed.phone;
+	// 	if (extras.isInternational) {
+	// 		result = result == null ? Number("00") : (Number(`00${result ?? ""}`) as any);
+	// 	}
+	// } else {
+	// }
+	let result = parsed.phonePreserved as any;
+	const prefix = extras.international.prefix;
+	const country = extras.international.country;
+	const phone = extras.value?.preservedNoCode;
+	if (prefix) {
+		result = `${extras.international.prefixNormalization ? "+" : (prefix ?? "")}${result ?? ""}`;
+		if (extras.international.displayMode === "no-prefix") {
+			result = country == null ? result : phone;
+		} else if (extras.international.displayMode === "keep-prefix") {
+			result =
+				country == null
+					? result
+					: phone == null || phone.length <= 0
+						? `${prefix}${country.dial_code_no_id}`
+						: phone;
 		}
 	}
-	console.log("result :: ", extras);
 
+	// console.log("result :: ", extras.international, " :: ", extras.value);
 	$next.extras = extras as any;
 	return result;
 }

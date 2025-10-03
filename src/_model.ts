@@ -221,11 +221,7 @@ export namespace Field {
 						: G
 					: never
 				: T extends "tel"
-					? S["tel"] extends Extras.Tel
-						? S["tel"]["valueAsNumber"] extends true
-							? number
-							: string
-						: string
+					? string
 					: string; // default/fallback data type
 	export type ValueFromOptions<T extends Type, V, S extends Setup<T, V> = Setup<T, V>> = (
 		true extends Check.IsUnknown<V> | Check.IsUndefined<V> | Check.IsNull<V>
@@ -326,10 +322,10 @@ export namespace Field {
 		readonly remove: Addon.FieldRemove<S, O>;
 		readonly reset: Addon.FieldReset<S, O>;
 		// const
-		readonly CYCLE: typeof CYCLE;
-		readonly DOM: typeof DOM;
-		readonly MUTATE: typeof MUTATE;
-		readonly PLACEHOLDERS: typeof PLACEHOLDERS;
+		// readonly CYCLE: typeof CYCLE;
+		// readonly DOM: typeof DOM;
+		// readonly MUTATE: typeof MUTATE;
+		// readonly PLACEHOLDERS: typeof PLACEHOLDERS;
 	};
 }
 
@@ -357,14 +353,35 @@ export namespace Extras {
 		no?: N;
 	};
 	export type Tel = {
-		valueAsNumber?: boolean;
 		/**
-		 * international numbers prefixes, use this if your field accepts
-		 * weird international prefixes like (00) or (+00). this option replaces defaults.
-		 * @default ["+", "00", "+(00)"]
+		 * some phone numbers may include chars like '-', by default these chars
+		 * get sanitized, you can ignore some sanitization chars here to be included
+		 * in the final tel value.
+		 * @default undefined
 		 */
-		internationalPrefixes?: string[] | string;
-		internationalPrefixNormalization?: boolean;
+		preserveChars?: string;
+		international?: {
+			/**
+			 * international numbers prefixes, use this if your field accepts
+			 * weird international prefixes like (00) or (+00). this option replaces defaults.
+			 * @default ["+", "00", "+(00)"]
+			 */
+			prefixes?: string | string[];
+			/**
+			 * unify international prefixes with only + and 00 while preserving user
+			 * input international prefix such as +(00), this is useful for clear user
+			 * experience and UI while maintaining user data in the background.
+			 * @default false
+			 */
+			prefixNormalization?: boolean;
+			/**
+			 * this option allows removes international code from the value
+			 * displaying only the phone number. useful for components that display
+			 * international code seprately.
+			 * @default 'normal'
+			 */
+			displayMode?: "normal" | "no-prefix" | "keep-prefix";
+		};
 	};
 
 	// processed
@@ -416,24 +433,35 @@ export namespace Extras {
 		yes?: Exclude<S["checkbox"], undefined>["yes"];
 		no?: Exclude<S["checkbox"], undefined>["no"];
 	};
-	export type TelOut = {
-		valueAsNumber: boolean;
-		internationalPrefix: string | undefined;
-		internationalPrefixes: string | string[] | undefined;
-		internationalPrefixNormalization: boolean | undefined;
-		isInternational: boolean;
-		country:
-			| undefined
-			| {
-					name: string;
-					flag: string;
-					code: string;
-					dial_code: string;
-					index: number;
-					dial_code_no_id: number;
-			  };
-		valueNoId: string | null;
-		valueNoCode: string | null;
+	export type TelOut<S extends Field.Setup> = {
+		preserveChars: string | undefined;
+		international: {
+			// user defined
+			prefixes: string | string[] | null;
+			prefixNormalization: boolean | undefined;
+			displayMode: "normal" | "no-prefix" | "keep-prefix";
+			//
+			prefix: string | null;
+			country: null | {
+				name: string;
+				flag: string;
+				code: string;
+				dial_code: string;
+				dial_code_no_id: string;
+				index: number;
+			};
+		};
+		value: {
+			number?: string | null;
+			numberNoCode?: string | null;
+			numberNoZero?: string | null;
+			numberNoCodeNoZero?: string | null;
+			//
+			// preserved: string;
+			preservedNoCode?: string | null;
+			preservedNoZero?: string | null;
+			preservedNoCodeNoZero?: string | null;
+		};
 	};
 
 	/**
@@ -447,7 +475,9 @@ export namespace Extras {
 			? SelectOut<S>
 			: T extends "checkbox"
 				? CheckboxOut<S>
-				: never;
+				: T extends "tel"
+					? TelOut<S>
+					: never;
 }
 
 export namespace Form {

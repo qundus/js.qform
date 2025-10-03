@@ -1,5 +1,4 @@
 import type { Field, Form } from "../../_model";
-import { PLACEHOLDERS } from "../../const";
 import { mergeFieldProps } from "../../methods/merge-field-props";
 
 export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToSetup<F>>(
@@ -63,40 +62,6 @@ export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToS
 				setup.label = setup.label.split(char).join(replacement);
 			}
 		}
-	}
-
-	// SPECIAL TYPES
-	// some specfic type settings
-	if (setup.type?.startsWith("select")) {
-		//
-		if (setup.select == null) {
-			setup.select = {};
-		}
-		setup.select.valueKey = setup.select.valueKey ?? "value";
-		setup.select.labelKey = setup.select.labelKey ?? "label";
-		if (!setup.multiple) {
-			// setup.value = setup.value ?? PLACEHOLDERS.select.value;
-		} else {
-			if (setup.value != null) {
-				if (!Array.isArray(setup.value)) {
-					// @ts-ignore
-					setup.value = [setup.value];
-				}
-			}
-		}
-	} else if (setup.type === "checkbox") {
-		if (setup.checkbox == null) {
-			setup.checkbox = {};
-		}
-		setup.checkbox.yes = setup.checkbox.yes ?? true;
-		setup.checkbox.no = setup.checkbox.no ?? false;
-	} else if (setup.type === "tel") {
-		if (setup.tel == null) {
-			setup.tel = {};
-		}
-		setup.tel.valueAsNumber = setup.tel.valueAsNumber ?? false;
-		setup.tel.internationalPrefixNormalization =
-			setup.tel.internationalPrefixNormalization ?? false;
 	}
 
 	// vital checks

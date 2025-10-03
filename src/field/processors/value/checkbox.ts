@@ -12,6 +12,10 @@ export function processCheckboxValue<S extends Field.Setup<"checkbox">, O extend
 	const extras = $next.extras ?? setup.checkbox ?? {};
 
 	//
+	extras.yes = extras.yes ?? true;
+	extras.no = extras.no ?? false;
+
+	//
 	if (manualUpdate) {
 		extras.checked =
 			processor.value === extras.yes ||

@@ -54,17 +54,17 @@ export function createField<
 		remove,
 		reset,
 		// const
-		get CYCLE() {
-			return CYCLE;
-		},
-		get DOM() {
-			return DOM;
-		},
-		get MUTATE() {
-			return MUTATE;
-		},
-		get PLACEHOLDERS() {
-			return PLACEHOLDERS;
-		},
+		// get CYCLE() {
+		// 	return CYCLE;
+		// },
+		// get DOM() {
+		// 	return DOM;
+		// },
+		// get MUTATE() {
+		// 	return MUTATE;
+		// },
+		// get PLACEHOLDERS() {
+		// 	return PLACEHOLDERS;
+		// },
 	};
 }

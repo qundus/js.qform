@@ -1,5 +1,5 @@
 import type { Extras, Field, Form, FunctionProps } from "../../_model";
-import { CYCLE, DOM, MUTATE } from "../../const";
+import { type COUNTRIES, CYCLE, DOM, MUTATE } from "../../const";
 
 export type FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> = {
 	value: (
@@ -20,7 +20,10 @@ export type FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> = {
 	// extras indvidually
 	select: <E extends Extras.Select>(props: Partial<E> | ((prev: E) => Partial<E>)) => void;
 	checkbox: <E extends Extras.Checkbox>(props: Partial<E> | ((prev: E) => Partial<E>)) => void;
-
+	tel: (
+		props: { country?: (typeof COUNTRIES)[number] | string; value?: string },
+		configs?: { preprocess?: boolean; noValidate?: boolean },
+	) => void;
 	// cycleUnsafe:  (cycle: CYCLE) => void;
 	// validation(): (func: Field.Validate) => (() => void) | null;
 	// /**
@@ -124,6 +127,34 @@ export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 			const vv = typeof value === "function" ? (value as any)(prev) : value;
 			next.extras = { ...prev, ...vv };
 			next.__internal.manual = true;
+			// state.__internal.preprocess = configs?.preprocess;
+			next.event.MUTATE = MUTATE.EXTRAS;
+			next.event.DOM = DOM.IDLE;
+			store.set(next);
+		},
+		tel(props, configs) {
+			if (props == null) {
+				return;
+			}
+			const next = { ...store.get() };
+			const extras = next.extras as Extras.TelOut<Field.Setup<"tel">>;
+			const vv = extras.value?.preservedNoCode ?? next.value ?? "";
+			let country = "";
+			// const phone = extras.value?.numberNoCode;
+			if (props.country != null) {
+				const dd = extras.international.prefix ?? "+";
+				country =
+					typeof props.country === "string"
+						? props.country
+						: `${dd}${props.country.dial_code.replace("+", "")}`;
+				extras.international.prefix = null;
+				extras.international.country = null;
+			}
+			next.extras = extras as any;
+			next.value = `${country}${props.value ?? vv}`;
+			next.__internal.manual = true;
+			next.__internal.preprocess = configs?.preprocess;
+			next.__internal.noValidation = configs?.noValidate;
 			// state.__internal.preprocess = configs?.preprocess;
 			next.event.MUTATE = MUTATE.EXTRAS;
 			next.event.DOM = DOM.IDLE;
