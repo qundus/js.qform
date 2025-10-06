@@ -74,5 +74,13 @@ export function renderAttributesTrigger<
 
 	options?.fieldsOnRender?.(processProps);
 	setup.onRender?.(processProps);
+
+	// mark rendered
+	if (state.event.RENDER === FIELD.RENDER.INIT) {
+		const next = { ...store.get() };
+		next.event.RENDER = FIELD.RENDER.READY;
+		next.event.MUTATE = FIELD.MUTATE.__RENDER;
+		store.set(next);
+	}
 	return attrs as Render.Attributes.Trigger<S, O, A>;
 }

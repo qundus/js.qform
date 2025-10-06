@@ -90,10 +90,19 @@ export namespace FIELD {
 		CYCLE = "MUTATE.CYCLE",
 		PROPS = "MUTATE.PROPS",
 		EXTRAS = "MUTATE.EXTRAS",
+		// special
+		MOUNTED_DATE = "MUTATE.MOUNTED_DATE",
+
 		// internals
 		__EXTRAS = "MUTATE.__EXTRAS",
+		__RENDER = "MUTATE.__RENDER",
 		__RESET = "MUTATE.__RESET",
 		__ABORT_VALIDATION = "MUTATE.__ABORT_VALIDATION",
+	}
+
+	export enum RENDER {
+		INIT = 0,
+		READY = 1,
 	}
 }
 

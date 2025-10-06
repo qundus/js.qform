@@ -2,6 +2,25 @@ import type * as _QSTATE from "@qundus/qstate";
 import type { IGNORED_SETUP_KEYS, FIELD, FORM } from "./const";
 import type { deriveAddon, hooksInUseAddon } from "@qundus/qstate/addons";
 import type { JSX as PJSX } from "preact";
+import type { default as AirDatePicker } from "air-datepicker";
+import type { AirDatepickerOptions } from "air-datepicker";
+
+//
+import type { FieldAddonUpdate } from "./addons/field/update";
+import type { FieldAddonRemove } from "./addons/field/remove";
+import type { FieldAddonReset } from "./addons/field/reset";
+
+import type { FormAddonSubmit } from "./addons/form/submit";
+import type { FormAddonUpdate } from "./addons/form/update";
+import type { FormAddonValues } from "./addons/form/values";
+import type { FormAddonButton } from "./addons/form/button";
+
+import type { IntegrationDom } from "./integrations/dom";
+import type { IntegrationRef } from "./integrations/ref";
+import type { IntegrationPreact } from "./integrations/preact";
+import type { IntegrationReact } from "./integrations/react";
+import type { IntegrationSolid } from "./integrations/solid";
+import type { IntegrationSvelte } from "./integrations/svelte";
 
 // checkers
 export namespace Check {
@@ -286,6 +305,7 @@ export namespace Field {
 			DOM: FIELD.DOM;
 			MUTATE: FIELD.MUTATE;
 			CYCLE: FIELD.CYCLE;
+			RENDER: FIELD.RENDER;
 			ev: undefined | Event;
 		};
 		// user
@@ -384,7 +404,17 @@ export namespace Extras {
 			displayMode?: "normal" | "no-prefix" | "keep-prefix";
 		};
 	};
-	export type Date = AirDatepickerOptions<HTMLElement> | undefined;
+	export type Date = {
+		/**
+		 * date options offered by {@link [AirDatePicker](https://air-datepicker.com/)},
+		 * some options here have been internally edited to suit QForm's flow but all of them
+		 * are passed directly to AirDatePicker and they work exactly as they should in the docs.
+		 * if you face any issues here please report them as not every option
+		 * is tested, thanks.
+		 */
+		options?: AirDatepickerOptions<HTMLElement>;
+		lang?: string;
+	};
 
 	// processed
 	export type FileOut<S extends Field.Setup> = {
@@ -465,7 +495,11 @@ export namespace Extras {
 			preservedNoCodeNoZero?: string | null;
 		};
 	};
-	// export type DateOut<S extends Field.Setup> = AirDatepickerOptions<HTMLElement> | undefined
+	export type DateOut<S extends Field.Setup> = {
+		init: boolean;
+		adp: null | AirDatePicker;
+		lang: string | undefined;
+	};
 
 	/**
 	 * sometimes some field types require additional information beyond the
@@ -480,7 +514,9 @@ export namespace Extras {
 				? CheckboxOut<S>
 				: T extends "tel"
 					? TelOut<S>
-					: never;
+					: T extends "date"
+						? DateOut<S>
+						: never;
 }
 
 export namespace Form {
@@ -755,14 +791,6 @@ export namespace FunctionProps {
 }
 
 // addons/future-independant
-import type { FieldAddonUpdate } from "./addons/field/update";
-import type { FieldAddonRemove } from "./addons/field/remove";
-import type { FieldAddonReset } from "./addons/field/reset";
-
-import type { FormAddonSubmit } from "./addons/form/submit";
-import type { FormAddonUpdate } from "./addons/form/update";
-import type { FormAddonValues } from "./addons/form/values";
-import type { FormAddonButton } from "./addons/form/button";
 
 export namespace Addon {
 	// field
@@ -778,13 +806,6 @@ export namespace Addon {
 }
 
 //
-import type { IntegrationDom } from "./integrations/dom";
-import type { IntegrationRef } from "./integrations/ref";
-import type { IntegrationPreact } from "./integrations/preact";
-import type { IntegrationReact } from "./integrations/react";
-import type { IntegrationSolid } from "./integrations/solid";
-import type { IntegrationSvelte } from "./integrations/svelte";
-import type { AirDatepickerOptions } from "air-datepicker";
 
 export namespace Render {
 	export namespace Attributes {
@@ -913,3 +934,23 @@ export namespace Integration {
 		__integrationName: `${N}-RENDER`;
 	};
 }
+
+// export namespace Plugin {
+// 	export namespace Render {
+// 		//
+// 		export type Factory<
+// 		S extends Field.Setup,
+// 		O extends Form.Options,
+// 		A extends Render.Attributes.Type,
+// 		I,
+// 	> = (
+// 		basic: FunctionProps.Field<S, O>,
+// 		props: FunctionProps.RenderAttributes<S, O, A>,
+// 	) => {
+// 		instance: I
+// 	}
+
+// 	//
+// 	export type AirDatePicker<>
+// 	}
+// }

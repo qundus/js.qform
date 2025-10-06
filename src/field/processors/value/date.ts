@@ -12,13 +12,13 @@ export function processDateValue<S extends Field.Setup<"date">, O extends Form.O
 	// const extras = ($next.extras ?? setup.date ?? {}) //as unknown as Extras.DateOut<
 	// 	Field.Setup<"date" | "datetime-local">
 	// >;
-	const id = ($next.element.label ?? setup.label) as string;
+	// const id = ($next.element.label ?? setup.label) as string;
 
 	//
 	console.log("value date :: ", _value, " :: ");
-	if (isServerSide()) {
-		return _value;
-	}
+	// if (isServerSide()) {
+	// 	return _value;
+	// }
 
 	//
 	// const flat = flatpickr(extras.element);

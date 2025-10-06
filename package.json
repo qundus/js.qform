@@ -30,9 +30,9 @@
 	},
 	"homepage": "https://github.com/qundus/js.qform#readme",
 	"files": [
-		"dist/"
+		"dist/",
+		"dist-static/"
 	],
-	"type": "module",
 	"types": "./dist/index.d.ts",
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.mjs",
@@ -60,12 +60,6 @@
 			"import": "./dist/const/index.mjs",
 			"module": "./dist/const/index.mjs",
 			"require": "./dist/const/index.cjs"
-		},
-		"./styles": {
-			"types": "./dist/styles/index.d.ts",
-			"import": "./dist/styles/index.mjs",
-			"module": "./dist/styles/index.mjs",
-			"require": "./dist/styles/index.cjs"
 		}
 	},
 	"scripts": {

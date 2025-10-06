@@ -26,9 +26,11 @@ export function processValue<S extends Field.Setup, O extends Form.Options>(
 		value = processNumberValue(props, processor);
 	} else if (setup.type === "tel") {
 		value = processTelValue(props, processor);
-	} else if (setup.type === "date") {
-		value = processDateValue(props as any, processor as any);
-	} else {
+	}
+	// else if (setup.type === "date") {
+	// 	value = processDateValue(props as any, processor as any);
+	// }
+	else {
 		value = !manualUpdate ? el?.value : value;
 	}
 

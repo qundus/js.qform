@@ -10,7 +10,6 @@ export function renderAttributesInput<
 	const { attrType, reactive } = props;
 	const state = reactive;
 	const attrs = {
-		"data-qform-const": `${setup.type}.${setup.label}`,
 		id: state?.element?.label ?? setup.label,
 		type: state?.element.hidden ? "hidden" : setup.type,
 		name: state.__internal.key,
@@ -95,6 +94,14 @@ export function renderAttributesInput<
 	const processProps: PP = { key, data: reactive, attrType, attrs, attrFor: "input" };
 	options?.fieldsOnRender?.(processProps);
 	setup.onRender?.(processProps);
+
+	// mark rendered
+	if (state.event.RENDER === FIELD.RENDER.INIT) {
+		const next = { ...store.get() };
+		next.event.RENDER = FIELD.RENDER.READY;
+		next.event.MUTATE = FIELD.MUTATE.__RENDER;
+		store.set(next);
+	}
 
 	// console.log("element input :: ", key, " :: ", result.value);
 	return attrs as Render.Attributes.Input<S, O, A>;
