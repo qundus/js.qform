@@ -54,7 +54,6 @@ export default defineConfig((options) => {
 					dts: ".d.ts",
 				};
 			},
-			// terserOptions: {},
 			// onSuccess: async () => {
 			// 	const distPath = join(process.cwd(), "dist");
 			// 	const sizeBytes = getFolderSize(distPath);

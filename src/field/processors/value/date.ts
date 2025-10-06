@@ -9,18 +9,17 @@ export function processDateValue<S extends Field.Setup<"date">, O extends Form.O
 	const { setup } = props;
 	const { el, manualUpdate, $next } = processor;
 	const _value = !manualUpdate ? el?.value : processor.value;
-	// const extras = ($next.extras ?? setup.date ?? {}) //as unknown as Extras.DateOut<
-	// 	Field.Setup<"date" | "datetime-local">
-	// >;
-	// const id = ($next.element.label ?? setup.label) as string;
+	const extras = ($next.extras ?? setup.date ?? {}) as unknown as Extras.DateOut<
+		Field.Setup<"date">
+	>;
 
-	//
+	if (manualUpdate && !isServerSide()) {
+		// if (extras.adp) {
+		// 	// extras.adp.selectDate(_value);
+		// 	extras.adp.$el.value = _value;
+		// }
+	}
 	console.log("value date :: ", _value, " :: ");
-	// if (isServerSide()) {
-	// 	return _value;
-	// }
-
-	//
 	// const flat = flatpickr(extras.element);
 
 	// const flat = flatpickr(`${setup.type}.${setup.label}`, {});

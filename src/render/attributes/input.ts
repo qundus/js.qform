@@ -16,6 +16,7 @@ export function renderAttributesInput<
 		multiple: state?.element.multiple,
 		required: state?.element.required,
 		disabled: state?.element.disabled,
+		placeholder: state?.element.placeholder,
 		[attrType !== "vdom" ? "autocomplete" : "autoComplete"]: "off",
 		[attrType !== "vdom" ? "onfocus" : "onFocus"]: (event: FocusEvent) => {
 			event.preventDefault();

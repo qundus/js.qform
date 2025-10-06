@@ -2,6 +2,7 @@ import { isServerSide } from "@qundus/qstate/checks";
 import type { Extras, Field, Form, FunctionProps, Render } from "../../_model";
 import { FIELD } from "../../const";
 import airDatePicker from "air-datepicker";
+import { DatePicker } from "../handlers/date-picker";
 
 export function renderAttributesDate<
 	S extends Field.Setup,
@@ -19,6 +20,7 @@ export function renderAttributesDate<
 		// multiple: state?.element.multiple,
 		required: state?.element.required,
 		disabled: state?.element.disabled,
+		placeholder: state?.element.placeholder,
 		[attrType !== "vdom" ? "autocomplete" : "autoComplete"]: "off",
 		[attrType !== "vdom" ? "onfocus" : "onFocus"]: (event: FocusEvent) => {
 			event.preventDefault();
@@ -68,15 +70,15 @@ export function renderAttributesDate<
 
 		//
 		(async () => {
-			// @ts-expect-error
-			await import("air-datepicker/air-datepicker.css");
-			let locale = undefined as any;
-			if (setup.date?.lang) {
-				locale = await import(`../../externals/air-datepicker/locale/${setup.date.lang}.js`);
-				locale = locale.default.default;
-				// console.log("locale :: ", locale);
-			}
-			let element = null as null | HTMLElement;
+			//# @ts-expect-error
+			// await import("air-datepicker/air-datepicker.css");
+			// let locale = undefined as any;
+			// if (setup.date?.lang) {
+			// 	locale = await import(`../../externals/air-datepicker/locale/${setup.date.lang}.js`);
+			// 	locale = locale.default.default;
+			// 	// console.log("locale :: ", locale);
+			// }
+			let element = null as null | HTMLInputElement;
 			while (element == null) {
 				element = document.querySelector(`[data-qform-const="${setup.type}.${setup.label}"]`);
 			}
@@ -86,47 +88,53 @@ export function renderAttributesDate<
 			}
 
 			console.log("element found :: ", element);
-			const options = setup.date?.options;
-			console.log("options :: ", options);
-			const dp = new airDatePicker(element, {
-				locale,
-				...(options ?? {}),
-				onSelect(props) {
-					const { date, formattedDate, datepicker } = props;
-					let value = options?.onSelect?.(props);
-					if (value == null) {
-						value = formattedDate as any;
-					}
+			// const options = setup.date?.options;
+			// console.log("options :: ", options);
+			// const dp = new airDatePicker(element, {
+			// 	locale,
+			// 	...(options ?? {}),
+			// 	onSelect(props) {
+			// 		const { date, formattedDate, datepicker } = props;
 
-					console.log("selected :: ", date, " :: ", formattedDate);
+			// 		let value = options?.onSelect?.(props);
+			// 		if (value == null) {
+			// 			value = formattedDate as any;
+			// 		}
 
-					// const next = { ...store.get() };
-					// if (next.element.disabled) {
-					// 	return;
-					// }
-					// next.__internal.manual = false;
-					// //
-					// next.event.DOM = FIELD.DOM.IDLE; // questionable?
-					// next.event.MUTATE = FIELD.MUTATE.VALUE;
-					// const value = (event.target as any).value;
-					// next.event.ev = {
-					// 	value: value === "" ? undefined : value,
-					// 	checked: (event.target as any).checked,
-					// 	files: (event.target as any).files,
-					// };
-					// store.set(next);
+			// 		console.log("selected :: ", date, " :: ", formattedDate);
 
-					// process input
-					// type PP = Parameters<Field.OnRender<Field.Type>>[0];
-					// const processProps: PP = { key, data: reactive, attrType, attrs, attrFor: "input" };
-					// options?.fieldsOnRender?.(processProps);
-					// setup.onRender?.(processProps);
-				},
-			});
+			// 		const next = { ...store.get() };
+			// 		if (next.element.disabled) {
+			// 			return;
+			// 		}
+			// 		next.__internal.manual = false;
+			// 		// //
+			// 		next.event.DOM = FIELD.DOM.IDLE; // questionable?
+			// 		next.event.MUTATE = FIELD.MUTATE.VALUE;
+			// 		// const value = formattedDate
+			// 		next.event.ev = { value };
+			// 		// @ts-expect-error
+			// 		next.extras.dates = date as any;
+			// 		// store.set(next);
+
+			// 		// process input
+			// 		// type PP = Parameters<Field.OnRender<Field.Type>>[0];
+			// 		// const processProps: PP = { key, data: reactive, attrType, attrs, attrFor: "input" };
+			// 		// options?.fieldsOnRender?.(processProps);
+			// 		// setup.onRender?.(processProps);
+			// 	},
+			// });
 
 			//
+			const instance = new DatePicker(element, {
+				...((setup.date ?? {}) as any),
+				onInput(value, isValid) {
+					console.log("date :: ", value, " :: ", isValid);
+				},
+				onChange(dates, isValid) {},
+			});
 
-			next.extras.adp = dp as any;
+			next.extras.instance = instance;
 			next.event.RENDER = FIELD.RENDER.READY;
 			next.event.MUTATE = FIELD.MUTATE.__RENDER;
 			store.set(next as any);

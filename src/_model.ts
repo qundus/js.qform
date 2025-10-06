@@ -21,6 +21,7 @@ import type { IntegrationPreact } from "./integrations/preact";
 import type { IntegrationReact } from "./integrations/react";
 import type { IntegrationSolid } from "./integrations/solid";
 import type { IntegrationSvelte } from "./integrations/svelte";
+import type { DatePicker, DatePickerOptions } from "./render/handlers/date-picker";
 
 // checkers
 export namespace Check {
@@ -126,6 +127,7 @@ export namespace Field {
 		type: T;
 		/** initial value */
 		value?: V; //| ValueFromType<T>;
+		placeholder?: string;
 		label?: string;
 		/**
 		 * when labels are taken from key because they're null, this replaces
@@ -404,16 +406,16 @@ export namespace Extras {
 			displayMode?: "normal" | "no-prefix" | "keep-prefix";
 		};
 	};
-	export type Date = {
-		/**
-		 * date options offered by {@link [AirDatePicker](https://air-datepicker.com/)},
-		 * some options here have been internally edited to suit QForm's flow but all of them
-		 * are passed directly to AirDatePicker and they work exactly as they should in the docs.
-		 * if you face any issues here please report them as not every option
-		 * is tested, thanks.
-		 */
-		options?: AirDatepickerOptions<HTMLElement>;
-		lang?: string;
+	export type Date = DatePickerOptions & {
+		// /**
+		//  * date options offered by {@link [AirDatePicker](https://air-datepicker.com/)},
+		//  * some options here have been internally edited to suit QForm's flow but all of them
+		//  * are passed directly to AirDatePicker and they work exactly as they should in the docs.
+		//  * if you face any issues here please report them as not every option
+		//  * is tested, thanks.
+		//  */
+		// options?: AirDatepickerOptions<HTMLElement>;
+		// lang?: string;
 	};
 
 	// processed
@@ -497,8 +499,9 @@ export namespace Extras {
 	};
 	export type DateOut<S extends Field.Setup> = {
 		init: boolean;
-		adp: null | AirDatePicker;
+		instance: null | DatePicker;
 		lang: string | undefined;
+		dates: Date | Date[];
 	};
 
 	/**
