@@ -64,7 +64,7 @@ function _getValues<
 		if (value != null) {
 			if (field.setup.type.startsWith("select")) {
 				const isArray = Array.isArray(value);
-				value = (isArray ? value : [value]) as Extras.SelectOut<Field.Setup<"select">>["options"];
+				value = (isArray ? value : [value]) as Extras.Select.Out<Field.Setup<"select">>["options"];
 				value.forEach((item, idx, arr) => {
 					const next = {};
 					for (const key in item) {
@@ -77,7 +77,7 @@ function _getValues<
 				});
 				value = isArray ? value : value[0];
 			} else if (field.setup.type === "tel") {
-				const extras = field.store.value?.extras as Extras.TelOut<Field.Setup<"tel">>;
+				const extras = field.store.value?.extras as Extras.Tel.Out<Field.Setup<"tel">>;
 				if (extras) {
 					const prefix = extras.international?.prefix;
 					// const country = extras.international?.country;

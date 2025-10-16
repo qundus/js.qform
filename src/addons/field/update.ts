@@ -27,8 +27,8 @@ export type FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> = {
 		cycle: G | undefined | null,
 	) => G extends FIELD.CYCLE.IDLE ? void : () => void;
 	// extras indvidually
-	select: <E extends Extras.Select>(props: Partial<E> | ((prev: E) => Partial<E>)) => void;
-	checkbox: <E extends Extras.Checkbox>(props: Partial<E> | ((prev: E) => Partial<E>)) => void;
+	select: <E extends Extras.Select.In>(props: Partial<E> | ((prev: E) => Partial<E>)) => void;
+	checkbox: <E extends Extras.Checkbox.In>(props: Partial<E> | ((prev: E) => Partial<E>)) => void;
 	tel: (
 		props: { country?: (typeof MISC.COUNTRIES)[number] | string; value?: string },
 		configs?: { preprocess?: boolean; noValidate?: boolean },
@@ -159,7 +159,7 @@ export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 				return;
 			}
 			const next = { ...store.get() };
-			const extras = next.extras as Extras.TelOut<Field.Setup<"tel">>;
+			const extras = next.extras as Extras.Tel.Out<Field.Setup<"tel">>;
 			const vv = extras.value?.preservedNoCode ?? next.value ?? "";
 			let country = "";
 			// const phone = extras.value?.numberNoCode;

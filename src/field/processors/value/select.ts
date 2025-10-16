@@ -11,7 +11,7 @@ export function processSelectValue<
 	const { manualUpdate, preprocessValue, $next } = processor;
 	// crucial checkup
 	const multiple = $next.element.multiple ?? false;
-	const extras = ($next.extras ?? setup.select ?? {}) as Extras.SelectOut<S>;
+	const extras = ($next.extras ?? setup.select ?? {}) as Extras.Select.Out<S>;
 	const _value = !manualUpdate ? $next.value : processor.value;
 	const result = Array.isArray(_value) ? _value : _value == null ? [] : [_value];
 	//

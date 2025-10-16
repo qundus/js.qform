@@ -1,7 +1,7 @@
 import type { Field, Form, FunctionProps, Render } from "../../_model";
 import { FIELD } from "../../const";
 
-export function renderAttributesTrigger<
+export function renderAttributesSelectTrigger<
 	S extends Field.Setup,
 	O extends Form.Options,
 	A extends Render.Attributes.Type,
@@ -58,7 +58,7 @@ export function renderAttributesTrigger<
 			//
 			// const ischildclick = event.target !== event.currentTarget;
 			// console.log("is child click :: ", ischildclick);
-			next.event.DOM = pointer === "touch" ? FIELD.DOM.TOUCH : FIELD.DOM.CLICK;
+			next.event.DOM = FIELD.DOM.CLICK;
 			next.event.MUTATE = FIELD.MUTATE.IDLE;
 			next.event.ev = {
 				value: (event.target as any).value,
@@ -82,5 +82,5 @@ export function renderAttributesTrigger<
 		next.event.MUTATE = FIELD.MUTATE.__RENDER;
 		store.set(next);
 	}
-	return attrs as Render.Attributes.Trigger<S, O, A>;
+	return attrs as Render.Attributes.SelectTrigger<S, O, A>;
 }

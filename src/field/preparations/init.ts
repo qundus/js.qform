@@ -60,7 +60,7 @@ export function prepareInit<S extends Field.Setup, O extends Form.Options>(
 		case "file":
 		case "checkbox":
 		case "tel":
-			// case "date":
+		case "date":
 			init.value = processValue(fieldProps, {
 				$next: init,
 				el: undefined,

@@ -1,8 +1,9 @@
 import type { Field, Form, FunctionProps, Integration, Render } from "../_model";
 import { renderAttributesInput } from "../render/attributes/input";
-import { renderAttributesTrigger } from "../render/attributes/trigger";
-import { renderAttributesOption } from "../render/attributes/option";
-import { renderAttributesDate } from "../render/attributes/date";
+//
+import { renderAttributesSelectTrigger } from "../render/attributes/select.trigger";
+import { renderAttributesSelectOption } from "../render/attributes/select.option";
+//
 
 export type IntegrationSvelte<
 	S extends Field.Setup,
@@ -13,11 +14,11 @@ export type IntegrationSvelte<
 	"SOLID",
 	{
 		input: { input: Render.Attributes.Input<S, O, "dom"> };
-		date: { date: Render.Attributes.Input<S, O, "dom"> };
 		select: {
-			trigger: Render.Attributes.Trigger<S, O, "dom">;
-			option: (option: any) => Render.Attributes.Option<S, O, "dom">;
+			trigger: Render.Attributes.SelectTrigger<S, O, "dom">;
+			option: (option: any) => Render.Attributes.SelectOption<S, O, "dom">;
 		};
+		date: any; //{ input: Render.Attributes.Input<S, O, "dom"> };
 	}
 >;
 export function svelteIntegration<S extends Field.Setup, O extends Form.Options>(
@@ -32,13 +33,13 @@ export function svelteIntegration<S extends Field.Setup, O extends Form.Options>
 			get trigger() {
 				const reactive = store.get();
 				const attrType = "dom";
-				return renderAttributesTrigger(basic, { attrType, reactive }) as any;
+				return renderAttributesSelectTrigger(basic, { attrType, reactive }) as any;
 			},
 			get option() {
 				const reactive = store.get();
 				const attrType = "dom";
 				return (value: any) => {
-					return renderAttributesOption(basic, {
+					return renderAttributesSelectOption(basic, {
 						attrType,
 						reactive,
 						optionValue: value,
@@ -46,14 +47,6 @@ export function svelteIntegration<S extends Field.Setup, O extends Form.Options>
 				};
 			},
 		} as any;
-	} else if (setup.type === "date") {
-		result = {
-			get input() {
-				const reactive = store.get();
-				const attrType = "dom";
-				return renderAttributesDate(basic, { attrType, reactive }) as any;
-			},
-		};
 	} else {
 		result = {
 			get input() {

@@ -14,9 +14,10 @@ export const IGNORED_SETUP_KEYS = {
 	props: undefined,
 	nested: undefined,
 	//
-	// selections: undefined,
-	// selectionsLabelKey: undefined,
-	// selectionsValueKey: undefined,
+	select: undefined,
+	checkbox: undefined,
+	tel: undefined,
+	date: undefined,
 } as Pick<
 	Field.Setup,
 	// make sure to update the keys above
@@ -34,6 +35,8 @@ export const IGNORED_SETUP_KEYS = {
 	// extras
 	| "select"
 	| "checkbox"
+	| "tel"
+	| "date"
 	// | "selections"
 	// | "selectionsValueKey"
 	// | "selectionsLabelKey"
@@ -72,9 +75,13 @@ export namespace FIELD {
 		CHANGE = "DOM.CHANGE",
 		CLICK = "DOM.CLICK",
 		CLICK_OPTION = "DOM.CLICK.OPTION",
+		CLICK_DATE_HEADER = "DOM.CLICK.DATE.HEADER",
+		CLICK_DATE_CELL = "DOM.CLICK.DATE.CELL",
 		// down
-		TOUCH = "DOM.TOUCH",
-		TOUCH_OPTION = "DOM.CLICK.OPTION",
+		// TOUCH = "DOM.TOUCH",
+		// TOUCH_OPTION = "DOM.TOUCH.OPTION",
+		// TOUCH_DATE_HEADER = "DOM.TOUCH.DATE.HEADER",
+		// TOUCH_DATE_CELL = "DOM.TOUCH.DATE.CELL",
 		// file
 		FILE_PROGRESS = "DOM.FILE.PROGRESS",
 		FILE_DONE = "DOM.FILE.DONE",
@@ -90,9 +97,6 @@ export namespace FIELD {
 		CYCLE = "MUTATE.CYCLE",
 		PROPS = "MUTATE.PROPS",
 		EXTRAS = "MUTATE.EXTRAS",
-		// special
-		MOUNTED_DATE = "MUTATE.MOUNTED_DATE",
-
 		// internals
 		__EXTRAS = "MUTATE.__EXTRAS",
 		__RENDER = "MUTATE.__RENDER",

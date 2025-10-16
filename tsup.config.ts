@@ -1,22 +1,20 @@
-import path from "path";
-import fs from "fs";
 import { defineConfig } from "tsup";
 
 // publish --access=public --no-git-checks
 export default defineConfig((options) => {
-	// Copy locale files to src so they can be imported
-	const sourceLocales = path.join("node_modules", "air-datepicker", "locale");
-	const destLocales = path.join("src", "externals", "air-datepicker", "locale");
+	// // Copy locale files to src so they can be imported
+	// const sourceLocales = path.join("node_modules", "air-datepicker", "locale");
+	// const destLocales = path.join("src", "externals", "air-datepicker", "locale");
 
-	if (fs.existsSync(sourceLocales) && !fs.existsSync(destLocales)) {
-		fs.mkdirSync(destLocales, { recursive: true });
-		const files = fs.readdirSync(sourceLocales);
-		files.forEach((file) => {
-			if (file.endsWith(".js")) {
-				fs.copyFileSync(path.join(sourceLocales, file), path.join(destLocales, file));
-			}
-		});
-	}
+	// if (fs.existsSync(sourceLocales) && !fs.existsSync(destLocales)) {
+	// 	fs.mkdirSync(destLocales, { recursive: true });
+	// 	const files = fs.readdirSync(sourceLocales);
+	// 	files.forEach((file) => {
+	// 		if (file.endsWith(".js")) {
+	// 			fs.copyFileSync(path.join(sourceLocales, file), path.join(destLocales, file));
+	// 		}
+	// 	});
+	// }
 	return [
 		{
 			entry: [
@@ -25,7 +23,7 @@ export default defineConfig((options) => {
 				"src/converters/index.ts",
 				"src/validators/index.ts",
 				"src/const/index.ts",
-				"src/externals/**/*",
+				// "src/externals/**/*", // revisit this for date locales
 			],
 			external: [
 				"@qundus/qstate",

@@ -42,7 +42,7 @@ export function fieldAddonReset<S extends Field.Setup, O extends Form.Options>(
 		},
 		tel: (configs) => {
 			const next = { ...store.get() };
-			const extras = next.extras as Extras.TelOut<Field.Setup<"tel">>;
+			const extras = next.extras as Extras.Tel.Out<Field.Setup<"tel">>;
 			const vv = configs?.clear ? undefined : setup.value;
 			let country = null as null | string;
 			if (configs?.keepCountry && extras.international.country) {

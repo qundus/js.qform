@@ -105,12 +105,12 @@ export function processTelValue<S extends Field.Setup, O extends Form.Options>(
 	const { setup } = props;
 	const { el, manualUpdate, $next } = processor;
 	const _value = !manualUpdate ? el?.value : processor.value;
-	const extras = ($next.extras ?? setup.tel ?? {}) as unknown as Extras.TelOut<S>; //<Field.Setup<'tel'>, any>
+	const extras = ($next.extras ?? setup.tel ?? {}) as unknown as Extras.Tel.Out<S>; //<Field.Setup<'tel'>, any>
 
 	// setup
 	// extras.valueAsNumber = extras.valueAsNumber ?? false;
 	extras.international = (extras.international ?? {}) as Exclude<
-		Extras.TelOut<S>["international"],
+		Extras.Tel.Out<S>["international"],
 		null
 	>;
 	extras.international.prefixNormalization = extras.international.prefixNormalization ?? false;
@@ -188,7 +188,7 @@ export function processTelValue<S extends Field.Setup, O extends Form.Options>(
 				const country = MISC.COUNTRIES[i];
 				if (phone.startsWith(country.dial_code)) {
 					extras.international.country = country as Exclude<
-						Extras.TelOut<S>["international"]["country"],
+						Extras.Tel.Out<S>["international"]["country"],
 						null
 					>;
 					extras.international.country.index = i;

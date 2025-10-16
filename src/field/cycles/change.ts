@@ -49,7 +49,9 @@ export function changeCycle<
 			_MUTATE === FIELD.MUTATE.VALUE ||
 			_MUTATE === FIELD.MUTATE.ELEMENT ||
 			_DOM === FIELD.DOM.CLICK_OPTION ||
-			_MUTATE === FIELD.MUTATE.EXTRAS;
+			_DOM === FIELD.DOM.CLICK_DATE_CELL ||
+			_MUTATE === FIELD.MUTATE.EXTRAS ||
+			_MUTATE === FIELD.MUTATE.__EXTRAS;
 		//
 		const prev = store.value;
 		const form = formStore?.get();

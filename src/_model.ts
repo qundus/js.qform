@@ -2,8 +2,6 @@ import type * as _QSTATE from "@qundus/qstate";
 import type { IGNORED_SETUP_KEYS, FIELD, FORM } from "./const";
 import type { deriveAddon, hooksInUseAddon } from "@qundus/qstate/addons";
 import type { JSX as PJSX } from "preact";
-import type { default as AirDatePicker } from "air-datepicker";
-import type { AirDatepickerOptions } from "air-datepicker";
 
 //
 import type { FieldAddonUpdate } from "./addons/field/update";
@@ -21,7 +19,6 @@ import type { IntegrationPreact } from "./integrations/preact";
 import type { IntegrationReact } from "./integrations/react";
 import type { IntegrationSolid } from "./integrations/solid";
 import type { IntegrationSvelte } from "./integrations/svelte";
-import type { DatePicker, DatePickerOptions } from "./render/handlers/date-picker";
 
 // checkers
 export namespace Check {
@@ -107,11 +104,11 @@ export namespace Field {
 			  }
 			| {
 					attrFor: "trigger";
-					attrs: Render.Attributes.Trigger<Setup<T>, Form.Options, Render.Attributes.Type>;
+					attrs: Render.Attributes.SelectTrigger<Setup<T>, Form.Options, Render.Attributes.Type>;
 			  }
 			| {
 					attrFor: "option";
-					attrs: Render.Attributes.Option<Setup<T>, Form.Options, Render.Attributes.Type>;
+					attrs: Render.Attributes.SelectOption<Setup<T>, Form.Options, Render.Attributes.Type>;
 			  }
 		),
 	) => void;
@@ -221,10 +218,10 @@ export namespace Field {
 
 		//## type specific as extra
 		// radio?: T extends "select.radio" ? RadioSetup : never;
-		tel?: T extends "tel" ? Extras.Tel : never;
-		select?: T extends "select" | "select.radio" ? Extras.Select : never;
-		checkbox?: T extends "checkbox" ? Extras.Checkbox : never;
-		date?: T extends "date" ? Extras.Date : never;
+		tel?: T extends "tel" ? Extras.Tel.In : never;
+		select?: T extends "select" | "select.radio" ? Extras.Select.In : never;
+		checkbox?: T extends "checkbox" ? Extras.Checkbox.In : never;
+		date?: T extends "date" ? Partial<Extras.Date.In> : never;
 	};
 
 	// converters
@@ -232,7 +229,7 @@ export namespace Field {
 		? // TODO: figure out how to display this in options but hide it from final object value type
 			FileList // | string | string[] | {name: string; url: string;} | {name: string; url:string}[]
 		: T extends "checkbox"
-			? S["checkbox"] extends Extras.Checkbox
+			? S["checkbox"] extends Extras.Checkbox.In
 				?
 						| (undefined | unknown extends S["checkbox"]["yes"] ? true : S["checkbox"]["yes"])
 						| (undefined | unknown extends S["checkbox"]["no"] ? false : S["checkbox"]["no"])
@@ -353,156 +350,305 @@ export namespace Field {
 }
 
 export namespace Extras {
-	// extras
-	export type Select = {
-		options?: (string | number | Record<string, unknown> | { label: string; value: string })[];
-		valueKey?: string;
-		labelKey?: string;
-		/**
-		 * incase the valueKey is not found in the option object, the dafault
-		 * behvior is to find a key dynamically and store it in the option
-		 * @default false
-		 */
-		throwOnKeyNotFound?: boolean;
-		/**
-		 * allows for dynamic creation of selection options by deriving the options
-		 * from the selected option at runtime, useful for adding options to an existing
-		 * list or creating a whole selection options dynamically.
-		 */
-		dynamic?: boolean;
-	};
-	export type Checkbox<Y = any, N = any> = {
-		yes?: Y;
-		no?: N;
-	};
-	export type Tel = {
-		/**
-		 * some phone numbers may include chars like '-', by default these chars
-		 * get sanitized, you can ignore some sanitization chars here to be included
-		 * in the final tel value.
-		 * @default undefined
-		 */
-		preserveChars?: string;
-		international?: {
+	export namespace File {
+		export type Out<S extends Field.Setup> = {
+			count: {
+				upload: number;
+				failed: number;
+				done: number;
+			};
+			fallback?: { name: string; url: string }[];
+			files?: {
+				file: File;
+				name: string;
+				loading: boolean;
+				stage: "start" | "success" | "fail" | "abort";
+				progress: {
+					loadedBytes: number;
+					totalBytes: number;
+					percentage: number;
+				};
+				buffer?: string | ArrayBuffer | null;
+				url?: string;
+				error?: DOMException | null;
+			}[];
+		};
+	}
+
+	export namespace Select {
+		export type In = {
+			options?: (string | number | Record<string, unknown> | { label: string; value: string })[];
+			valueKey?: string;
+			labelKey?: string;
 			/**
-			 * international numbers prefixes, use this if your field accepts
-			 * weird international prefixes like (00) or (+00). this option replaces defaults.
-			 * @default ["+", "00", "+(00)"]
-			 */
-			prefixes?: string | string[];
-			/**
-			 * unify international prefixes with only + and 00 while preserving user
-			 * input international prefix such as +(00), this is useful for clear user
-			 * experience and UI while maintaining user data in the background.
+			 * incase the valueKey is not found in the option object, the dafault
+			 * behvior is to find a key dynamically and store it in the option
 			 * @default false
 			 */
-			prefixNormalization?: boolean;
+			throwOnKeyNotFound?: boolean;
 			/**
-			 * this option allows removes international code from the value
-			 * displaying only the phone number. useful for components that display
-			 * international code seprately.
-			 * @default 'normal'
+			 * allows for dynamic creation of selection options by deriving the options
+			 * from the selected option at runtime, useful for adding options to an existing
+			 * list or creating a whole selection options dynamically.
 			 */
-			displayMode?: "normal" | "no-prefix" | "keep-prefix";
+			dynamic?: boolean;
 		};
-	};
-	export type Date = DatePickerOptions & {
-		// /**
-		//  * date options offered by {@link [AirDatePicker](https://air-datepicker.com/)},
-		//  * some options here have been internally edited to suit QForm's flow but all of them
-		//  * are passed directly to AirDatePicker and they work exactly as they should in the docs.
-		//  * if you face any issues here please report them as not every option
-		//  * is tested, thanks.
-		//  */
-		// options?: AirDatepickerOptions<HTMLElement>;
-		// lang?: string;
-	};
 
-	// processed
-	export type FileOut<S extends Field.Setup> = {
-		count: {
-			upload: number;
-			failed: number;
-			done: number;
+		export type Out<S extends Field.Setup> = {
+			dynamic: boolean | undefined;
+			valueKey: string;
+			labelKey: string;
+			selected: number;
+			throwOnKeyNotFound: boolean;
+			prev: number[];
+			current: number[];
+			options: ((S["select"] extends In
+				? S["select"]["options"] extends (infer option)[]
+					? option extends string | number
+						? { label: option; value: option }
+						: option
+					: { label: string; value: string }
+				: { label: string; value: string }) & {
+				__selected: boolean;
+				__key: string;
+				__valueKey?: string;
+				__labelKey?: string;
+			})[];
 		};
-		fallback?: { name: string; url: string }[];
-		files?: {
-			file: File;
+	}
+
+	export namespace Checkbox {
+		export type In<Y = any, N = any> = {
+			yes?: Y;
+			no?: N;
+		};
+
+		export type Out<S extends Field.Setup> = {
+			checked: boolean;
+			yes?: Exclude<S["checkbox"], undefined>["yes"];
+			no?: Exclude<S["checkbox"], undefined>["no"];
+		};
+	}
+
+	export namespace Tel {
+		export type In = {
+			/**
+			 * some phone numbers may include chars like '-', by default these chars
+			 * get sanitized, you can ignore some sanitization chars here to be included
+			 * in the final tel value.
+			 * @default undefined
+			 */
+			preserveChars?: string;
+			international?: {
+				/**
+				 * international numbers prefixes, use this if your field accepts
+				 * weird international prefixes like (00) or (+00). this option replaces defaults.
+				 * @default ["+", "00", "+(00)"]
+				 */
+				prefixes?: string | string[];
+				/**
+				 * unify international prefixes with only + and 00 while preserving user
+				 * input international prefix such as +(00), this is useful for clear user
+				 * experience and UI while maintaining user data in the background.
+				 * @default false
+				 */
+				prefixNormalization?: boolean;
+				/**
+				 * this option allows removes international code from the value
+				 * displaying only the phone number. useful for components that display
+				 * international code seprately.
+				 * @default 'normal'
+				 */
+				displayMode?: "normal" | "no-prefix" | "keep-prefix";
+			};
+		};
+
+		export type Out<S extends Field.Setup> = {
+			preserveChars: string | undefined;
+			international: {
+				// user defined
+				prefixes: string | string[] | null;
+				prefixNormalization: boolean | undefined;
+				displayMode: "normal" | "no-prefix" | "keep-prefix";
+				//
+				prefix: string | null;
+				country: null | {
+					name: string;
+					flag: string;
+					code: string;
+					dial_code: string;
+					dial_code_no_id: string;
+					index: number;
+				};
+			};
+			value: {
+				number?: string | null;
+				numberNoCode?: string | null;
+				numberNoZero?: string | null;
+				numberNoCodeNoZero?: string | null;
+				//
+				preserved?: string | null;
+				preservedNoCode?: string | null;
+				preservedNoZero?: string | null;
+				preservedNoCodeNoZero?: string | null;
+			};
+		};
+	}
+
+	export namespace Date {
+		/**
+		 * calendar modes, by default this is calculated based on the format.
+		 * if a mode is not offered by the format it won't be displayed and the next
+		 * logical mode is going to take place
+		 */
+		export enum Mode {
+			YEAR = 0,
+			MONTH = 1,
+			DAY = 2,
+			HOUR = 3,
+			MINUTE = 4,
+			SECOND = 5,
+		}
+		export enum ModeType {
+			DATE = "DATE",
+			TIME = "TIME",
+		}
+
+		export interface Cell {
+			key: string;
+			mode: Mode;
+			modeName: keyof typeof Mode;
+			value: string;
+			valueNumber: number;
 			name: string;
-			loading: boolean;
-			stage: "start" | "success" | "fail" | "abort";
-			progress: {
-				loadedBytes: number;
-				totalBytes: number;
-				percentage: number;
-			};
-			buffer?: string | ArrayBuffer | null;
-			url?: string;
-			error?: DOMException | null;
-		}[];
-	};
-	export type SelectOut<S extends Field.Setup> = {
-		dynamic: boolean | undefined;
-		valueKey: string;
-		labelKey: string;
-		selected: number;
-		throwOnKeyNotFound: boolean;
-		prev: number[];
-		current: number[];
-		options: ((S["select"] extends Select
-			? S["select"]["options"] extends (infer option)[]
-				? option extends string | number
-					? { label: option; value: option }
-					: option
-				: { label: string; value: string }
-			: { label: string; value: string }) & {
-			__selected: boolean;
-			__key: string;
-			__valueKey?: string;
-			__labelKey?: string;
-		})[];
-	};
-	export type CheckboxOut<S extends Field.Setup> = {
-		checked: boolean;
-		yes?: Exclude<S["checkbox"], undefined>["yes"];
-		no?: Exclude<S["checkbox"], undefined>["no"];
-	};
-	export type TelOut<S extends Field.Setup> = {
-		preserveChars: string | undefined;
-		international: {
-			// user defined
-			prefixes: string | string[] | null;
-			prefixNormalization: boolean | undefined;
-			displayMode: "normal" | "no-prefix" | "keep-prefix";
-			//
-			prefix: string | null;
-			country: null | {
-				name: string;
-				flag: string;
-				code: string;
-				dial_code: string;
-				dial_code_no_id: string;
-				index: number;
+			shortName: string;
+			isSelected: boolean;
+			isToday?: boolean;
+			isOtherMonth?: boolean;
+			is24Hour?: boolean;
+		}
+
+		export interface Header {
+			value: string;
+			name: string;
+			shortName: string;
+		}
+
+		export interface ParsedDate {
+			year: string | null;
+			month: string | null;
+			day: string | null;
+			yearNumber: number | null;
+			monthNumber: number | null;
+			dayNumber: number | null;
+			valid: boolean;
+			formatted: string | null;
+		}
+
+		export interface ParsedTime {
+			hour: string | null;
+			minute: string | null;
+			second: string | null;
+			period: "AM" | "PM" | null;
+			valid: boolean;
+			formatted: string | null;
+			formatted24h: string | null;
+		}
+
+		export interface ParsedResult {
+			date: ParsedDate;
+			time: ParsedTime;
+			valid: boolean;
+			others: string | null;
+			error?: string;
+		}
+
+		export type In = {
+			// mode: Mode;
+			/**
+			 * format of the date, use char n to denote minutes, everything else is universal standard.
+			 * @option {yyyy or yy} for years
+			 * @option {mm or m} for months, mm won't detect user typed single digits
+			 * @option {dd or d} for days, dd won't detect user typed single digits
+			 * @option {hh or h} for hours, hh won't detect user typed single digits
+			 * @option {nn or n} for minutes, nn won't detect user typed single digits
+			 * @option {ss or s} for seconds, ss won't detect user typed single digits
+			 * @example
+			 * format: "d-m-yyyy hh:nn";
+			 * // note the '/', the detection allows free familiar human language.
+			 * value: "meeting on 22-12/2025 at exactly 14:30"
+			 * @default "d-m-yyyy h:n:s"
+			 */
+			format: string;
+			/**
+			 * separators used for dates
+			 * @default ['-', '/', '.']
+			 */
+			dateSeparators: string | string[];
+			/**
+			 * separators used for time
+			 * @default [':']
+			 */
+			timeSeparators: string | string[];
+			/**
+			 * locale used in date objects parsing.
+			 * @default 'en-US'
+			 */
+			/**
+			 * separator used to split multiple dates
+			 * @default |
+			 */
+			multipleSeparator: string;
+			locale: string;
+			spanYears: number;
+			viewYear: number;
+			firstDayOfWeek: number;
+			timeFormat: "12h" | "24h";
+			now: {
+				year?: number;
+				month?: number;
+				day?: number;
 			};
 		};
-		value: {
-			number?: string | null;
-			numberNoCode?: string | null;
-			numberNoZero?: string | null;
-			numberNoCodeNoZero?: string | null;
-			//
-			preserved?: string | null;
-			preservedNoCode?: string | null;
-			preservedNoZero?: string | null;
-			preservedNoCodeNoZero?: string | null;
+
+		export type Out<S extends Field.Setup> = {
+			// from options
+			format: string;
+			dateSeparators: string[];
+			timeSeparators: string[];
+			multipleSeparator: string;
+			locale: string;
+			spanYears: number;
+			viewYear: number;
+			firstDayOfWeek: number;
+			timeFormat: "12h" | "24h";
+			now: {
+				year: number;
+				month: number; // 0-11
+				day: number;
+			};
+
+			// processed/generated
+			selected: Map<ParsedDate, ParsedTime[]>;
+			mode: {
+				active: Mode;
+				activeType: ModeType;
+				default: Mode;
+				defaultType: ModeType;
+				// names
+				activeName: keyof typeof Mode;
+				activeTypeName: keyof typeof ModeType;
+				defaultName: keyof typeof Mode;
+				defaultTypeName: keyof typeof Mode;
+				// others
+				sequence: Mode[];
+			};
+			headers: {
+				days: Header[];
+			};
+			cells: { -readonly [K in keyof typeof Mode]?: Cell[] } & { date?: Cell[]; time?: Cell[] };
 		};
-	};
-	export type DateOut<S extends Field.Setup> = {
-		init: boolean;
-		instance: null | DatePicker;
-		lang: string | undefined;
-		dates: Date | Date[];
-	};
+	}
 
 	/**
 	 * sometimes some field types require additional information beyond the
@@ -510,15 +656,15 @@ export namespace Extras {
 	 * and places it under FieldState or State
 	 */
 	export type Factory<S extends Field.Setup<Field.Type>, T = S["type"]> = T extends "file"
-		? FileOut<S>
+		? File.Out<S>
 		: T extends "select" | "select.radio"
-			? SelectOut<S>
+			? Select.Out<S>
 			: T extends "checkbox"
-				? CheckboxOut<S>
+				? Checkbox.Out<S>
 				: T extends "tel"
-					? TelOut<S>
+					? Tel.Out<S>
 					: T extends "date"
-						? DateOut<S>
+						? Date.Out<S>
 						: never;
 }
 
@@ -848,41 +994,45 @@ export namespace Render {
 		> = (A extends "dom" ? InputDom : InputVdom) & Record<string, unknown>;
 
 		// select
-		export type TriggerDom = ToDom<TriggerVdom>;
-		export type TriggerVdom = {
+		export type SelectTriggerDom = ToDom<SelectTriggerVdom>;
+		export type SelectTriggerVdom = {
 			name: string;
 			value: any;
 			onClick: (event: Event) => void;
 		};
-		export type Trigger<
+		export type SelectTrigger<
 			S extends Field.Setup,
 			O extends Form.Options,
 			A extends Type,
-		> = (A extends "dom" ? TriggerDom : TriggerVdom) & Record<string, unknown>;
+		> = (A extends "dom" ? SelectTriggerDom : SelectTriggerVdom) & Record<string, unknown>;
 
 		// option
-		export type OptionDom = ToDom<OptionVdom>;
-		export type OptionVdom = {
+		export type SelectOptionDom = ToDom<SelectOptionVdom>;
+		export type SelectOptionVdom = {
 			value: any;
 			selected: boolean;
 			onClick: (event: Event) => void;
 		};
 
-		export type OptionRadioDom = ToDom<OptionRadioVdom>;
-		export type OptionRadioVdom = {
+		export type SelectOptionRadioDom = ToDom<SelectOptionRadioVdom>;
+		export type SelectOptionRadioVdom = {
 			value: any;
 			selected: boolean;
 			// onClick: (event: Event) => void;
 		};
-		export type Option<S extends Field.Setup, O extends Form.Options, A extends Type> = S extends {
+		export type SelectOption<
+			S extends Field.Setup,
+			O extends Form.Options,
+			A extends Type,
+		> = S extends {
 			type: "select";
 		}
-			? (A extends "dom" ? OptionDom : OptionVdom) & Record<string, unknown>
-			: (A extends "dom" ? OptionRadioDom : OptionRadioVdom) & Record<string, unknown>;
+			? (A extends "dom" ? SelectOptionDom : SelectOptionVdom) & Record<string, unknown>
+			: (A extends "dom" ? SelectOptionRadioDom : SelectOptionRadioVdom) & Record<string, unknown>;
 
 		// date
-		export type DateDom = ToDom<InputVdom>;
-		export type DateVdom = {
+		export type DateInputDom = ToDom<DateInputVdom>;
+		export type DateInputVdom = {
 			id: string;
 			required: boolean;
 			disabled: boolean;
@@ -890,11 +1040,36 @@ export namespace Render {
 			type: string; // not linking to Field.Type to avoid issues with html.input.type
 			name: string;
 		};
-		export type Date<
+		export type DateInput<
 			S extends Field.Setup,
 			O extends Form.Options,
 			A extends Type,
-		> = (A extends "dom" ? DateDom : DateVdom) & Record<string, unknown>;
+		> = (A extends "dom" ? DateInputDom : DateInputVdom) & Record<string, unknown>;
+
+		// date
+		export type DateHeaderDom = ToDom<DateHeaderVdom>;
+		export type DateHeaderVdom = {
+			id: string;
+			name: string;
+			onClick: (event: Event) => void;
+		};
+		export type DateHeader<
+			S extends Field.Setup,
+			O extends Form.Options,
+			A extends Type,
+		> = (A extends "dom" ? DateHeaderDom : DateHeaderVdom) & Record<string, unknown>;
+
+		export type DateCellDom = ToDom<DateCellVdom>;
+		export type DateCellVdom = {
+			id: string;
+			name: string;
+			onClick: (event: Event) => void;
+		};
+		export type DateCell<
+			S extends Field.Setup,
+			O extends Form.Options,
+			A extends Type,
+		> = (A extends "dom" ? DateCellDom : DateCellVdom) & Record<string, unknown>;
 
 		// all
 		export type AllInputDom = HTMLInputElement;
@@ -908,18 +1083,15 @@ export namespace Render {
 export namespace Integration {
 	export type Template<S extends Field.Setup, O extends Form.Options> = {
 		input: any;
-		// | Render.Attributes.Input<S, O, Render.Attributes.Type>
-		// | ((...args: any[]) => Render.Attributes.Input<S, O, Render.Attributes.Type> | void);
 		select: {
 			trigger: any;
-			// | Render.Attributes.Trigger<S, O, Render.Attributes.Type>
-			// | ((...args: any[]) => Render.Attributes.Trigger<S, O, Render.Attributes.Type> | void);
 			option: any;
-			// (
-			// 	...args: [value: any, ...any[]]
-			// ) => Render.Attributes.Option<S, O, Render.Attributes.Type> | void;
 		};
-		date: any;
+		date: {
+			input: any;
+			header: any;
+			cell: any;
+		};
 	};
 
 	//

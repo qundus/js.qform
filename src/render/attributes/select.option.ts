@@ -1,7 +1,7 @@
 import type { Field, Form, FunctionProps, Render } from "../../_model";
 import { FIELD } from "../../const";
 
-export function renderAttributesOption<
+export function renderAttributesSelectOption<
 	S extends Field.Setup,
 	O extends Form.Options,
 	A extends Render.Attributes.Type,
@@ -165,8 +165,7 @@ export function renderAttributesOption<
 
 			next.__internal.manual = false;
 			//
-			next.event.DOM =
-				event.pointerType === "touch" ? FIELD.DOM.TOUCH_OPTION : FIELD.DOM.CLICK_OPTION;
+			next.event.DOM = FIELD.DOM.CLICK_OPTION;
 			next.event.MUTATE = FIELD.MUTATE.VALUE;
 			next.event.ev = {
 				value: (event.target as any).value,
@@ -199,5 +198,5 @@ export function renderAttributesOption<
 		next.event.MUTATE = FIELD.MUTATE.__RENDER;
 		store.set(next);
 	}
-	return attrs as Render.Attributes.Option<S, O, A>;
+	return attrs as Render.Attributes.SelectOption<S, O, A>;
 }
