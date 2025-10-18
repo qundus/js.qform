@@ -1,52 +1,71 @@
 import type { Field } from "../../../_model";
-import { Extras } from "../../../_model";
+import type { Extras } from "../../../_model";
+import { CALENDAR } from "../../../const";
 
 type Configs = Pick<
 	Extras.Date.Out<any>,
-	"mode" | "cells" | "now" | "spanYears" | "selected" | "locale" | "firstDayOfWeek" | "viewYear"
+	| "mode"
+	| "cells"
+	| "now"
+	| "yearSpan"
+	| "selected"
+	| "locale"
+	| "firstDayOfWeek"
+	| "yearView"
+	| "timeFormat"
 >;
 export function makeCells(configs: Configs): Extras.Date.Out<any>["cells"] {
 	const result: Extras.Date.Out<any>["cells"] = {};
 	result.YEAR = year(configs);
 	result.MONTH = month(configs);
 	result.DAY = day(configs);
-	// time
+	result.HOUR = hour(configs);
+	result.MINUTE = minute(configs);
+	result.SECOND = second(configs);
 
-	// general arrays
+	// sequential arrays
 	const activeDateName =
-		configs.mode.active <= Extras.Date.Mode.DAY
+		configs.mode.active <= CALENDAR.MODE.DAY
 			? configs.mode.activeName
-			: configs.mode.default <= Extras.Date.Mode.DAY
+			: configs.mode.default <= CALENDAR.MODE.DAY
 				? configs.mode.defaultName
 				: null;
 	if (activeDateName != null) {
-		result.date = result[activeDateName];
+		// @ts-expect-error
+		result.DATE = result[activeDateName];
+	}
+	//
+	const activeTimeName =
+		configs.mode.active > CALENDAR.MODE.DAY
+			? configs.mode.activeName
+			: configs.mode.default > CALENDAR.MODE.DAY
+				? configs.mode.defaultName
+				: null;
+	if (activeTimeName != null) {
+		result.TIME = result[activeTimeName];
 	}
 
 	return result;
 }
 
-function year(configs: Configs): Extras.Date.Cell[] {
-	const years: Extras.Date.Cell[] = [];
+function year(configs: Configs): Extras.Date.CellDate[] {
+	const years: Extras.Date.CellDate[] = [];
 	// Calculate start year based on the current view, not selection
-	const currentViewYear = configs.viewYear || configs.now.year;
-	const startYear = currentViewYear - Math.floor(configs.spanYears / 2);
+	const currentViewYear = configs.yearView || configs.now.year;
+	const startYear = currentViewYear - Math.floor(configs.yearSpan / 2);
 
-	if (!configs.mode.sequence.includes(Extras.Date.Mode.YEAR)) {
+	if (!configs.mode.sequence.includes(CALENDAR.MODE.YEAR)) {
 		return null as any;
 	}
-	const keys = configs.selected.keys();
-
-	for (let i = 0; i < configs.spanYears; i++) {
+	for (let i = 0; i < configs.yearSpan; i++) {
 		const year = startYear + i;
 		const yearStr = year.toString();
-		const found = keys.find((d) => d.yearNumber === year);
-		const isSelected = found != null;
+		const isSelected = configs.selected.hasYear(year);
 
 		years.push({
 			key: `calendar.year.${i}`,
-			mode: Extras.Date.Mode.YEAR,
-			modeName: Extras.Date.Mode[Extras.Date.Mode.YEAR] as any,
+			mode: CALENDAR.MODE.YEAR,
+			modeName: CALENDAR.MODE[CALENDAR.MODE.YEAR] as any,
 			value: yearStr,
 			valueNumber: year,
 			name: yearStr,
@@ -58,28 +77,24 @@ function year(configs: Configs): Extras.Date.Cell[] {
 	return years;
 }
 
-function month(configs: Configs): Extras.Date.Cell[] {
-	const months: Extras.Date.Cell[] = [];
+function month(configs: Configs): Extras.Date.CellDate[] {
+	const months: Extras.Date.CellDate[] = [];
 	const formatter = new Intl.DateTimeFormat(configs.locale, { month: "long" });
 	const shortFormatter = new Intl.DateTimeFormat(configs.locale, { month: "short" });
 
-	if (!configs.mode.sequence.includes(Extras.Date.Mode.MONTH)) {
+	if (!configs.mode.sequence.includes(CALENDAR.MODE.MONTH)) {
 		return null as any;
 	}
 
-	const keys = configs.selected.keys();
 	for (let i = 0; i < 12; i++) {
 		const date = new Date(configs.now.year, i, 1);
 		const monthNumber = i + 1;
-		const found = keys.find(
-			(d) => d.yearNumber === configs.now.year && d.monthNumber === monthNumber,
-		);
-		const isSelected = found != null;
+		const isSelected = configs.selected.hasYearMonth(configs.now.year, monthNumber);
 
 		months.push({
 			key: `calendar.month.${i}`,
-			mode: Extras.Date.Mode.MONTH,
-			modeName: Extras.Date.Mode[Extras.Date.Mode.MONTH] as any,
+			mode: CALENDAR.MODE.MONTH,
+			modeName: CALENDAR.MODE[CALENDAR.MODE.MONTH] as any,
 			value: `${monthNumber}`,
 			valueNumber: monthNumber,
 			name: formatter.format(date),
@@ -91,12 +106,12 @@ function month(configs: Configs): Extras.Date.Cell[] {
 	return months;
 }
 
-function day(extras: Configs): Extras.Date.Cell[] {
-	if (!extras.mode.sequence.includes(Extras.Date.Mode.DAY)) {
+function day(extras: Configs): Extras.Date.CellDate[] {
+	if (!extras.mode.sequence.includes(CALENDAR.MODE.DAY)) {
 		return null as any;
 	}
 
-	const days: Extras.Date.Cell[] = [];
+	const days: Extras.Date.CellDate[] = [];
 	const today = new Date();
 
 	const currentYear = extras.now.year;
@@ -110,7 +125,6 @@ function day(extras: Configs): Extras.Date.Cell[] {
 	const totalCells = 42;
 
 	//
-	const keys = extras.selected.keys();
 	for (let i = 0; i < totalCells; i++) {
 		let dayNumber: number;
 		let key: string;
@@ -136,25 +150,18 @@ function day(extras: Configs): Extras.Date.Cell[] {
 			// Only check for today
 			const date = new Date(currentYear, currentMonth, dayNumber);
 			isToday = date.toDateString() === today.toDateString();
+			// check for selected dates in spanned months' days
+			isSelected = extras.selected.hasDate(extras.now.year, extras.now.month, dayNumber);
 		}
-
-		// check for selected dates in spanned months' days
-		const found = keys.find(
-			(d) =>
-				d.yearNumber === extras.now.year &&
-				d.monthNumber === extras.now.month &&
-				d.dayNumber === dayNumber,
-		);
-		isSelected = found != null;
 
 		const dayStr = dayNumber.toString();
 
 		days.push({
 			key,
-			mode: Extras.Date.Mode.DAY,
-			modeName: Extras.Date.Mode[Extras.Date.Mode.DAY] as any,
+			mode: CALENDAR.MODE.DAY,
+			modeName: CALENDAR.MODE[CALENDAR.MODE.DAY] as any,
 			value: dayStr,
-			valueNumber: i,
+			valueNumber: dayNumber,
 			name: dayStr,
 			shortName: dayStr,
 			isSelected,
@@ -166,88 +173,101 @@ function day(extras: Configs): Extras.Date.Cell[] {
 	return days;
 }
 
-// function hours(extras: Configs): Extras.Date.Cell[] {
-// 	const hours: Extras.Date.Cell[] = [];
-// 	const maxHour = extras.timeFormat === "12h" ? 12 : 24;
+function hour(extras: Configs): Extras.Date.CellTime[] {
+	const hours: Extras.Date.CellTime[] = [];
+	const maxHour = extras.timeFormat === "12h" ? 12 : 24;
+	const year = extras.now.year;
+	const month = extras.now.month - 1;
+	const day = extras.now.day;
+	const period = extras.now.period;
+	const is12Hour = extras.timeFormat === "12h";
 
-// 	for (let i = 0; i < maxHour; i++) {
-// 		const hour = extras.timeFormat === "12h" ? (i === 0 ? 12 : i) : i;
-// 		const hourStr = hour.toString();
-// 		const idx = extras.__selectedDates.findIndex((d) => d.time.hour === hourStr);
+	const times = extras.selected.getTimesForDate(year, month, day);
+	for (let i = 0; i < maxHour; i++) {
+		const hour = is12Hour ? (i === 0 ? 12 : i) : i;
+		const hourStr = hour.toString();
+		const idx = times.findIndex(
+			(t) => (is12Hour ? t.period === period : true) && t.hourNumber === hour,
+		);
 
-// 		hours.push({
-// 			key: `calendar.hour.${i}`,
-// 			mode: Extras.Date.Mode.DAY,
-// 			modeName: Extras.Date.Mode[Extras.Date.Mode.DAY] as any,
-// 			value: hourStr,
-// 			name: hourStr.padStart(2, "0"),
-// 			shortName: hourStr,
-// 			isSelected: idx >= 0,
-// 			is24Hour: extras.timeFormat === "24h",
-// 			selectedIndex: -1,
-// 		});
-// 	}
+		hours.push({
+			key: `calendar.hour.${i}`,
+			mode: CALENDAR.MODE.HOUR,
+			modeName: CALENDAR.MODE[CALENDAR.MODE.HOUR] as any,
+			value: hourStr,
+			valueNumber: hour,
+			isSelected: idx >= 0,
+			is24Hour: !is12Hour,
+		});
+		// name: hourStr.padStart(2, "0"),
+		// shortName: hourStr,
+	}
 
-// 	return hours;
-// }
+	return hours;
+}
 
-// function minutes(extras: Options): Extras.Date.Cell[] {
-// 	const minutes: Extras.Date.Cell[] = [];
+function minute(extras: Configs): Extras.Date.CellTime[] {
+	const minutes: Extras.Date.CellTime[] = [];
+	const year = extras.now.year;
+	const month = extras.now.month - 1;
+	const day = extras.now.day;
+	const hour = extras.now.hour;
+	const period = extras.now.period;
+	const is12Hour = extras.timeFormat === "12h";
 
-// 	for (let i = 0; i < 60; i++) {
-// 		const minuteStr = i.toString();
-// 		const isSelected = extras.__selectedDates.some((d) => d.time.minute === minuteStr);
+	const times = extras.selected.getTimesForDate(year, month, day);
+	for (let i = 0; i < 60; i++) {
+		const minuteStr = i.toString();
+		const idx = times.findIndex(
+			(t) =>
+				(is12Hour ? t.period === period : true) && t.hourNumber === hour && t.minuteNumber === i,
+		);
 
-// 		minutes.push({
-// 			key: `calendar.minute.${i}`,
-// 			type: "minute",
-// 			value: minuteStr,
-// 			name: minuteStr.padStart(2, "0"),
-// 			shortName: minuteStr.padStart(2, "0"),
-// 			isSelected,
-// 			selectedIndex: -1,
-// 		});
-// 	}
+		minutes.push({
+			key: `calendar.hour.${hour}.minute.${i}`,
+			mode: CALENDAR.MODE.MINUTE,
+			modeName: CALENDAR.MODE[CALENDAR.MODE.MINUTE] as any,
+			value: minuteStr,
+			valueNumber: i,
+			isSelected: idx >= 0,
+			is24Hour: !is12Hour,
+		});
+	}
 
-// 	return minutes;
-// }
+	return minutes;
+}
 
-// function seconds(extras: Options): Extras.Date.Cell[] {
-// 	const seconds: Extras.Date.Cell[] = [];
+function second(extras: Configs): Extras.Date.CellTime[] {
+	const seconds: Extras.Date.CellTime[] = [];
+	const year = extras.now.year;
+	const month = extras.now.month - 1;
+	const day = extras.now.day;
+	const hour = extras.now.hour;
+	const minute = extras.now.minute;
+	const period = extras.now.period;
+	const is12Hour = extras.timeFormat === "12h";
 
-// 	for (let i = 0; i < 60; i++) {
-// 		const secondStr = i.toString();
-// 		const isSelected = extras.__selectedDates.some((d) => d.time.second === secondStr);
+	const times = extras.selected.getTimesForDate(year, month, day);
+	for (let i = 0; i < 60; i++) {
+		const secondStr = i.toString();
+		const idx = times.findIndex(
+			(t) =>
+				(is12Hour ? t.period === period : true) &&
+				t.hourNumber === hour &&
+				t.minuteNumber === minute &&
+				t.secondNumber === i,
+		);
 
-// 		seconds.push({
-// 			key: `calendar.second.${i}`,
-// 			type: "second",
-// 			value: secondStr,
-// 			name: secondStr.padStart(2, "0"),
-// 			shortName: secondStr.padStart(2, "0"),
-// 			isSelected,
-// 			selectedIndex: -1,
-// 		});
-// 	}
+		seconds.push({
+			key: `calendar.hour.${hour}.minute.${i}.second.${i}`,
+			mode: CALENDAR.MODE.SECOND,
+			modeName: CALENDAR.MODE[CALENDAR.MODE.SECOND] as any,
+			value: secondStr,
+			valueNumber: i,
+			isSelected: idx >= 0,
+			is24Hour: !is12Hour,
+		});
+	}
 
-// 	return seconds;
-// }
-
-// function generatePeriod(extras: Options): Extras.Date.Item[] {
-// 	return [
-// 		{
-// 			type: "period",
-// 			value: "AM",
-// 			name: "AM",
-// 			shortName: "AM",
-// 			isSelected: extras.selectedDates.some((d) => d.period === "AM"),
-// 		},
-// 		{
-// 			type: "period",
-// 			value: "PM",
-// 			name: "PM",
-// 			shortName: "PM",
-// 			isSelected: extras.selectedDates.some((d) => d.period === "PM"),
-// 		},
-// 	];
-// }
+	return seconds;
+}

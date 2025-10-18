@@ -1,4 +1,5 @@
-import { Extras } from "../../../_model";
+import type { Extras } from "../../../_model";
+import { CALENDAR } from "../../../const";
 import { extractFormatTokens } from "./parse";
 
 type Configs = {
@@ -6,47 +7,50 @@ type Configs = {
 };
 export function initMode(configs: Configs): Extras.Date.Out<any>["mode"] {
 	const formatTokens = extractFormatTokens(configs.format);
-	const modeSequence = [] as Extras.Date.Mode[];
+	const modeSequence = [] as CALENDAR.MODE[];
 	//
 	for (const token of formatTokens) {
 		const value = token.toLowerCase();
 		if (value === "yyyy" || value === "yy") {
-			modeSequence.push(Extras.Date.Mode.YEAR);
+			modeSequence.push(CALENDAR.MODE.YEAR);
 		} else if (value === "mm" || value === "m") {
-			modeSequence.push(Extras.Date.Mode.MONTH);
+			modeSequence.push(CALENDAR.MODE.MONTH);
 		} else if (value === "dd" || value === "d") {
-			modeSequence.push(Extras.Date.Mode.DAY);
+			modeSequence.push(CALENDAR.MODE.DAY);
 		} else if (value === "hh" || value === "h") {
-			modeSequence.push(Extras.Date.Mode.HOUR);
+			modeSequence.push(CALENDAR.MODE.HOUR);
 		} else if (value === "nn" || value === "n") {
-			modeSequence.push(Extras.Date.Mode.MINUTE);
+			modeSequence.push(CALENDAR.MODE.MINUTE);
 		} else if (value === "ss" || value === "s") {
-			modeSequence.push(Extras.Date.Mode.SECOND);
+			modeSequence.push(CALENDAR.MODE.SECOND);
 		}
 	}
 	modeSequence.sort();
 	// set initial type mode
-	let active = null as unknown as Extras.Date.Mode;
+	let active = null as unknown as CALENDAR.MODE;
 	// TODO: offer a better way to set starting mode, for now it's in this order.
-	if (modeSequence.includes(Extras.Date.Mode.DAY)) active = Extras.Date.Mode.DAY;
-	else if (modeSequence.includes(Extras.Date.Mode.MONTH)) active = Extras.Date.Mode.MONTH;
-	else if (modeSequence.includes(Extras.Date.Mode.YEAR)) active = Extras.Date.Mode.YEAR;
-	else if (modeSequence.includes(Extras.Date.Mode.HOUR)) active = Extras.Date.Mode.HOUR;
-	else if (modeSequence.includes(Extras.Date.Mode.MINUTE)) active = Extras.Date.Mode.MINUTE;
-	else if (modeSequence.includes(Extras.Date.Mode.SECOND)) active = Extras.Date.Mode.SECOND;
+	if (modeSequence.includes(CALENDAR.MODE.DAY)) active = CALENDAR.MODE.DAY;
+	else if (modeSequence.includes(CALENDAR.MODE.MONTH)) active = CALENDAR.MODE.MONTH;
+	else if (modeSequence.includes(CALENDAR.MODE.YEAR)) active = CALENDAR.MODE.YEAR;
+	else if (modeSequence.includes(CALENDAR.MODE.HOUR)) active = CALENDAR.MODE.HOUR;
+	else if (modeSequence.includes(CALENDAR.MODE.MINUTE)) active = CALENDAR.MODE.MINUTE;
+	else if (modeSequence.includes(CALENDAR.MODE.SECOND)) active = CALENDAR.MODE.SECOND;
 
 	const activeType =
-		active <= Extras.Date.Mode.DAY ? Extras.Date.ModeType.DATE : Extras.Date.ModeType.TIME;
+		active <= CALENDAR.MODE.DAY ? CALENDAR.MODE_TYPE.DATE : CALENDAR.MODE_TYPE.TIME;
+	const apply = modeSequence[modeSequence.length - 1];
 	return {
 		active,
 		activeType,
 		default: active,
 		defaultType: activeType,
+		apply,
 		// names
-		activeName: Extras.Date.Mode[active] as any,
-		defaultName: Extras.Date.Mode[active] as any,
-		activeTypeName: Extras.Date.ModeType[activeType],
-		defaultTypeName: Extras.Date.ModeType[activeType] as any,
+		activeName: CALENDAR.MODE[active] as any,
+		defaultName: CALENDAR.MODE[active] as any,
+		activeTypeName: CALENDAR.MODE_TYPE[activeType],
+		defaultTypeName: CALENDAR.MODE_TYPE[activeType] as any,
+		applyName: CALENDAR.MODE[apply] as any,
 		// others
 		sequence: modeSequence,
 	};
@@ -66,18 +70,15 @@ export function nextMode(configs: { mode: Extras.Date.Out<any>["mode"] }) {
 	if (active !== result.active) {
 		result.active = active;
 		result.activeType =
-			active <= Extras.Date.Mode.DAY ? Extras.Date.ModeType.DATE : Extras.Date.ModeType.TIME;
-		result.activeName = Extras.Date.Mode[result.active] as any;
-		result.activeTypeName = Extras.Date.ModeType[result.activeType] as any;
+			active <= CALENDAR.MODE.DAY ? CALENDAR.MODE_TYPE.DATE : CALENDAR.MODE_TYPE.TIME;
+		result.activeName = CALENDAR.MODE[result.active] as any;
+		result.activeTypeName = CALENDAR.MODE_TYPE[result.activeType] as any;
 	}
 
 	return result;
 }
 
-export function goToMode(
-	reqMode: Extras.Date.Mode,
-	configs: { mode: Extras.Date.Out<any>["mode"] },
-) {
+export function goToMode(reqMode: CALENDAR.MODE, configs: { mode: Extras.Date.Out<any>["mode"] }) {
 	const idx = configs.mode.sequence.indexOf(reqMode);
 	if (idx < 0) {
 		return configs.mode;
@@ -88,8 +89,8 @@ export function goToMode(
 	//
 	result.active = active;
 	result.activeType =
-		active <= Extras.Date.Mode.DAY ? Extras.Date.ModeType.DATE : Extras.Date.ModeType.TIME;
-	result.activeName = Extras.Date.Mode[result.active] as any;
-	result.activeTypeName = Extras.Date.ModeType[result.activeType] as any;
+		active <= CALENDAR.MODE.DAY ? CALENDAR.MODE_TYPE.DATE : CALENDAR.MODE_TYPE.TIME;
+	result.activeName = CALENDAR.MODE[result.active] as any;
+	result.activeTypeName = CALENDAR.MODE_TYPE[result.activeType] as any;
 	return result;
 }

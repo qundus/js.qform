@@ -4,11 +4,9 @@ import { renderAttributesInput } from "../render/attributes/input";
 import { renderAttributesSelectTrigger } from "../render/attributes/select.trigger";
 import { renderAttributesSelectOption } from "../render/attributes/select.option";
 //
+import type { CALENDAR } from "../const";
 import { renderAttributesDateInput } from "../render/attributes/date.input";
-import {
-	renderAttributesDateHeader,
-	type DateHeaderElement,
-} from "../render/attributes/date.header";
+import { renderAttributesDateEvent } from "../render/attributes/date.event";
 import { renderAttributesDateCell, type DateAttributeCells } from "../render/attributes/date.cell";
 
 export type IntegrationPreact<
@@ -35,18 +33,40 @@ export type IntegrationPreact<
 			input: <D extends Render.Attributes.Type = "vdom">(props?: {
 				attrType?: D;
 			}) => Render.Attributes.DateInput<S, O, D>;
-			header: <D extends Render.Attributes.Type = "vdom">(
-				element: DateHeaderElement,
-				props?: {
-					attrType?: D;
-				},
-			) => Render.Attributes.DateHeader<S, O, D>;
-			cell: <D extends Render.Attributes.Type = "vdom">(
-				items: DateAttributeCells,
-				props?: {
-					attrType?: D;
-				},
-			) => Render.Attributes.DateCell<S, O, D>;
+			event: {
+				<D extends Render.Attributes.Type = "vdom">(
+					event: CALENDAR.EVENTS,
+					props?: {
+						attrType?: D;
+					},
+				): Render.Attributes.DateEvent<S, O, D>;
+				<D extends Render.Attributes.Type = "vdom">(
+					eventName: keyof typeof CALENDAR.EVENTS,
+					props?: {
+						attrType?: D;
+					},
+				): Render.Attributes.DateEvent<S, O, D>;
+			};
+			cell: {
+				<D extends Render.Attributes.Type = "vdom">(
+					dateCell: Extras.Date.CellDate,
+					props?: {
+						attrType?: D;
+					},
+				): Render.Attributes.DateCell<S, O, D>;
+				<D extends Render.Attributes.Type = "vdom">(
+					timeCell: Extras.Date.CellTime,
+					props?: {
+						attrType?: D;
+					},
+				): Render.Attributes.DateCell<S, O, D>;
+				<D extends Render.Attributes.Type = "vdom">(
+					items: DateAttributeCells,
+					props?: {
+						attrType?: D;
+					},
+				): Render.Attributes.DateCell<S, O, D>;
+			};
 		};
 	}
 >;
@@ -95,7 +115,7 @@ export function preactIntegration<S extends Field.Setup, O extends Form.Options>
 				const attrType = props?.attrType ?? "vdom"; //as typeof props.attrType;
 				return renderAttributesDateInput(basic, { attrType, reactive }) as any;
 			},
-			header: (element, props) => {
+			header: (event, props) => {
 				if (store.hooksUsed().preact == null) {
 					throw new Error(
 						"qform: preact hook does not exist, please add it to options.storeHooks option!",
@@ -103,7 +123,7 @@ export function preactIntegration<S extends Field.Setup, O extends Form.Options>
 				}
 				const reactive = store.hooksUsed().preact?.call();
 				const attrType = props?.attrType ?? "vdom"; //as typeof props.attrType;
-				return renderAttributesDateHeader(basic, { attrType, reactive }, element) as any;
+				return renderAttributesDateEvent(basic, { attrType, reactive }, event) as any;
 			},
 			cell: (items, props) => {
 				if (store.hooksUsed().preact == null) {

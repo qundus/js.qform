@@ -128,3 +128,35 @@ export namespace MISC {
 	};
 	export const COUNTRIES = COUNTRIES_;
 }
+
+export namespace CALENDAR {
+	/**
+	 * calendar modes, by default this is calculated based on the format.
+	 * if a mode is not offered by the format it won't be displayed and the next
+	 * logical mode is going to take place
+	 */
+	export enum MODE {
+		YEAR = 0,
+		MONTH = 1,
+		DAY = 2,
+		HOUR = 3,
+		MINUTE = 4,
+		SECOND = 5,
+		// PERIOD = 6,
+	}
+	export enum MODE_TYPE {
+		DATE = "DATE",
+		TIME = "TIME",
+	}
+
+	export enum EVENTS {
+		NAV_PREV = 11,
+		NAV_NEXT = 12,
+		//,
+		MODE_YEARS = 21,
+		MODE_MONTHS = 22,
+		MODE_DAYS = 23,
+		//
+		TOGGLE_TIME_PERIOD = 31,
+	}
+}

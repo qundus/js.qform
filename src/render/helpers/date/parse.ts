@@ -10,6 +10,7 @@ export function parseDateEnhanced(
 	format: string,
 	dateSeparators: string | string[] = ["/", "-", "."],
 	timeSeparators: string | string[] = [":"],
+	multipleTimeSeparator: string | null = null,
 ): DateParseResult {
 	const result = createEmptyResult();
 
@@ -27,33 +28,43 @@ export function parseDateEnhanced(
 		const numbers = stringValue.match(/\d+/g) || [];
 		const formatTokens = extractFormatTokens(format);
 
-		// Simple linear assignment - numbers in order to format tokens
-		for (let i = 0; i < Math.min(numbers.length, formatTokens.length); i++) {
-			const number = numbers[i];
-			const token = formatTokens[i];
-
-			if (isValidNumber(number, token)) {
-				assignComponent(result, token, number);
-			}
+		// If multipleTimeSeparator is provided, handle multiple time parsing
+		if (multipleTimeSeparator && stringValue.includes(multipleTimeSeparator)) {
+			parseWithMultipleTimes(
+				result,
+				stringValue,
+				format,
+				dateSeparators,
+				timeSeparators,
+				multipleTimeSeparator,
+			);
+		} else {
+			// Original single time parsing logic
+			parseSingleTime(result, numbers, formatTokens, stringValue);
 		}
 
-		// Detect AM/PM
-		detectPeriod(result, stringValue);
-
-		// Generate formatted outputs - pass the original format
+		// Generate formatted outputs
 		result.date.formatted = formatDate(result.date, format);
-		result.time.formatted = formatTime12h(result.time);
-		result.time.formatted24h = formatTime24h(result.time);
+
+		// Format all time entries
+		result.time.forEach((time) => {
+			time.formatted = formatTime12h(time);
+			time.formatted24h = formatTime24h(time);
+		});
 
 		// Extract others by removing used numbers and separators
 		result.others = extractOthers(stringValue, numbers, dateSeparators, timeSeparators);
 
 		// Validate based on what's requested in the format
 		result.date.valid = validateDateComponents(result.date, format);
-		result.time.valid = validateTimeComponents(result.time, format);
 
-		// Overall validation
-		result.valid = result.date.valid || result.time.valid;
+		// Validate each time entry
+		result.time.forEach((time) => {
+			time.valid = validateSingleTimeComponents(time, format);
+		});
+
+		// Overall validation - consider valid if either date or any time is valid
+		result.valid = result.date.valid || result.time.some((t) => t.valid);
 	} catch (error) {
 		result.error = error instanceof Error ? error.message : "Unknown parsing error";
 	}
@@ -61,73 +72,221 @@ export function parseDateEnhanced(
 	return result;
 }
 
-function assignComponent(result: DateParseResult, token: string, value: string): void {
+function parseSingleTime(
+	result: DateParseResult,
+	numbers: string[],
+	formatTokens: string[],
+	stringValue: string,
+): void {
+	const timeEntry = createEmptyTime();
+
+	// Simple linear assignment - numbers in order to format tokens
+	for (let i = 0; i < Math.min(numbers.length, formatTokens.length); i++) {
+		const number = numbers[i];
+		const token = formatTokens[i];
+
+		if (isValidNumber(number, token)) {
+			assignComponent(result.date, timeEntry, token, number);
+		}
+	}
+
+	// Detect AM/PM
+	detectPeriod(timeEntry, stringValue);
+
+	// Only add time entry if it has at least one component
+	if (timeEntry.hour || timeEntry.minute || timeEntry.second) {
+		result.time.push(timeEntry);
+	}
+}
+
+function parseWithMultipleTimes(
+	result: DateParseResult,
+	stringValue: string,
+	format: string,
+	dateSeparators: string | string[],
+	timeSeparators: string | string[],
+	multipleTimeSeparator: string,
+): void {
+	const formatTokens = extractFormatTokens(format);
+
+	// Split the input by the multiple time separator
+	const parts = stringValue.split(multipleTimeSeparator);
+
+	if (parts.length < 2) {
+		// Fall back to single time parsing if no multiple times found
+		const numbers = stringValue.match(/\d+/g) || [];
+		parseSingleTime(result, numbers, formatTokens, stringValue);
+		return;
+	}
+
+	// Parse date from first part (assuming date comes first)
+	const datePart = parts[0];
+	const dateNumbers = datePart.match(/\d+/g) || [];
+
+	// Assign date components
+	for (let i = 0; i < Math.min(dateNumbers.length, formatTokens.length); i++) {
+		const number = dateNumbers[i];
+		const token = formatTokens[i];
+
+		if (isValidNumber(number, token) && isDateToken(token)) {
+			assignComponent(result.date, createEmptyTime(), token, number); // We only care about date components here
+		}
+	}
+
+	// Parse time from remaining parts
+	const timeParts = parts.slice(1);
+
+	// Try to parse each time part
+	for (const timePart of timeParts) {
+		const timeEntry = createEmptyTime();
+		const timeNumbers = timePart.match(/\d+/g) || [];
+		const timeFormatTokens = formatTokens.filter((token) => isTimeToken(token));
+
+		// If we don't have enough time tokens, use the first available ones
+		const availableTimeTokens =
+			timeFormatTokens.length > 0
+				? timeFormatTokens
+				: ["hh", "nn", "ss"].slice(0, Math.min(3, timeNumbers.length));
+
+		for (let i = 0; i < Math.min(timeNumbers.length, availableTimeTokens.length); i++) {
+			const number = timeNumbers[i];
+			const token = availableTimeTokens[i];
+
+			if (isValidNumber(number, token)) {
+				assignComponent(result.date, timeEntry, token, number);
+			}
+		}
+
+		// Detect AM/PM in this time part
+		detectPeriod(timeEntry, timePart);
+
+		// Only add time entry if it has at least one component
+		if (timeEntry.hour || timeEntry.minute || timeEntry.second) {
+			result.time.push(timeEntry);
+		}
+	}
+}
+
+function assignComponent(
+	date: DateComponents,
+	time: TimeComponents,
+	token: string,
+	value: string,
+): void {
 	const normalizedToken = token.toLowerCase();
 
 	// Date components
 	if (normalizedToken === "yyyy") {
-		result.date.year = value;
-		result.date.yearNumber = parseInt(value);
+		date.year = value;
+		date.yearNumber = parseInt(value);
 	} else if (normalizedToken === "yy") {
-		result.date.year = value.length === 2 ? `20${value}` : value;
-		result.date.yearNumber = parseInt(result.date.year);
+		date.year = value.length === 2 ? `20${value}` : value;
+		date.yearNumber = parseInt(date.year);
 	} else if (normalizedToken === "mm") {
-		result.date.month = value.padStart(2, "0");
-		result.date.monthNumber = parseInt(result.date.month);
+		date.month = value.padStart(2, "0");
+		date.monthNumber = parseInt(date.month);
 	} else if (normalizedToken === "m") {
-		result.date.month = value.padStart(2, "0");
-		result.date.monthNumber = parseInt(result.date.month);
+		date.month = value.padStart(2, "0");
+		date.monthNumber = parseInt(date.month);
 	} else if (normalizedToken === "dd") {
-		result.date.day = value.padStart(2, "0");
-		result.date.dayNumber = parseInt(value);
+		date.day = value.padStart(2, "0");
+		date.dayNumber = parseInt(value);
 	} else if (normalizedToken === "d") {
-		result.date.day = value.padStart(2, "0");
-		result.date.dayNumber = parseInt(value);
+		date.day = value.padStart(2, "0");
+		date.dayNumber = parseInt(value);
 	}
-	// Time components - using 'n' for minutes to avoid conflict with months
+	// Time components
 	else if (normalizedToken === "hh" || normalizedToken === "h") {
-		result.time.hour = value.padStart(2, "0");
+		time.hour = value.padStart(2, "0");
+		time.hourNumber = parseInt(value);
 	} else if (normalizedToken === "nn" || normalizedToken === "n") {
-		result.time.minute = value.padStart(2, "0");
+		time.minute = value.padStart(2, "0");
+		time.minuteNumber = parseInt(value);
 	} else if (normalizedToken === "ss" || normalizedToken === "s") {
-		result.time.second = value.padStart(2, "0");
+		time.second = value.padStart(2, "0");
+		time.secondNumber = parseInt(value);
 	}
 }
 
-function detectPeriod(result: DateParseResult, value: string): void {
+function detectPeriod(time: TimeComponents, value: string): void {
 	const lowerValue = value.toLowerCase();
 
 	if (lowerValue.includes("am") || lowerValue.includes("a.m.") || lowerValue.match(/\ba\b/)) {
-		result.time.period = "AM";
+		time.period = "AM";
 		// Convert 12 AM to 00
-		if (result.time.hour === "12") {
-			result.time.hour = "00";
+		if (time.hour === "12") {
+			time.hour = "00";
 		}
 	} else if (
 		lowerValue.includes("pm") ||
 		lowerValue.includes("p.m.") ||
 		lowerValue.match(/\bp\b/)
 	) {
-		result.time.period = "PM";
+		time.period = "PM";
 		// Convert to 24-hour (except 12 PM)
-		if (result.time.hour && result.time.hour !== "12") {
-			const hourNum = parseInt(result.time.hour);
+		if (time.hour && time.hour !== "12") {
+			const hourNum = parseInt(time.hour);
 			if (!Number.isNaN(hourNum) && hourNum < 12) {
-				result.time.hour = String(hourNum + 12).padStart(2, "0");
+				time.hour = String(hourNum + 12).padStart(2, "0");
 			}
 		}
 	}
 
 	// Auto-detect 24-hour format
-	if (!result.time.period && result.time.hour) {
-		const hourNum = parseInt(result.time.hour);
+	if (!time.period && time.hour) {
+		const hourNum = parseInt(time.hour);
 		if (!Number.isNaN(hourNum) && hourNum >= 13 && hourNum <= 23) {
-			result.time.period = "PM";
+			time.period = "PM";
 		} else if (!Number.isNaN(hourNum) && hourNum >= 0 && hourNum <= 23) {
-			result.time.period = "AM";
+			time.period = "AM";
 		}
 	}
 }
+
+function isDateToken(token: string): boolean {
+	const normalizedToken = token.toLowerCase();
+	return ["yyyy", "yy", "mm", "m", "dd", "d"].includes(normalizedToken);
+}
+
+function isTimeToken(token: string): boolean {
+	const normalizedToken = token.toLowerCase();
+	return ["hh", "h", "nn", "n", "ss", "s"].includes(normalizedToken);
+}
+
+function createEmptyResult(): DateParseResult {
+	return {
+		date: {
+			year: null,
+			month: null,
+			day: null,
+			yearNumber: null,
+			monthNumber: null,
+			dayNumber: null,
+			valid: false,
+			formatted: null,
+		},
+		time: [], // Empty array instead of single time object
+		valid: false,
+		others: null,
+	};
+}
+
+function createEmptyTime(): TimeComponents {
+	return {
+		hour: null,
+		minute: null,
+		second: null,
+		hourNumber: null,
+		minuteNumber: null,
+		secondNumber: null,
+		period: null,
+		valid: false,
+		formatted: null,
+		formatted24h: null,
+	};
+}
+
+// Rest of your existing utility functions with minor adjustments...
 
 function extractOthers(
 	value: string,
@@ -238,7 +397,9 @@ export function formatDate(
 	return null;
 }
 
-export function formatTime12h(time: TimeComponents): string | null {
+export function formatTime12h(
+	time: Pick<TimeComponents, "hour" | "minute" | "second" | "period">,
+): string | null {
 	const timeParts = [] as any[];
 
 	if (time.hour) {
@@ -279,7 +440,9 @@ export function formatTime12h(time: TimeComponents): string | null {
 	return time.period ? `${timeString} ${time.period}` : timeString;
 }
 
-export function formatTime24h(time: TimeComponents): string | null {
+export function formatTime24h(
+	time: Pick<TimeComponents, "hour" | "minute" | "second">,
+): string | null {
 	const timeParts = [] as any[];
 
 	if (time.hour) {
@@ -293,29 +456,6 @@ export function formatTime24h(time: TimeComponents): string | null {
 	}
 
 	return timeParts.length > 0 ? timeParts.join(":") : null;
-}
-
-function createEmptyResult(): DateParseResult {
-	return {
-		date: {
-			year: null,
-			month: null,
-			day: null,
-			formatted: null,
-			valid: false,
-		},
-		time: {
-			hour: null,
-			minute: null,
-			second: null,
-			period: null,
-			formatted: null,
-			formatted24h: null,
-			valid: false,
-		},
-		valid: false,
-		others: null,
-	};
 }
 
 function validateDateComponents(date: DateComponents, format: string): boolean {
@@ -380,7 +520,7 @@ function validateDateComponents(date: DateComponents, format: string): boolean {
 	return true;
 }
 
-function validateTimeComponents(time: TimeComponents, format: string): boolean {
+function validateSingleTimeComponents(time: TimeComponents, format: string): boolean {
 	const formatTokens = extractFormatTokens(format);
 	const timeTokens = formatTokens.filter((token) =>
 		["hh", "h", "nn", "n", "ss", "s"].includes(token.toLowerCase()),

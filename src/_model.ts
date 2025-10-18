@@ -1,5 +1,5 @@
 import type * as _QSTATE from "@qundus/qstate";
-import type { IGNORED_SETUP_KEYS, FIELD, FORM } from "./const";
+import type { IGNORED_SETUP_KEYS, FIELD, FORM, CALENDAR } from "./const";
 import type { deriveAddon, hooksInUseAddon } from "@qundus/qstate/addons";
 import type { JSX as PJSX } from "preact";
 
@@ -19,6 +19,7 @@ import type { IntegrationPreact } from "./integrations/preact";
 import type { IntegrationReact } from "./integrations/react";
 import type { IntegrationSolid } from "./integrations/solid";
 import type { IntegrationSvelte } from "./integrations/svelte";
+import type { SelectedList } from "./render/helpers/date/selected-list";
 
 // checkers
 export namespace Check {
@@ -496,35 +497,23 @@ export namespace Extras {
 	}
 
 	export namespace Date {
-		/**
-		 * calendar modes, by default this is calculated based on the format.
-		 * if a mode is not offered by the format it won't be displayed and the next
-		 * logical mode is going to take place
-		 */
-		export enum Mode {
-			YEAR = 0,
-			MONTH = 1,
-			DAY = 2,
-			HOUR = 3,
-			MINUTE = 4,
-			SECOND = 5,
-		}
-		export enum ModeType {
-			DATE = "DATE",
-			TIME = "TIME",
-		}
-
-		export interface Cell {
+		interface Cell {
 			key: string;
-			mode: Mode;
-			modeName: keyof typeof Mode;
+			mode: CALENDAR.MODE;
+			modeName: keyof typeof CALENDAR.MODE;
 			value: string;
 			valueNumber: number;
+			isSelected: boolean;
+		}
+
+		export interface CellDate extends Cell {
 			name: string;
 			shortName: string;
-			isSelected: boolean;
 			isToday?: boolean;
 			isOtherMonth?: boolean;
+		}
+
+		export interface CellTime extends Cell {
 			is24Hour?: boolean;
 		}
 
@@ -549,6 +538,9 @@ export namespace Extras {
 			hour: string | null;
 			minute: string | null;
 			second: string | null;
+			hourNumber: number | null;
+			minuteNumber: number | null;
+			secondNumber: number | null;
 			period: "AM" | "PM" | null;
 			valid: boolean;
 			formatted: string | null;
@@ -557,7 +549,7 @@ export namespace Extras {
 
 		export interface ParsedResult {
 			date: ParsedDate;
-			time: ParsedTime;
+			time: ParsedTime[];
 			valid: boolean;
 			others: string | null;
 			error?: string;
@@ -591,23 +583,33 @@ export namespace Extras {
 			 */
 			timeSeparators: string | string[];
 			/**
-			 * locale used in date objects parsing.
-			 * @default 'en-US'
-			 */
-			/**
 			 * separator used to split multiple dates
 			 * @default |
 			 */
-			multipleSeparator: string;
+			multipleDateSeparator: string;
+			/**
+			 * separator used to split multiple times for selected dates
+			 * @default ,
+			 */
+			multipleTimeSeparator: string;
+			multipleTime: boolean;
+			/**
+			 * locale used in date objects parsing.
+			 * @default 'en-US'
+			 */
 			locale: string;
-			spanYears: number;
-			viewYear: number;
+			yearSpan: number;
+			yearView: number;
 			firstDayOfWeek: number;
 			timeFormat: "12h" | "24h";
 			now: {
 				year?: number;
 				month?: number;
 				day?: number;
+				hour?: number;
+				minute?: number;
+				second?: number;
+				period?: "am" | "pm";
 			};
 		};
 
@@ -616,37 +618,67 @@ export namespace Extras {
 			format: string;
 			dateSeparators: string[];
 			timeSeparators: string[];
-			multipleSeparator: string;
+			multipleDateSeparator: string;
+			multipleTimeSeparator: string;
+			multipleTime: boolean;
 			locale: string;
-			spanYears: number;
-			viewYear: number;
+			yearSpan: number;
+			yearView: number;
 			firstDayOfWeek: number;
 			timeFormat: "12h" | "24h";
 			now: {
 				year: number;
 				month: number; // 0-11
 				day: number;
+				hour: number;
+				minute: number;
+				second: number;
+				period?: string | null;
 			};
 
 			// processed/generated
-			selected: Map<ParsedDate, ParsedTime[]>;
+			selected: SelectedList;
 			mode: {
-				active: Mode;
-				activeType: ModeType;
-				default: Mode;
-				defaultType: ModeType;
+				active: CALENDAR.MODE;
+				activeType: CALENDAR.MODE_TYPE;
+				default: CALENDAR.MODE;
+				defaultType: CALENDAR.MODE_TYPE;
+				apply: CALENDAR.MODE; // when to apply choices
 				// names
-				activeName: keyof typeof Mode;
-				activeTypeName: keyof typeof ModeType;
-				defaultName: keyof typeof Mode;
-				defaultTypeName: keyof typeof Mode;
+				activeName: keyof typeof CALENDAR.MODE;
+				activeTypeName: keyof typeof CALENDAR.MODE_TYPE;
+				defaultName: keyof typeof CALENDAR.MODE;
+				defaultTypeName: keyof typeof CALENDAR.MODE;
+				applyName: keyof typeof CALENDAR.MODE; // when to apply choices
 				// others
-				sequence: Mode[];
+				sequence: CALENDAR.MODE[];
 			};
 			headers: {
 				days: Header[];
+				year: number;
+				yearStart: number;
+				yearEnd: number;
+				month: number;
+				monthShort: string;
+				monthLong: string;
+				day: number;
+				dayShort: string;
+				dayLong: string;
+				period?: string | null;
 			};
-			cells: { -readonly [K in keyof typeof Mode]?: Cell[] } & { date?: Cell[]; time?: Cell[] };
+			cells: {
+				YEAR?: CellDate[];
+				MONTH?: CellDate[];
+				DAY?: CellDate[];
+				//
+				HOUR?: CellTime[];
+				MINUTE?: CellTime[];
+				SECOND?: CellTime[];
+				// PERIOD?: CellTime[];
+				//
+				DATE?: CellDate[]; // for sequential loops
+				TIME?: CellTime[]; //
+			};
 		};
 	}
 
@@ -1047,17 +1079,17 @@ export namespace Render {
 		> = (A extends "dom" ? DateInputDom : DateInputVdom) & Record<string, unknown>;
 
 		// date
-		export type DateHeaderDom = ToDom<DateHeaderVdom>;
-		export type DateHeaderVdom = {
+		export type DateEventDom = ToDom<DateEventVdom>;
+		export type DateEventVdom = {
 			id: string;
 			name: string;
 			onClick: (event: Event) => void;
 		};
-		export type DateHeader<
+		export type DateEvent<
 			S extends Field.Setup,
 			O extends Form.Options,
 			A extends Type,
-		> = (A extends "dom" ? DateHeaderDom : DateHeaderVdom) & Record<string, unknown>;
+		> = (A extends "dom" ? DateEventDom : DateEventVdom) & Record<string, unknown>;
 
 		export type DateCellDom = ToDom<DateCellVdom>;
 		export type DateCellVdom = {
@@ -1089,7 +1121,7 @@ export namespace Integration {
 		};
 		date: {
 			input: any;
-			header: any;
+			event: any;
 			cell: any;
 		};
 	};
