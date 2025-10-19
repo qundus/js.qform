@@ -75,8 +75,9 @@ export namespace FIELD {
 		CHANGE = "DOM.CHANGE",
 		CLICK = "DOM.CLICK",
 		CLICK_OPTION = "DOM.CLICK.OPTION",
-		CLICK_DATE_HEADER = "DOM.CLICK.DATE.HEADER",
+		CLICK_DATE_EVENT = "DOM.CLICK.DATE.EVENT",
 		CLICK_DATE_CELL = "DOM.CLICK.DATE.CELL",
+		CLICK_DATE_OPTION = "DOM.CLICK.DATE.OPTION",
 		// down
 		// TOUCH = "DOM.TOUCH",
 		// TOUCH_OPTION = "DOM.TOUCH.OPTION",
@@ -144,9 +145,14 @@ export namespace CALENDAR {
 		SECOND = 5,
 		// PERIOD = 6,
 	}
+
 	export enum MODE_TYPE {
 		DATE = "DATE",
 		TIME = "TIME",
+	}
+
+	export enum OPTIONS {
+		TIME_PERIOD = 11,
 	}
 
 	export enum EVENTS {
@@ -157,6 +163,6 @@ export namespace CALENDAR {
 		MODE_MONTHS = 22,
 		MODE_DAYS = 23,
 		//
-		TOGGLE_TIME_PERIOD = 31,
+		// TOGGLE_TIME_PERIOD = 31, // moved to options
 	}
 }

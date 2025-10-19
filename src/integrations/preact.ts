@@ -115,7 +115,7 @@ export function preactIntegration<S extends Field.Setup, O extends Form.Options>
 				const attrType = props?.attrType ?? "vdom"; //as typeof props.attrType;
 				return renderAttributesDateInput(basic, { attrType, reactive }) as any;
 			},
-			header: (event, props) => {
+			event: (event, props) => {
 				if (store.hooksUsed().preact == null) {
 					throw new Error(
 						"qform: preact hook does not exist, please add it to options.storeHooks option!",

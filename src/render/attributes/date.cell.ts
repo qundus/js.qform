@@ -98,7 +98,7 @@ export function renderAttributesDateCell<
 
 	// process input
 	type PP = Parameters<Field.OnRender<Field.Type>>[0];
-	const processProps: PP = { key, data: reactive, attrType, attrs, attrFor: "input" };
+	const processProps: PP = { key, data: reactive, attrType, attrs, attrFor: "option" };
 	options?.fieldsOnRender?.(processProps);
 	setup.onRender?.(processProps);
 

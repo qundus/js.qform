@@ -8,9 +8,9 @@ type DateParseResult = Extras.Date.ParsedResult;
 export function parseDateEnhanced(
 	value: string,
 	format: string,
-	dateSeparators: string | string[] = ["/", "-", "."],
-	timeSeparators: string | string[] = [":"],
-	multipleTimeSeparator: string | null = null,
+	dateSeparators: string | string[], //= ["/", "-", "."],
+	timeSeparators: string | string[], //= [":"],
+	multipleTimeSeparator: string | null, // = null,
 ): DateParseResult {
 	const result = createEmptyResult();
 

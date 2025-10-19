@@ -46,7 +46,7 @@ export function processDateValue<S extends Field.Setup<"date">, O extends Form.O
 	extras.yearView = extras.yearView ?? extras.now.year;
 
 	// not options
-	extras.mode = extras.mode ?? initMode(extras);
+	extras.mode = extras.mode ?? initMode(extras as any);
 
 	// fatals
 	if (extras.multipleDateSeparator === extras.multipleTimeSeparator) {
@@ -65,6 +65,7 @@ export function processDateValue<S extends Field.Setup<"date">, O extends Form.O
 				extras.format,
 				extras.dateSeparators,
 				extras.timeSeparators,
+				extras.multipleTimeSeparator,
 			);
 
 			//

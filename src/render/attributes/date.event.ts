@@ -28,7 +28,6 @@ export function renderAttributesDateEvent<
 			let nextMode = next.extras.mode;
 			let nextMonth = next.extras.now.month;
 			let nextYear = next.extras.now.year;
-			let nextPeriod = next.extras.now.period;
 			let nextYearView = next.extras.yearView;
 			if (EVENT === CALENDAR.EVENTS.MODE_YEARS) {
 				nextMode = goToMode(CALENDAR.MODE.YEAR, next.extras);
@@ -36,8 +35,6 @@ export function renderAttributesDateEvent<
 				nextMode = goToMode(CALENDAR.MODE.MONTH, next.extras);
 			} else if (EVENT === CALENDAR.EVENTS.MODE_DAYS) {
 				nextMode = goToMode(CALENDAR.MODE.DAY, next.extras);
-			} else if (EVENT === CALENDAR.EVENTS.TOGGLE_TIME_PERIOD) {
-				nextPeriod = nextPeriod == null ? null : nextPeriod === "am" ? "pm" : "am";
 			} else if (next.extras.mode.active === CALENDAR.MODE.DAY) {
 				nextMonth =
 					EVENT === CALENDAR.EVENTS.NAV_PREV
@@ -67,7 +64,6 @@ export function renderAttributesDateEvent<
 				nextMode.active !== next.extras.mode.active ||
 				nextMonth !== next.extras.now.month ||
 				nextYear !== next.extras.now.year ||
-				nextPeriod !== next.extras.now.period ||
 				nextYearView !== next.extras.yearView
 			) {
 				update = true;
@@ -80,9 +76,8 @@ export function renderAttributesDateEvent<
 			next.extras.mode = nextMode;
 			next.extras.now.month = nextMonth;
 			next.extras.now.year = nextYear;
-			next.extras.now.period = nextPeriod;
 			next.extras.yearView = nextYearView;
-			next.event.DOM = FIELD.DOM.CLICK_DATE_HEADER;
+			next.event.DOM = FIELD.DOM.CLICK_DATE_EVENT;
 			next.event.MUTATE = FIELD.MUTATE.__EXTRAS;
 			store.set(next as any);
 		},
@@ -90,7 +85,7 @@ export function renderAttributesDateEvent<
 
 	// process input
 	type PP = Parameters<Field.OnRender<Field.Type>>[0];
-	const processProps: PP = { key, data: reactive, attrType, attrs, attrFor: "input" };
+	const processProps: PP = { key, data: reactive, attrType, attrs, attrFor: "option" };
 	options?.fieldsOnRender?.(processProps);
 	setup.onRender?.(processProps);
 

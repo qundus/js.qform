@@ -2,9 +2,7 @@ import type { Extras } from "../../../_model";
 import { CALENDAR } from "../../../const";
 import { extractFormatTokens } from "./parse";
 
-type Configs = {
-	format: string;
-};
+type Configs = Pick<Extras.Date.In, "format" | "defaultMode">;
 export function initMode(configs: Configs): Extras.Date.Out<any>["mode"] {
 	const formatTokens = extractFormatTokens(configs.format);
 	const modeSequence = [] as CALENDAR.MODE[];
@@ -36,6 +34,22 @@ export function initMode(configs: Configs): Extras.Date.Out<any>["mode"] {
 	else if (modeSequence.includes(CALENDAR.MODE.MINUTE)) active = CALENDAR.MODE.MINUTE;
 	else if (modeSequence.includes(CALENDAR.MODE.SECOND)) active = CALENDAR.MODE.SECOND;
 
+	// check if user requested mode is allowed
+	if (configs.defaultMode != null) {
+		const userRequestedMode = CALENDAR.MODE[configs.defaultMode];
+		if (modeSequence.includes(userRequestedMode)) {
+			active = userRequestedMode;
+		} else {
+			console.warn(
+				"qform: user requested default calendar mode <",
+				configs.defaultMode,
+				"> is not allowed, reverting to <",
+				CALENDAR.MODE[active],
+				">",
+			);
+		}
+	}
+	//
 	const activeType =
 		active <= CALENDAR.MODE.DAY ? CALENDAR.MODE_TYPE.DATE : CALENDAR.MODE_TYPE.TIME;
 	const apply = modeSequence[modeSequence.length - 1];

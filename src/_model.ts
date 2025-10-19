@@ -504,11 +504,11 @@ export namespace Extras {
 			value: string;
 			valueNumber: number;
 			isSelected: boolean;
+			name: string;
+			shortName: string;
 		}
 
 		export interface CellDate extends Cell {
-			name: string;
-			shortName: string;
 			isToday?: boolean;
 			isOtherMonth?: boolean;
 		}
@@ -518,6 +518,14 @@ export namespace Extras {
 		}
 
 		export interface Header {
+			value: string;
+			name: string;
+			shortName: string;
+		}
+
+		export interface Option {
+			type: CALENDAR.OPTIONS;
+			typeName: keyof typeof CALENDAR.OPTIONS;
 			value: string;
 			name: string;
 			shortName: string;
@@ -556,6 +564,7 @@ export namespace Extras {
 		}
 
 		export type In = {
+			defaultMode: keyof typeof CALENDAR.MODE;
 			// mode: Mode;
 			/**
 			 * format of the date, use char n to denote minutes, everything else is universal standard.
@@ -679,6 +688,7 @@ export namespace Extras {
 				DATE?: CellDate[]; // for sequential loops
 				TIME?: CellTime[]; //
 			};
+			options: { [K in keyof typeof CALENDAR.OPTIONS]?: Extras.Date.Option[] };
 		};
 	}
 
@@ -1103,6 +1113,18 @@ export namespace Render {
 			A extends Type,
 		> = (A extends "dom" ? DateCellDom : DateCellVdom) & Record<string, unknown>;
 
+		export type DateOptionDom = ToDom<DateOptionVdom>;
+		export type DateOptionVdom = {
+			id: string;
+			name: string;
+			onClick: (event: Event) => void;
+		};
+		export type DateOption<
+			S extends Field.Setup,
+			O extends Form.Options,
+			A extends Type,
+		> = (A extends "dom" ? DateOptionDom : DateOptionVdom) & Record<string, unknown>;
+
 		// all
 		export type AllInputDom = HTMLInputElement;
 		export type AllInputVdom = PJSX.IntrinsicElements["input"];
@@ -1123,6 +1145,7 @@ export namespace Integration {
 			input: any;
 			event: any;
 			cell: any;
+			option: any;
 		};
 	};
 
