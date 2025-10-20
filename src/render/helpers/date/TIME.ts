@@ -1,57 +1,76 @@
-import type { Field } from "../../../_model";
 import type { Extras } from "../../../_model";
 import { CALENDAR } from "../../../const";
 
-type Configs = Pick<
-	Extras.Date.Out<any>,
-	| "mode"
-	| "cells"
-	| "now"
-	| "yearSpan"
-	| "selected"
-	| "locale"
-	| "firstDayOfWeek"
-	| "yearView"
-	| "timeFormat"
->;
-export function makeOptions(configs: Configs): Extras.Date.Out<any>["options"] {
-	const result: Extras.Date.Out<any>["options"] = {};
-	result.TIME_PERIOD = period(configs);
-	return result;
-}
+export default {
+	init: (extras: Extras.Date.Out<any>): Extras.Date.Out<any>["TIME"] => {
+		const result: Extras.Date.Out<any>["TIME"] = {} as any;
+		result.suffix = getLocaleSuffix(extras.locale) as any;
+		result.periods = periods(extras);
+		result.activePeriod = result.periods?.[0].value;
+		//
+		return result;
+	},
+	check: (extras: Extras.Date.Out<any>) => {
+		//
+		const activeMode = extras.mode.active;
+		if (activeMode > CALENDAR.MODE.DAY) {
+			extras.TIME.cells = extras[activeMode];
+		} else {
+			extras.TIME.cells = null as any;
+		}
 
-function period(extras: Configs): Extras.Date.Option[] {
+		//
+		// extras.TIME.periods = periods(extras);
+		// if (extras.TIME.periods != null && extras.TIME.activePeriod == null) {
+		// 	extras.TIME.activePeriod = extras.TIME.periods?.[0].value;
+		// }
+	},
+	//
+	options: {
+		switchPeriod: (option: Extras.Date.Option, extras: Extras.Date.Out<any>) => {
+			if (option.type !== CALENDAR.OPTIONS.TIME_PERIOD || extras.TIME.periods == null) {
+				return;
+			}
+			const period = option.value;
+			extras.TIME.activePeriod = period;
+			for (let i = 0; i < extras.TIME.periods.length; i++) {
+				const value = extras.TIME.periods[i];
+				value.isSelected = value.value === period;
+			}
+		},
+	},
+};
+
+function periods(extras: Extras.Date.Out<any>): Extras.Date.Option[] {
 	if (extras.timeFormat !== "12h") {
 		return null as any;
 	}
-	const result: Extras.Date.CellTime[] = [];
-
-	for (let i = 0; i < 60; i++) {
-		const secondStr = i.toString();
-		const idx = times.findIndex(
-			(t) =>
-				(is12Hour ? t.period === period : true) &&
-				t.hourNumber === hour &&
-				t.minuteNumber === minute &&
-				t.secondNumber === i,
-		);
-
-		seconds.push({
-			key: `calendar.hour.${hour}.minute.${i}.second.${i}`,
-			mode: CALENDAR.MODE.SECOND,
-			modeName: CALENDAR.MODE[CALENDAR.MODE.SECOND] as any,
-			value: secondStr,
-			valueNumber: i,
-			isSelected: idx >= 0,
-			is24Hour: !is12Hour,
-			name: `${secondStr.padStart(2, "0")}${suffix.long.second}`,
-			shortName: `${secondStr.padStart(2, "0")}${suffix.short.second}`,
-		});
-	}
-
-	return seconds;
+	const result: Extras.Date.Option[] = [
+		{
+			type: CALENDAR.OPTIONS.TIME_PERIOD,
+			typeName: "TIME_PERIOD",
+			value: "am",
+			name: "AM",
+			shortName: "AM",
+			isSelected: extras.TIME.activePeriod === "am",
+		},
+		{
+			type: CALENDAR.OPTIONS.TIME_PERIOD,
+			typeName: "TIME_PERIOD",
+			value: "pm",
+			name: "PM",
+			shortName: "PM",
+			isSelected: extras.TIME.activePeriod === "pm",
+		},
+	];
+	return result;
 }
 
+//
+function getLocaleSuffix(locale: string): typeof timeSuffixes.default {
+	const baseLocale = locale.split("-")[0];
+	return timeSuffixes[baseLocale] || timeSuffixes.default;
+}
 const timeSuffixes = {
 	// Arabic and Middle Eastern (RTL)
 	ar: {
@@ -233,7 +252,3 @@ const timeSuffixes = {
 		long: { hour: "hour", minute: "minute", second: "second" },
 	},
 };
-function getTimeSuffixes(locale: string): typeof timeSuffixes.default {
-	const baseLocale = locale.split("-")[0];
-	return timeSuffixes[baseLocale] || timeSuffixes.default;
-}

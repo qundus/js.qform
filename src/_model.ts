@@ -529,6 +529,7 @@ export namespace Extras {
 			value: string;
 			name: string;
 			shortName: string;
+			isSelected: boolean;
 		}
 
 		export interface ParsedDate {
@@ -608,7 +609,7 @@ export namespace Extras {
 			 */
 			locale: string;
 			yearSpan: number;
-			yearView: number;
+			// yearView: number;
 			firstDayOfWeek: number;
 			timeFormat: "12h" | "24h";
 			now: {
@@ -632,18 +633,18 @@ export namespace Extras {
 			multipleTime: boolean;
 			locale: string;
 			yearSpan: number;
-			yearView: number;
+			// yearView: number;
 			firstDayOfWeek: number;
 			timeFormat: "12h" | "24h";
-			now: {
-				year: number;
-				month: number; // 0-11
-				day: number;
-				hour: number;
-				minute: number;
-				second: number;
-				period?: string | null;
-			};
+			// now: {
+			// 	year: number;
+			// 	month: number; // 0-11
+			// 	day: number;
+			// 	hour: number;
+			// 	minute: number;
+			// 	second: number;
+			// 	period?: string | null;
+			// };
 
 			// processed/generated
 			selected: SelectedList;
@@ -662,33 +663,52 @@ export namespace Extras {
 				// others
 				sequence: CALENDAR.MODE[];
 			};
-			headers: {
-				days: Header[];
-				year: number;
-				yearStart: number;
-				yearEnd: number;
-				month: number;
-				monthShort: string;
-				monthLong: string;
-				day: number;
-				dayShort: string;
-				dayLong: string;
-				period?: string | null;
+			DATE: {
+				cells?: CellDate[];
+				// active: globalThis.Date;
 			};
-			cells: {
-				YEAR?: CellDate[];
-				MONTH?: CellDate[];
-				DAY?: CellDate[];
-				//
-				HOUR?: CellTime[];
-				MINUTE?: CellTime[];
-				SECOND?: CellTime[];
-				// PERIOD?: CellTime[];
-				//
-				DATE?: CellDate[]; // for sequential loops
-				TIME?: CellTime[]; //
+			TIME: {
+				cells?: CellTime[];
+				periods?: Extras.Date.Option[];
+				activePeriod?: string;
+				suffix: {
+					dir: "ltr" | "rtl";
+					short: { hour: string; minute: string; second: string };
+					long: { hour: string; minute: string; second: string };
+				};
 			};
-			options: { [K in keyof typeof CALENDAR.OPTIONS]?: Extras.Date.Option[] };
+			//
+			YEAR: {
+				cells?: CellDate[];
+				active: number;
+				start: number;
+				end: number;
+			};
+			MONTH: {
+				cells?: CellDate[];
+				active: number;
+				name: string;
+				shortName: string;
+			};
+			DAY: {
+				headers: Header[];
+				cells?: CellDate[];
+				active: number;
+				name: string;
+				shortName: string;
+			};
+			HOUR: {
+				cells?: CellTime[];
+				active: number;
+			};
+			MINUTE: {
+				cells?: CellTime[];
+				active: number;
+			};
+			SECOND: {
+				cells?: CellTime[];
+				active: number;
+			};
 		};
 	}
 

@@ -2,6 +2,16 @@ import type { Field, Form, FunctionProps, Render } from "../../_model";
 import { CALENDAR, FIELD } from "../../const";
 import { goToMode } from "../helpers/date/mode";
 
+//
+import DATE from "../helpers/date/DATE";
+import TIME from "../helpers/date/TIME";
+import YEAR from "../helpers/date/YEAR";
+import MONTH from "../helpers/date/MONTH";
+import DAY from "../helpers/date/DAY";
+import HOUR from "../helpers/date/HOUR";
+import MINUTE from "../helpers/date/MINUTE";
+import SECOND from "../helpers/date/SECOND";
+
 export function renderAttributesDateEvent<
 	S extends Field.Setup,
 	O extends Form.Options,
@@ -25,46 +35,33 @@ export function renderAttributesDateEvent<
 			event.preventDefault();
 			const next = { ...store.get() } as Field.StoreObject<Field.Setup<"date">>;
 			let update = false;
-			let nextMode = next.extras.mode;
-			let nextMonth = next.extras.now.month;
-			let nextYear = next.extras.now.year;
-			let nextYearView = next.extras.yearView;
+			let mode = next.extras.mode;
+			const month = next.extras.MONTH.active;
+			const year = next.extras.YEAR.active;
+			const yearStart = next.extras.YEAR.start;
 			if (EVENT === CALENDAR.EVENTS.MODE_YEARS) {
-				nextMode = goToMode(CALENDAR.MODE.YEAR, next.extras);
+				mode = goToMode(CALENDAR.MODE.YEAR, next.extras);
 			} else if (EVENT === CALENDAR.EVENTS.MODE_MONTHS) {
-				nextMode = goToMode(CALENDAR.MODE.MONTH, next.extras);
+				mode = goToMode(CALENDAR.MODE.MONTH, next.extras);
 			} else if (EVENT === CALENDAR.EVENTS.MODE_DAYS) {
-				nextMode = goToMode(CALENDAR.MODE.DAY, next.extras);
+				mode = goToMode(CALENDAR.MODE.DAY, next.extras);
 			} else if (next.extras.mode.active === CALENDAR.MODE.DAY) {
-				nextMonth =
-					EVENT === CALENDAR.EVENTS.NAV_PREV
-						? nextMonth - 1
-						: EVENT === CALENDAR.EVENTS.NAV_NEXT
-							? nextMonth + 1
-							: nextMonth;
-				nextMonth = nextMonth < 1 || nextMonth > 12 ? next.extras.now.month : nextMonth;
+				if (EVENT === CALENDAR.EVENTS.NAV_PREV) MONTH.events.prev(next.extras);
+				else if (EVENT === CALENDAR.EVENTS.NAV_NEXT) MONTH.events.next(next.extras);
 			} else if (next.extras.mode.active === CALENDAR.MODE.MONTH) {
-				nextYear =
-					EVENT === CALENDAR.EVENTS.NAV_PREV
-						? nextYear - 1
-						: EVENT === CALENDAR.EVENTS.NAV_NEXT
-							? nextYear + 1
-							: nextYear;
+				if (EVENT === CALENDAR.EVENTS.NAV_PREV) YEAR.events.prev(next.extras);
+				else if (EVENT === CALENDAR.EVENTS.NAV_NEXT) YEAR.events.next(next.extras);
 			} else if (next.extras.mode.active === CALENDAR.MODE.YEAR) {
-				nextYearView =
-					EVENT === CALENDAR.EVENTS.NAV_PREV
-						? nextYearView - next.extras.yearSpan
-						: EVENT === CALENDAR.EVENTS.NAV_NEXT
-							? nextYearView + next.extras.yearSpan
-							: nextYearView;
+				if (EVENT === CALENDAR.EVENTS.NAV_PREV) YEAR.events.prevView(next.extras);
+				else if (EVENT === CALENDAR.EVENTS.NAV_NEXT) YEAR.events.nextView(next.extras);
 			}
 
 			//
 			if (
-				nextMode.active !== next.extras.mode.active ||
-				nextMonth !== next.extras.now.month ||
-				nextYear !== next.extras.now.year ||
-				nextYearView !== next.extras.yearView
+				mode.active !== next.extras.mode.active ||
+				year !== next.extras.YEAR.active ||
+				yearStart !== next.extras.YEAR.start ||
+				month !== next.extras.MONTH.active
 			) {
 				update = true;
 			}
@@ -73,10 +70,7 @@ export function renderAttributesDateEvent<
 				return;
 			}
 			// const pointer = event.pointerType as "mouse" | "touch";
-			next.extras.mode = nextMode;
-			next.extras.now.month = nextMonth;
-			next.extras.now.year = nextYear;
-			next.extras.yearView = nextYearView;
+			next.extras.mode = mode;
 			next.event.DOM = FIELD.DOM.CLICK_DATE_EVENT;
 			next.event.MUTATE = FIELD.MUTATE.__EXTRAS;
 			store.set(next as any);

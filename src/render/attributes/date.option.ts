@@ -1,7 +1,16 @@
 import type { Extras, Field, Form, FunctionProps, Render } from "../../_model";
-import { type CALENDAR, FIELD } from "../../const";
+import { CALENDAR, FIELD } from "../../const";
 
-export type DateAttributeOptions = { [K in keyof typeof CALENDAR.OPTIONS]?: Extras.Date.Option };
+//
+import DATE from "../helpers/date/DATE";
+import TIME from "../helpers/date/TIME";
+import YEAR from "../helpers/date/YEAR";
+import MONTH from "../helpers/date/MONTH";
+import DAY from "../helpers/date/DAY";
+import HOUR from "../helpers/date/HOUR";
+import MINUTE from "../helpers/date/MINUTE";
+import SECOND from "../helpers/date/SECOND";
+
 export function renderAttributesDateOption<
 	S extends Field.Setup,
 	O extends Form.Options,
@@ -9,14 +18,19 @@ export function renderAttributesDateOption<
 >(
 	basic: FunctionProps.Field<S, O>,
 	props: FunctionProps.RenderAttributes<S, O, A>,
-	_option: Extras.Date.Option | DateAttributeOptions,
+	option: Extras.Date.Option,
 ) {
 	const { key, options, store, setup } = basic;
 	const { attrType, reactive } = props;
 	const state = reactive as unknown as Field.StoreObject<Field.Setup<"date">>;
-	const option = "typeName" in _option ? { [_option.typeName]: _option } : _option;
-	if (option === null) throw new Error("qform: unknown date option :: " + _option);
-	const id = (state?.element?.label ?? setup.label) + ".option.id";
+	if (option === null) throw new Error("qform: unknown date option :: " + option);
+	const id =
+		(state?.element?.label ?? setup.label) +
+		".option." +
+		option.typeName +
+		"." +
+		option.value +
+		".id";
 	const name = state.__internal.key + ".option";
 	const attrs = {
 		id,
@@ -25,13 +39,13 @@ export function renderAttributesDateOption<
 			event.preventDefault();
 			const next = { ...store.get() } as Field.StoreObject<Field.Setup<"date">>;
 			let update = false;
-			let nextPeriod = next.extras.now.period;
-			if (option.TIME_PERIOD != null) {
-				nextPeriod = option.TIME_PERIOD.value;
+			const period = next.extras.TIME.activePeriod;
+			if (option.type === CALENDAR.OPTIONS.TIME_PERIOD) {
+				TIME.options.switchPeriod(option, next.extras);
 			}
 
 			//
-			if (nextPeriod !== next.extras.now.period) {
+			if (period !== next.extras.TIME.activePeriod) {
 				update = true;
 			}
 
@@ -39,7 +53,6 @@ export function renderAttributesDateOption<
 				return;
 			}
 			// const pointer = event.pointerType as "mouse" | "touch";
-			next.extras.now.period = nextPeriod;
 			next.event.DOM = FIELD.DOM.CLICK_DATE_OPTION;
 			next.event.MUTATE = FIELD.MUTATE.__EXTRAS;
 			store.set(next as any);

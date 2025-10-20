@@ -1,10 +1,17 @@
 import type { Extras, Field, Form, FunctionProps } from "../../../_model";
 import { parseDateEnhanced } from "../../../render/helpers/date/parse";
 import { initMode } from "../../../render/helpers/date/mode";
-import { makeHeaders } from "../../../render/helpers/date/headers";
-import { makeCells } from "../../../render/helpers/date/cells";
 import { FIELD } from "../../../const";
 import { SelectedList } from "../../../render/helpers/date/selected-list";
+//
+import DATE from "../../../render/helpers/date/DATE";
+import TIME from "../../../render/helpers/date/TIME";
+import YEAR from "../../../render/helpers/date/YEAR";
+import MONTH from "../../../render/helpers/date/MONTH";
+import DAY from "../../../render/helpers/date/DAY";
+import HOUR from "../../../render/helpers/date/HOUR";
+import MINUTE from "../../../render/helpers/date/MINUTE";
+import SECOND from "../../../render/helpers/date/SECOND";
 
 export function processDateValue<S extends Field.Setup<"date">, O extends Form.Options>(
 	props: FunctionProps.Field<S, O>,
@@ -35,15 +42,6 @@ export function processDateValue<S extends Field.Setup<"date">, O extends Form.O
 	extras.yearSpan = extras.yearSpan == null || extras.yearSpan <= 0 ? 12 : extras.yearSpan;
 	extras.firstDayOfWeek = extras.firstDayOfWeek ?? 0;
 	extras.timeFormat = extras.timeFormat ?? "24h";
-	extras.now = extras.now ?? {};
-	extras.now.year = extras.now.year ?? new Date().getFullYear();
-	extras.now.month = extras.now.month ?? new Date().getMonth() + 1;
-	extras.now.day = extras.now.day ?? new Date().getDate();
-	extras.now.hour = extras.now.hour ?? new Date().getHours();
-	extras.now.minute = extras.now.minute ?? new Date().getMinutes();
-	extras.now.second = extras.now.second ?? new Date().getSeconds();
-	extras.now.period = extras.timeFormat === "12h" ? (extras.now.period ?? "am") : null;
-	extras.yearView = extras.yearView ?? extras.now.year;
 
 	// not options
 	extras.mode = extras.mode ?? initMode(extras as any);
@@ -55,6 +53,17 @@ export function processDateValue<S extends Field.Setup<"date">, O extends Form.O
 				key,
 		);
 	}
+
+	// crucial api preparations
+	extras.DATE = extras.DATE ?? DATE.init(extras);
+	extras.TIME = extras.TIME ?? TIME.init(extras);
+	extras.YEAR = extras.YEAR ?? YEAR.init(extras);
+	extras.MONTH = extras.MONTH ?? MONTH.init(extras);
+	extras.DAY = extras.DAY ?? DAY.init(extras);
+	extras.HOUR = extras.HOUR ?? HOUR.init(extras);
+	extras.MINUTE = extras.MINUTE ?? MINUTE.init(extras);
+	extras.SECOND = extras.SECOND ?? SECOND.init(extras);
+
 	//
 	const selected = new SelectedList();
 	if (_value != null) {
@@ -70,10 +79,9 @@ export function processDateValue<S extends Field.Setup<"date">, O extends Form.O
 
 			//
 			if (parsed.date.valid && $next.event.MUTATE !== FIELD.MUTATE.__EXTRAS) {
-				extras.now.year = parsed.date.yearNumber ?? extras.now.year;
-				extras.now.month = parsed.date.monthNumber ?? extras.now.month;
-				extras.now.day = parsed.date.dayNumber ?? extras.now.day;
-				extras.yearView = extras.now.year;
+				YEAR.update(parsed.date.yearNumber, extras);
+				MONTH.update(parsed.date.monthNumber, extras);
+				DAY.update(parsed.date.dayNumber, extras);
 			}
 
 			//
@@ -81,10 +89,18 @@ export function processDateValue<S extends Field.Setup<"date">, O extends Form.O
 		}
 	}
 
-	// populate arrays
+	// regular checks
 	extras.selected = selected;
-	extras.cells = makeCells(extras);
-	extras.headers = makeHeaders(extras);
+	//
+	YEAR.check(extras);
+	MONTH.check(extras);
+	DAY.check(extras);
+	HOUR.check(extras);
+	MINUTE.check(extras);
+	SECOND.check(extras);
+	//
+	DATE.check(extras);
+	TIME.check(extras);
 
 	console.log("result :: ", _value, " :: ", extras);
 

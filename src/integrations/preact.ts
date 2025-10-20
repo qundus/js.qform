@@ -8,6 +8,7 @@ import type { CALENDAR } from "../const";
 import { renderAttributesDateInput } from "../render/attributes/date.input";
 import { renderAttributesDateEvent } from "../render/attributes/date.event";
 import { renderAttributesDateCell, type DateAttributeCells } from "../render/attributes/date.cell";
+import { renderAttributesDateOption } from "../render/attributes/date.option";
 
 export type IntegrationPreact<
 	S extends Field.Setup,
@@ -67,6 +68,12 @@ export type IntegrationPreact<
 					},
 				): Render.Attributes.DateCell<S, O, D>;
 			};
+			option: <D extends Render.Attributes.Type = "vdom">(
+				option: Extras.Date.Option,
+				props?: {
+					attrType?: D;
+				},
+			) => Render.Attributes.DateCell<S, O, D>;
 		};
 	}
 >;
@@ -134,6 +141,16 @@ export function preactIntegration<S extends Field.Setup, O extends Form.Options>
 				const reactive = store.hooksUsed().preact?.call();
 				const attrType = props?.attrType ?? "vdom"; //as typeof props.attrType;
 				return renderAttributesDateCell(basic, { attrType, reactive }, items) as any;
+			},
+			option: (option, props) => {
+				if (store.hooksUsed().preact == null) {
+					throw new Error(
+						"qform: preact hook does not exist, please add it to options.storeHooks option!",
+					);
+				}
+				const reactive = store.hooksUsed().preact?.call();
+				const attrType = props?.attrType ?? "vdom"; //as typeof props.attrType;
+				return renderAttributesDateOption(basic, { attrType, reactive }, option) as any;
 			},
 		};
 	} else {

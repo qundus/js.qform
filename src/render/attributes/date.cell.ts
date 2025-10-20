@@ -5,6 +5,16 @@ import { CALENDAR, FIELD } from "../../const";
 import { formatDate, formatTime12h, formatTime24h } from "../helpers/date/parse";
 import { nextMode } from "../helpers/date/mode";
 
+//
+import DATE from "../helpers/date/DATE";
+import TIME from "../helpers/date/TIME";
+import YEAR from "../helpers/date/YEAR";
+import MONTH from "../helpers/date/MONTH";
+import DAY from "../helpers/date/DAY";
+import HOUR from "../helpers/date/HOUR";
+import MINUTE from "../helpers/date/MINUTE";
+import SECOND from "../helpers/date/SECOND";
+
 export type DateAttributeCells = {
 	YEAR?: Extras.Date.CellDate;
 	MONTH?: Extras.Date.CellDate;
@@ -40,29 +50,29 @@ export function renderAttributesDateCell<
 			const next = { ...store.get() } as Field.StoreObject<Field.Setup<"date">>;
 			//
 			if (cells[next.extras.mode.applyName] == null) {
-				next.extras.now.year = cells.YEAR?.valueNumber ?? next.extras.now.year;
-				next.extras.now.month = cells.MONTH?.valueNumber ?? next.extras.now.month;
-				next.extras.now.day = cells.DAY?.valueNumber ?? next.extras.now.day;
-				next.extras.now.hour = cells.HOUR?.valueNumber ?? next.extras.now.hour;
-				next.extras.now.minute = cells.MINUTE?.valueNumber ?? next.extras.now.minute;
-				next.extras.now.second = cells.SECOND?.valueNumber ?? next.extras.now.second;
+				YEAR.update(cells.YEAR?.valueNumber, next.extras);
+				MONTH.update(cells.MONTH?.valueNumber, next.extras);
+				DAY.update(cells.DAY?.valueNumber, next.extras);
+				HOUR.update(cells.HOUR?.valueNumber, next.extras);
+				MINUTE.update(cells.MINUTE?.valueNumber, next.extras);
+				SECOND.update(cells.SECOND?.valueNumber, next.extras);
 				next.extras.mode = nextMode(next.extras);
 				next.event.DOM = FIELD.DOM.CLICK;
 				next.event.MUTATE = FIELD.MUTATE.__EXTRAS;
 			} else {
 				// date
-				const year = cells.YEAR?.value ?? `${next.extras.now.year}`;
-				const month = cells.MONTH?.value ?? `${next.extras.now.month}`;
-				const day = cells.DAY?.value ?? `${next.extras.now.day}`;
+				const year = cells.YEAR?.value ?? `${next.extras.YEAR.active}`;
+				const month = cells.MONTH?.value ?? `${next.extras.MONTH.active}`;
+				const day = cells.DAY?.value ?? `${next.extras.DAY.active}`;
 				const formattedDate = formatDate({ year, month, day }, next.extras.format);
 
 				// time
-				const hour = cells.HOUR?.value ?? `${next.extras.now.hour}`;
-				const minute = cells.MINUTE?.value ?? `${next.extras.now.minute}`;
-				const second = cells.SECOND?.value ?? `${next.extras.now.second}`;
+				const hour = cells.HOUR?.value ?? `${next.extras.HOUR.active}`;
+				const minute = cells.MINUTE?.value ?? `${next.extras.MINUTE.active}`;
+				const second = cells.SECOND?.value ?? `${next.extras.SECOND.active}`;
 				const formattedTime =
 					next.extras.timeFormat === "12h"
-						? formatTime12h({ hour, minute, second, period: next.extras.now.period as any })
+						? formatTime12h({ hour, minute, second, period: next.extras.TIME.activePeriod as any })
 						: formatTime24h({ hour, minute, second });
 
 				//
