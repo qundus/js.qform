@@ -75,7 +75,7 @@ export function prepareInit<S extends Field.Setup, O extends Form.Options>(
 
 	//
 	if (!init.element.hidden) {
-		const incomplete = isFieldIncomplete(init.element, setup.value);
+		const incomplete = isFieldIncomplete(setup.value, init);
 		if (incomplete) {
 			init.condition.valid = false;
 			// init.condition.error = "incomplete"; // TODO: make this an config option

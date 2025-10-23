@@ -52,19 +52,34 @@ export function initMode(configs: Configs): Extras.Date.Out<any>["mode"] {
 	//
 	const activeType =
 		active <= CALENDAR.MODE.DAY ? CALENDAR.MODE_TYPE.DATE : CALENDAR.MODE_TYPE.TIME;
-	const apply = modeSequence[modeSequence.length - 1];
+	const applyDate = modeSequence.includes(CALENDAR.MODE.DAY)
+		? CALENDAR.MODE.DAY
+		: modeSequence.includes(CALENDAR.MODE.MONTH)
+			? CALENDAR.MODE.MONTH
+			: modeSequence.includes(CALENDAR.MODE.YEAR)
+				? CALENDAR.MODE.YEAR
+				: null;
+	const applyTime = modeSequence.includes(CALENDAR.MODE.SECOND)
+		? CALENDAR.MODE.SECOND
+		: modeSequence.includes(CALENDAR.MODE.MINUTE)
+			? CALENDAR.MODE.MINUTE
+			: modeSequence.includes(CALENDAR.MODE.HOUR)
+				? CALENDAR.MODE.HOUR
+				: null;
 	return {
 		active,
 		activeType,
 		default: active,
 		defaultType: activeType,
-		apply,
+		applyDate,
+		applyTime,
 		// names
 		activeName: CALENDAR.MODE[active] as any,
 		defaultName: CALENDAR.MODE[active] as any,
 		activeTypeName: CALENDAR.MODE_TYPE[activeType],
 		defaultTypeName: CALENDAR.MODE_TYPE[activeType] as any,
-		applyName: CALENDAR.MODE[apply] as any,
+		applyDateName: applyDate == null ? null : (CALENDAR.MODE[applyDate] as any),
+		applyTimeName: applyTime == null ? null : (CALENDAR.MODE[applyTime] as any),
 		// others
 		sequence: modeSequence,
 	};

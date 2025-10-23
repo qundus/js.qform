@@ -5,7 +5,7 @@ export default {
 	init: (extras: Extras.Date.Out<any>): Extras.Date.Out<any>["TIME"] => {
 		const result: Extras.Date.Out<any>["TIME"] = {} as any;
 		result.suffix = getLocaleSuffix(extras.locale) as any;
-		result.periods = periods(extras);
+		result.periods = initPeriods(extras);
 		result.activePeriod = result.periods?.[0].value;
 		//
 		return result;
@@ -14,7 +14,7 @@ export default {
 		//
 		const activeMode = extras.mode.active;
 		if (activeMode > CALENDAR.MODE.DAY) {
-			extras.TIME.cells = extras[activeMode];
+			extras.TIME.cells = extras[extras.mode.activeName].cells as any;
 		} else {
 			extras.TIME.cells = null as any;
 		}
@@ -41,7 +41,7 @@ export default {
 	},
 };
 
-function periods(extras: Extras.Date.Out<any>): Extras.Date.Option[] {
+function initPeriods(extras: Extras.Date.Out<any>): Extras.Date.Option[] {
 	if (extras.timeFormat !== "12h") {
 		return null as any;
 	}
@@ -49,18 +49,18 @@ function periods(extras: Extras.Date.Out<any>): Extras.Date.Option[] {
 		{
 			type: CALENDAR.OPTIONS.TIME_PERIOD,
 			typeName: "TIME_PERIOD",
-			value: "am",
+			value: "AM",
 			name: "AM",
 			shortName: "AM",
-			isSelected: extras.TIME.activePeriod === "am",
+			isSelected: true,
 		},
 		{
 			type: CALENDAR.OPTIONS.TIME_PERIOD,
 			typeName: "TIME_PERIOD",
-			value: "pm",
+			value: "PM",
 			name: "PM",
 			shortName: "PM",
-			isSelected: extras.TIME.activePeriod === "pm",
+			isSelected: false,
 		},
 	];
 	return result;

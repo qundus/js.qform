@@ -25,28 +25,26 @@ export default {
 		const is12Hour = extras.timeFormat === "12h";
 
 		const year = extras.YEAR.active;
-		const month = extras.MONTH.active - 1;
+		const month = extras.MONTH.active;
 		const day = extras.DAY.active;
 		const hour = extras.HOUR.active;
 
-		const times = extras.selected.getTimesForDate(year, month, day);
+		const times = extras.selected.populateSelectedTime(year, month, day);
 		for (let i = 0; i < 60; i++) {
 			const minuteStr = i.toString();
-			const idx = times.findIndex(
-				(t) =>
-					(is12Hour ? t.period === period : true) && t.hourNumber === hour && t.minuteNumber === i,
-			);
-
+			const isSelected = times.hasHourMinute(hour, i);
 			minutes.push({
 				key: `calendar.hour.${hour}.minute.${i}`,
 				mode: CALENDAR.MODE.MINUTE,
 				modeName: CALENDAR.MODE[CALENDAR.MODE.MINUTE] as any,
 				value: minuteStr,
 				valueNumber: i,
-				isSelected: idx >= 0,
+				isSelected,
 				is24Hour: !is12Hour,
 				name: `${minuteStr.padStart(2, "0")}${suffix.long.minute}`,
 				shortName: `${minuteStr.padStart(2, "0")}${suffix.short.minute}`,
+				suffix: suffix.long.minute,
+				shortSuffix: suffix.short.minute,
 			});
 		}
 

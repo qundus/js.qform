@@ -5,9 +5,10 @@ export default {
 	init: (extras: Extras.Date.Out<any>): Extras.Date.Out<any>["MONTH"] => {
 		const result: Extras.Date.Out<any>["MONTH"] = {} as any;
 		result.active = new Date().getMonth() + 1;
+		result.current = new Date().getMonth() + 1;
 
 		//
-		const date = new Date(extras.YEAR.active, extras.MONTH.active - 1, 1);
+		const date = new Date(extras.YEAR.active, result.active - 1, 1);
 		const formatter = new Intl.DateTimeFormat(extras.locale, { month: "long" });
 		const shortFormatter = new Intl.DateTimeFormat(extras.locale, { month: "short" });
 
@@ -26,6 +27,7 @@ export default {
 		const shortFormatter = new Intl.DateTimeFormat(extras.locale, { month: "short" });
 
 		//
+		extras.MONTH.active = month;
 		extras.MONTH.name = formatter.format(date);
 		extras.MONTH.shortName = shortFormatter.format(date);
 	},
@@ -51,7 +53,8 @@ export default {
 				valueNumber: monthNumber,
 				name: formatter.format(date),
 				shortName: shortFormatter.format(date),
-				isSelected: isSelected || extras.MONTH.active === monthNumber,
+				isSelected,
+				isToday: extras.MONTH.current === monthNumber,
 			});
 		}
 
@@ -65,6 +68,13 @@ export default {
 				return;
 			}
 			extras.MONTH.active = next;
+			const date = new Date(extras.YEAR.active, next - 1, 1);
+			const formatter = new Intl.DateTimeFormat(extras.locale, { month: "long" });
+			const shortFormatter = new Intl.DateTimeFormat(extras.locale, { month: "short" });
+
+			//
+			extras.MONTH.name = formatter.format(date);
+			extras.MONTH.shortName = shortFormatter.format(date);
 		},
 		next: (extras: Extras.Date.Out<any>) => {
 			const next = extras.MONTH.active + 1;
@@ -72,6 +82,14 @@ export default {
 				return;
 			}
 			extras.MONTH.active = next;
+
+			const date = new Date(extras.YEAR.active, next - 1, 1);
+			const formatter = new Intl.DateTimeFormat(extras.locale, { month: "long" });
+			const shortFormatter = new Intl.DateTimeFormat(extras.locale, { month: "short" });
+
+			//
+			extras.MONTH.name = formatter.format(date);
+			extras.MONTH.shortName = shortFormatter.format(date);
 		},
 	},
 };

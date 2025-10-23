@@ -11,7 +11,7 @@ export default {
 		//
 		const activeMode = extras.mode.active;
 		if (activeMode <= CALENDAR.MODE.DAY) {
-			extras.DATE.cells = extras[activeMode];
+			extras.DATE.cells = extras[extras.mode.activeName].cells as any;
 		} else {
 			extras.DATE.cells = null as any;
 		}

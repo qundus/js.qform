@@ -14,9 +14,10 @@ export default {
 		}
 		extras.SECOND.active = _second;
 	},
-	check: (extras: Extras.Date.Out<any>): Extras.Date.CellTime[] => {
+	check: (extras: Extras.Date.Out<any>) => {
 		if (!extras.mode.sequence.includes(CALENDAR.MODE.SECOND)) {
-			return null as any;
+			extras.SECOND.cells = null as any;
+			return;
 		}
 		const seconds: Extras.Date.CellTime[] = [];
 		const period = extras.TIME.activePeriod;
@@ -24,21 +25,15 @@ export default {
 		const is12Hour = extras.timeFormat === "12h";
 
 		const year = extras.YEAR.active;
-		const month = extras.MONTH.active - 1;
+		const month = extras.MONTH.active;
 		const day = extras.DAY.active;
 		const hour = extras.HOUR.active;
 		const minute = extras.MINUTE.active;
 
-		const times = extras.selected.getTimesForDate(year, month, day);
+		const times = extras.selected.populateSelectedTime(year, month, day);
 		for (let i = 0; i < 60; i++) {
 			const secondStr = i.toString();
-			const idx = times.findIndex(
-				(t) =>
-					(is12Hour ? t.period === period : true) &&
-					t.hourNumber === hour &&
-					t.minuteNumber === minute &&
-					t.secondNumber === i,
-			);
+			const isSelected = times.hasTime(hour, minute, i);
 
 			seconds.push({
 				key: `calendar.hour.${hour}.minute.${i}.second.${i}`,
@@ -46,13 +41,15 @@ export default {
 				modeName: CALENDAR.MODE[CALENDAR.MODE.SECOND] as any,
 				value: secondStr,
 				valueNumber: i,
-				isSelected: idx >= 0,
+				isSelected,
 				is24Hour: !is12Hour,
 				name: `${secondStr.padStart(2, "0")}${suffix.long.second}`,
 				shortName: `${secondStr.padStart(2, "0")}${suffix.short.second}`,
+				suffix: suffix.long.second,
+				shortSuffix: suffix.short.second,
 			});
 		}
 
-		return seconds;
+		extras.SECOND.cells = seconds;
 	},
 };

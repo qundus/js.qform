@@ -24,6 +24,7 @@ export default {
 	init: (extras: Extras.Date.Out<any>): Extras.Date.Out<any>["DAY"] => {
 		const result: Extras.Date.Out<any>["DAY"] = {} as any;
 		result.active = new Date().getDate();
+		result.current = new Date().getDate();
 
 		//
 		const date = new Date(extras.YEAR.active, extras.MONTH.active - 1, result.active);
@@ -47,6 +48,7 @@ export default {
 		const shortFormatter = new Intl.DateTimeFormat(extras.locale, { weekday: "short" });
 
 		//
+		extras.DAY.active = day;
 		extras.DAY.name = formatter.format(date);
 		extras.DAY.shortName = shortFormatter.format(date);
 	},

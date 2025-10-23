@@ -515,6 +515,8 @@ export namespace Extras {
 
 		export interface CellTime extends Cell {
 			is24Hour?: boolean;
+			suffix: string;
+			shortSuffix: string;
 		}
 
 		export interface Header {
@@ -612,15 +614,7 @@ export namespace Extras {
 			// yearView: number;
 			firstDayOfWeek: number;
 			timeFormat: "12h" | "24h";
-			now: {
-				year?: number;
-				month?: number;
-				day?: number;
-				hour?: number;
-				minute?: number;
-				second?: number;
-				period?: "am" | "pm";
-			};
+			// range: boolean;
 		};
 
 		export type Out<S extends Field.Setup> = {
@@ -631,20 +625,12 @@ export namespace Extras {
 			multipleDateSeparator: string;
 			multipleTimeSeparator: string;
 			multipleTime: boolean;
+			rangeSeparator: string;
 			locale: string;
 			yearSpan: number;
-			// yearView: number;
 			firstDayOfWeek: number;
 			timeFormat: "12h" | "24h";
-			// now: {
-			// 	year: number;
-			// 	month: number; // 0-11
-			// 	day: number;
-			// 	hour: number;
-			// 	minute: number;
-			// 	second: number;
-			// 	period?: string | null;
-			// };
+			// range: boolean;
 
 			// processed/generated
 			selected: SelectedList;
@@ -653,13 +639,15 @@ export namespace Extras {
 				activeType: CALENDAR.MODE_TYPE;
 				default: CALENDAR.MODE;
 				defaultType: CALENDAR.MODE_TYPE;
-				apply: CALENDAR.MODE; // when to apply choices
+				applyDate: CALENDAR.MODE | null; // when to apply choices
+				applyTime: CALENDAR.MODE | null; // when to apply choices
 				// names
 				activeName: keyof typeof CALENDAR.MODE;
 				activeTypeName: keyof typeof CALENDAR.MODE_TYPE;
 				defaultName: keyof typeof CALENDAR.MODE;
 				defaultTypeName: keyof typeof CALENDAR.MODE;
-				applyName: keyof typeof CALENDAR.MODE; // when to apply choices
+				applyDateName: keyof typeof CALENDAR.MODE | null; // when to apply choices
+				applyTimeName: keyof typeof CALENDAR.MODE | null; // when to apply choices
 				// others
 				sequence: CALENDAR.MODE[];
 			};
@@ -681,12 +669,14 @@ export namespace Extras {
 			YEAR: {
 				cells?: CellDate[];
 				active: number;
+				current: number;
 				start: number;
 				end: number;
 			};
 			MONTH: {
 				cells?: CellDate[];
 				active: number;
+				current: number;
 				name: string;
 				shortName: string;
 			};
@@ -694,6 +684,7 @@ export namespace Extras {
 				headers: Header[];
 				cells?: CellDate[];
 				active: number;
+				current: number;
 				name: string;
 				shortName: string;
 			};

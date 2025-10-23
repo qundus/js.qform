@@ -18,7 +18,7 @@ export function renderAttributesDateInput<
 		required: state?.element.required,
 		disabled: state?.element.disabled,
 		placeholder: state?.element.placeholder ?? state.extras.format,
-		value: state.value,
+		value: state.value ?? "",
 		[attrType !== "vdom" ? "autocomplete" : "autoComplete"]: "off",
 		[attrType !== "vdom" ? "onfocus" : "onFocus"]: (event: FocusEvent) => {
 			event.preventDefault();

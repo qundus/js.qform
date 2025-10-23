@@ -4,7 +4,7 @@ import { CALENDAR } from "../../../const";
 export default {
 	init: (extras: Extras.Date.Out<any>): Extras.Date.Out<any>["HOUR"] => {
 		const result: Extras.Date.Out<any>["HOUR"] = {} as any;
-		result.active = new Date().getHours();
+		result.active = new Date().getHours(); // 0-23
 		//
 		return result;
 	},
@@ -26,16 +26,14 @@ export default {
 		const maxHour = extras.timeFormat === "12h" ? 12 : 24;
 
 		const year = extras.YEAR.active;
-		const month = extras.MONTH.active - 1;
+		const month = extras.MONTH.active;
 		const day = extras.DAY.active;
 
-		const times = extras.selected.getTimesForDate(year, month, day);
+		const times = extras.selected.populateSelectedTime(year, month, day);
 		for (let i = 0; i < maxHour; i++) {
 			const hour = is12Hour ? i + 1 : i;
 			const hourStr = hour.toString();
-			const idx = times.findIndex(
-				(t) => (is12Hour ? t.period === period : true) && t.hourNumber === hour,
-			);
+			const isSelected = times.hasHour(hour);
 
 			hours.push({
 				key: `calendar.hour.${i}`,
@@ -43,10 +41,12 @@ export default {
 				modeName: CALENDAR.MODE[CALENDAR.MODE.HOUR] as any,
 				value: hourStr,
 				valueNumber: hour,
-				isSelected: idx >= 0,
+				isSelected,
 				is24Hour: !is12Hour,
 				name: `${hourStr.padStart(2, "0")}${suffix.long.hour}`,
 				shortName: `${hourStr.padStart(2, "0")}${suffix.short.hour}`,
+				suffix: suffix.long.hour,
+				shortSuffix: suffix.short.hour,
 			});
 		}
 

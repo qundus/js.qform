@@ -2,7 +2,7 @@ import type { Extras, Field, Form, FunctionProps } from "../../../_model";
 import { parseDateEnhanced } from "../../../render/helpers/date/parse";
 import { initMode } from "../../../render/helpers/date/mode";
 import { FIELD } from "../../../const";
-import { SelectedList } from "../../../render/helpers/date/selected-list";
+import { createSelectedList } from "../../../render/helpers/date/selected-list";
 //
 import DATE from "../../../render/helpers/date/DATE";
 import TIME from "../../../render/helpers/date/TIME";
@@ -37,11 +37,12 @@ export function processDateValue<S extends Field.Setup<"date">, O extends Form.O
 	extras.multipleDateSeparator = extras.multipleDateSeparator ?? "|";
 	extras.multipleTimeSeparator = extras.multipleTimeSeparator ?? ",";
 	extras.multipleTime = extras.multipleTime ?? false;
-	extras.format = extras.format ?? "d-m-yyyy h:n:s";
+	extras.format = extras.format ?? "d-m-yyyy"; //"d-m-yyyy h:n:s";
 	extras.locale = extras.locale ?? "en-US";
 	extras.yearSpan = extras.yearSpan == null || extras.yearSpan <= 0 ? 12 : extras.yearSpan;
 	extras.firstDayOfWeek = extras.firstDayOfWeek ?? 0;
 	extras.timeFormat = extras.timeFormat ?? "24h";
+	// extras.range = extras.range ?? false; // TODO: leave for later
 
 	// not options
 	extras.mode = extras.mode ?? initMode(extras as any);
@@ -65,7 +66,9 @@ export function processDateValue<S extends Field.Setup<"date">, O extends Form.O
 	extras.SECOND = extras.SECOND ?? SECOND.init(extras);
 
 	//
-	const selected = new SelectedList();
+	const selected = createSelectedList(extras);
+	let putResult = false;
+	const result = [] as string[];
 	if (_value != null) {
 		const values = $next.element.multiple ? _value.split(extras.multipleDateSeparator) : [_value];
 		for (const v of values) {
@@ -86,6 +89,21 @@ export function processDateValue<S extends Field.Setup<"date">, O extends Form.O
 
 			//
 			selected.append(parsed);
+			// TODO: allow free language input writing for date and time as well
+			if (parsed.date.valid) {
+				putResult = true;
+			}
+			const date = parsed.date.formatted ?? "";
+			const time = [] as (string | null)[];
+			for (const t of parsed.time) {
+				if (t.formatted == null || t.formatted24h == null) {
+					continue;
+				}
+				time.push(extras.timeFormat === "12h" ? t.formatted : t.formatted24h);
+			}
+			result.push(
+				`${date} ${extras.multipleTime ? time.join(extras.multipleTimeSeparator) : (time[0] ?? "")}`.trim(),
+			);
 		}
 	}
 
@@ -101,9 +119,18 @@ export function processDateValue<S extends Field.Setup<"date">, O extends Form.O
 	//
 	DATE.check(extras);
 	TIME.check(extras);
-
-	console.log("result :: ", _value, " :: ", extras);
-
 	$next.extras = extras as any;
-	return _value;
+
+	// console.log("result :: ", _value, " :: ", selected);
+
+	if (!$next.element.preprocessValue) {
+		return _value;
+	}
+
+	if (!putResult) {
+		return _value;
+	}
+
+	return $next.element.multiple ? result.join(extras.multipleDateSeparator) : result[0];
+	// return _value;
 }

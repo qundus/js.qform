@@ -33,6 +33,10 @@ export type FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> = {
 		props: { country?: (typeof MISC.COUNTRIES)[number] | string; value?: string },
 		configs?: { preprocess?: boolean; noValidate?: boolean },
 	) => void;
+	date: (
+		props: Partial<Extras.Date.In>,
+		configs?: { preprocess?: boolean; noValidate?: boolean },
+	) => void;
 	// cycleUnsafe:  (cycle: CYCLE) => void;
 	// validation(): (func: Field.Validate) => (() => void) | null;
 	// /**
@@ -174,6 +178,24 @@ export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 			}
 			next.extras = extras as any;
 			next.value = `${country}${props.value ?? vv}`;
+			next.__internal.manual = true;
+			next.__internal.preprocess = configs?.preprocess;
+			next.__internal.noValidation = configs?.noValidate;
+			// state.__internal.preprocess = configs?.preprocess;
+			next.event.MUTATE = FIELD.MUTATE.EXTRAS;
+
+			next.event.DOM = FIELD.DOM.IDLE;
+			store.set(next);
+		},
+		date(props, configs) {
+			if (props == null) {
+				return;
+			}
+			const next = { ...store.get() };
+			const extras = next.extras as Extras.Tel.Out<Field.Setup<"date">>;
+
+			//
+			next.extras = { ...props, ...extras } as any;
 			next.__internal.manual = true;
 			next.__internal.preprocess = configs?.preprocess;
 			next.__internal.noValidation = configs?.noValidate;

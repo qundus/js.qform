@@ -188,7 +188,7 @@ export function changeCycle<
 					if (VMCM === "force-valid") {
 						$next.condition.error = false;
 					} else {
-						const incomplete = isFieldIncomplete($next.element, $next.value);
+						const incomplete = isFieldIncomplete($next.value, $next);
 						$next.condition.error = incomplete ? "incomplete" : false;
 					}
 				} else {
