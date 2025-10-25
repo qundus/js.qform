@@ -825,7 +825,7 @@ export namespace Form {
 		 * default behavior of form is to start with CYCLES.IDLE,
 		 * use this to change that default, indvidual fields 'initCycle'
 		 * options supercedes this.
-		 * @default true
+		 * @default CYCLE.INIT
 		 */
 		fieldsInitCycle?: FIELD.CYCLE;
 

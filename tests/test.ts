@@ -1,4 +1,5 @@
-import { createForm, createField, Field } from "../src";
+import { createForm, createField, Field, createFormSetup } from "../src";
+import { FIELD, FORM } from "../src/const";
 import { vFile } from "../src/validators";
 import { preactHook } from "@qundus/qstate/preact";
 
@@ -26,7 +27,8 @@ export const tel = createField("tel", {
 
 // radio.render.preact.
 
-tel.store.get().value;
+tel.store.get().element.focused;
+
 // cities.store.get().element.select.options.map((item) => {
 // 	// item.
 // });
@@ -143,8 +145,7 @@ const form = createForm(
 		onMount: ({ fields }, listen) => {
 			// init.extras.gender?.[0].
 			// console.log("mounted form loginform :: ", init);
-
-			listen([fields.cities.store, fields.color.store], (country, color) => {});
+			// listen([fields.cities.store, fields.color.store], (country, color) => {});
 		},
 		onEffect: ($next) => {
 			console.log("changed form loginform :: ", $next);
@@ -157,13 +158,49 @@ const form = createForm(
 	},
 );
 
+const createWOw = createFormSetup({
+	fieldsRequired: false,
+	onEffect(props) {},
+});
+
+// const [res, err] = await form.submit.start();
+
 // test dynamic/component type usage
 // function wow<F extends Field.Setup<'file'>>(field: Field.Factory<F, any>) {
 // 	const extras = field.store.get().extras
 // }
 form.values.get().picture;
 form.fields.picture.store.hooks;
-form.store.hooks.useStore();
+form.store.listen((value) => {
+	// use a if statement
+	if (value.status === FORM.STATUS.SUBMIT) {
+		// do something on submit
+	}
+	// or use a switch
+	switch (value.status) {
+		case FORM.STATUS.ERROR:
+			// do something on form error
+			break;
+		default:
+			break;
+	}
+});
+
+form.fields.name.store.listen((value) => {
+	if (value.event.CYCLE === FIELD.CYCLE.SKELETON) {
+		// do something while field is in loading cycle
+	}
+	if (value.event.DOM === FIELD.DOM.CLICK) {
+		// do something when the field is clicked on
+	}
+	if (value.event.MUTATE === FIELD.MUTATE.VALUE) {
+		// do something when the field value has been mutated
+	}
+	if (value.event.RENDER === FIELD.RENDER.READY) {
+		// do something when the field render elements have been mounted
+	}
+});
+
 // form.fields.cities.setup.
 // form.fields.cities.store.get();
 // form.fields.gender.setup.

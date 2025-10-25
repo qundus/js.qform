@@ -1,6 +1,6 @@
 {
 	"name": "@qundus/qform",
-	"version": "0.3.0",
+	"version": "0.4.5",
 	"description": "The only form library you'll ever need :)",
 	"keywords": [
 		"forms",
@@ -80,12 +80,14 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.1.1",
-		"@qundus/qstate": "link:../js.qstate",
 		"@types/node": "^24.0.14",
 		"lefthook": "^1.12.2",
 		"terser": "^5.43.1",
 		"tsup": "^8.5.0",
 		"typescript": "^5.8.3"
+	},
+	"peerDependencies": {
+		"@qundus/qstate": ">=0.4.1"
 	},
 	"optionalDependencies": {
 		"astro": ">=4",

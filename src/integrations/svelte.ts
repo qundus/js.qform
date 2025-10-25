@@ -1,8 +1,13 @@
-import type { Field, Form, FunctionProps, Integration, Render } from "../_model";
+import type { Extras, Field, Form, FunctionProps, Integration, Render } from "../_model";
 import { renderAttributesInput } from "../render/attributes/input";
 //
 import { renderAttributesSelectTrigger } from "../render/attributes/select.trigger";
 import { renderAttributesSelectOption } from "../render/attributes/select.option";
+import type { CALENDAR } from "../const";
+import { type DateAttributeCells, renderAttributesDateCell } from "../render/attributes/date.cell";
+import { renderAttributesDateInput } from "../render/attributes/date.input";
+import { renderAttributesDateEvent } from "../render/attributes/date.event";
+import { renderAttributesDateOption } from "../render/attributes/date.option";
 //
 
 export type IntegrationSvelte<
@@ -18,7 +23,19 @@ export type IntegrationSvelte<
 			trigger: Render.Attributes.SelectTrigger<S, O, "dom">;
 			option: (option: any) => Render.Attributes.SelectOption<S, O, "dom">;
 		};
-		date: any; //{ input: Render.Attributes.Input<S, O, "dom"> };
+		date: {
+			input: Render.Attributes.DateInput<S, O, "dom">;
+			event: {
+				(event: CALENDAR.EVENTS): Render.Attributes.DateEvent<S, O, "dom">;
+				(eventName: keyof typeof CALENDAR.EVENTS): Render.Attributes.DateEvent<S, O, "dom">;
+			};
+			cell: {
+				(dateCell: Extras.Date.CellDate): Render.Attributes.DateCell<S, O, "dom">;
+				(timeCell: Extras.Date.CellTime): Render.Attributes.DateCell<S, O, "dom">;
+				(items: DateAttributeCells): Render.Attributes.DateCell<S, O, "dom">;
+			};
+			option: (option: Extras.Date.Option) => Render.Attributes.DateCell<S, O, "dom">;
+		};
 	}
 >;
 export function svelteIntegration<S extends Field.Setup, O extends Form.Options>(
@@ -47,6 +64,35 @@ export function svelteIntegration<S extends Field.Setup, O extends Form.Options>
 				};
 			},
 		} as any;
+	} else if (setup.type === "date") {
+		result = {
+			get input() {
+				const reactive = store.get();
+				const attrType = "dom";
+				return renderAttributesDateInput(basic, { attrType, reactive }) as any;
+			},
+			get event() {
+				const reactive = store.get();
+				const attrType = "dom";
+				return (event) => {
+					return renderAttributesDateEvent(basic, { attrType, reactive }, event) as any;
+				};
+			},
+			get cell() {
+				const reactive = store.get();
+				const attrType = "dom";
+				return (items) => {
+					return renderAttributesDateCell(basic, { attrType, reactive }, items) as any;
+				};
+			},
+			get option() {
+				const reactive = store.get();
+				const attrType = "dom";
+				return (option) => {
+					return renderAttributesDateOption(basic, { attrType, reactive }, option) as any;
+				};
+			},
+		};
 	} else {
 		result = {
 			get input() {
