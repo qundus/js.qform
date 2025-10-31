@@ -101,10 +101,6 @@ const form = createForm(
 					"madinah",
 				],
 			},
-			// multiple: true,
-			// processValue: ({ key, next }, { processors }) => {
-			// 	return processors.checkbox();
-			// },
 		},
 		picture: {
 			type: "file",

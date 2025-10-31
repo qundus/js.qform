@@ -35,14 +35,13 @@ export default defineConfig((options) => {
 				"svelte",
 				"zod",
 				"vue",
-				"air-datepicker",
 			],
 			format: ["esm", "cjs"],
 			outDir: "./dist",
 			clean: true, // Clean dist folder
 			splitting: true,
 			sourcemap: true, // Optional: for debugging
-			minify: false,
+			minify: true,
 			treeshake: "recommended",
 			dts: true, // Generate .d.ts type files
 			// target: "es2017", // better to configure it in tsconfig

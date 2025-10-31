@@ -351,6 +351,19 @@ export namespace Field {
 }
 
 export namespace Extras {
+	export namespace Checkbox {
+		export type In<Y = any, N = any> = {
+			yes?: Y;
+			no?: N;
+		};
+
+		export type Out<S extends Field.Setup> = {
+			checked: boolean;
+			yes?: Exclude<S["checkbox"], undefined>["yes"];
+			no?: Exclude<S["checkbox"], undefined>["no"];
+		};
+	}
+
 	export namespace File {
 		export type Out<S extends Field.Setup> = {
 			count: {
@@ -415,19 +428,6 @@ export namespace Extras {
 				__valueKey?: string;
 				__labelKey?: string;
 			})[];
-		};
-	}
-
-	export namespace Checkbox {
-		export type In<Y = any, N = any> = {
-			yes?: Y;
-			no?: N;
-		};
-
-		export type Out<S extends Field.Setup> = {
-			checked: boolean;
-			yes?: Exclude<S["checkbox"], undefined>["yes"];
-			no?: Exclude<S["checkbox"], undefined>["no"];
 		};
 	}
 

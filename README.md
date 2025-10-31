@@ -15,6 +15,7 @@ it feels absolutly bizzare how html forms have become framework dedicated soluti
 <img width="150px" height="50px" src="https://img.shields.io/badge/features-yellow?style=for-the-badge" />
 <br />
 
+- Clear separation of concern between data logic and markup/style
 - Independant and straight forward form logic
 - support for framework specific hooks through [qState]
 - modify dom/vdom element right from any input
@@ -24,6 +25,7 @@ it feels absolutly bizzare how html forms have become framework dedicated soluti
 - listen to form mount and change events and modify data accordingly
 - separate logic (js) from markup and style (html and css)
 - easily create reusable components through field extras
+- zero-dependencies, only [qState] for state management
 - ...and much more!
 
 <!-- disclaimer -->
@@ -31,8 +33,7 @@ it feels absolutly bizzare how html forms have become framework dedicated soluti
 <img width="150px" height="50px" src="https://img.shields.io/badge/disclaimer-red?style=for-the-badge" />
 <br />
 
-i don't have time rn to finish this but below are some helpful examples, this is still work in progress even though i'm testing it in production and it's working like a charm.
-i appreciate any feedback, issues and/or PRs
+i need testers please, i also need help with svelte and vue frameworks as well, any help is much appreciated before the code source is available to the public somewhere in the next 2 months/early 2026
 
 <!-- installation -->
 <br />
@@ -330,8 +331,12 @@ fired once the field is mounted, you can use it fetch remote data or do any calc
 fired everytime data changes, used in case of complex data values
 need to be extracted from field element and the basic html.element.value attribute isn't accurate enough. some processors run when events like onfocus and onblur fire, this gives the chance to modify field state like required, disabled..etc, according to specific needs or logic.
 
+> be carefull here, if you set any values within this function it will rerun again so make sure you have solid if statments/conditions to avoid infinite loops/maximum stacks.
+
 `onRender` </br>
 fired when html element is requesting render attributes, you can use this to attach any html attributes during runtime. 
+
+> I chose to remove store mutations from here and keep the data handling within the previous onChange method/s, if you have solid reason why you need it here please open an issue on github.
 
 ### Conditions
 `hidden` </br>
@@ -381,20 +386,7 @@ user defined data/properties passed around
 signals weather this field is requesting plural of whatever the value is or singular, defaults to false.
 
 ### Special Type Options
-these are options specifically tailored to certain types since they require way more understanding and cannot just be categorized like any other input field/type.
-
-`tel` </br>
-TBD
-
-`select` </br>
-TBD
-
-`checkbox` </br>
-TBD
-
-`date` </br>
-TBD
-
+these are options specifically tailored to certain types since they require way more understanding and cannot just be categorized like any other input field/type. you can find them in the next chapter `Extras`
 
 <!-- form options -->
 <br />
@@ -442,7 +434,7 @@ add hooks to be used by the store, relies on [qState].
 fires when all fields in the form have mounted
 
 `onEffect` </br>
-fires when any field or form data changes
+fires when any field data changes, be carefull here, if you set any values within this function it will rerun again so make sure you have solid if statments/conditions to avoid infinite loops/maximum stacks.
 
 
 ### Fields
@@ -479,13 +471,506 @@ if the desired data extracted from the form is in the shape of a nested object, 
 `flatLabelJoinChar` </br>
 when no label is provided, the key is used as fallback but sometimes the key is meant to be unflattened later on when fetching the form data, so this offers a way to replace the key flatObjectKeysChar with any character. defaults to ' ' or empty space
 
+<!-- extras -->
+<br />
+<img height="50px" src="https://img.shields.io/badge/extras-red?style=for-the-badge" />
+<br />
+<br />
+
+some field/data types require more than the regular processing and that's due to their nature and expected user experience. Here we're going to explain eachone separately.
+
+`extras` is the name given to the extras data/behavior generated based on such field types, `extras` offer all the necessary properties i think is standard when using those field types.
+
+the entire behavior is set once the field's data type is set, and the those field types involved here are:
+
+- Checkbox
+- File
+- Select and all it's subtypes like `select.radio`
+- Tel
+- Date
+
+all the extras can be set through the previous chapter's `field setup` as regular field settings/options under the respective type's name, so for example, if you want to set checkbox's `yes` option you have to set `field.checkbox.yes`.
+
+Finally, these extras will be found in any store object property, like `field.store.get().extras` or during field setup/settings `onChange.$next.extras` and `validate.extras`. This is could be very helpful while building components and what not.
+
+> CODE | where you can use extras
+```ts
+import { createForm } from "@qundus/qform";
+
+export default createForm(
+  {
+    agreed: {
+			type: 'checkbox',
+			validate: ({value, extras}) => {
+				// validate value based on extras
+			},
+			onChange: ({ $next }) => {
+				const extras = $next.extras;
+				// do something with value based on extras
+			}
+		}
+  }
+);
+
+// later when you want to use form's data
+import form from "../path/to/form";
+const extras = field.store.get().extras;
+
+// and ofcourse, element is set
+const field = form.fields.agreed;
+<input {...field.dom()} />
+```
+
+
+## Checkbox
+
+allows the user to change the standard `on` and `off` values retrieved by html standard input field when type is set to `checkbox` to whatever the user wants.
+
+for example, if you wish to use `boolean` data type or just want the property value to be something when set to `checked` you can use the checkbox extras setup to do so.
+
+> API
+
+`yes` </br>
+used to set the value of the field when checked, can be set to anything including objects, defaults to 'true'
+
+`no` </br>
+used to set the value of the field when unchecked, can be set to anything including objects, defaults to 'false'
+
+`checked` | readonly </br>
+use this to know the current state of the filed weather checked or not.
+
+> EXAMPLE
+
+```ts
+import { createForm } from "@qundus/qform";
+
+export default createForm(
+  {
+    agreed: {
+			type: 'checkbox',
+			mandatory: false // here you can set weather this field is mandatory or not
+			preprocessValue: true // use this to cancel value preprocessing
+			checkbox: {
+				yes: true, // checked
+				no: "don't agree" // unchecked
+			}
+		}
+  }
+);
+
+// later when you want to use form's data
+import form from "../path/to/form";
+
+// value
+const data = form.values.get();
+console.log(data.agreed); // checked = true | not checked = "don't agree"
+```
+
+default behavior here is `boolean` data type, if `preprocessValue` is set to false then whatever data handled by the raw html input field/element will be set.
+
+## File
+
+currently there's no special settings for this field type, it only offers extra data to deal with file input types.
+
+> API
+
+`count` | readonly </br>
+offers file count when file/s uploaded, internally it loads the files buffers through a function and sets upload, failed and successful counts.
+
+`fallback` | readonly, nullable </br>
+offers a fallback placeholders for the field/element, you can set value through `field.setup` option to a string and that would be processed here since value can only be a file/s.
+
+`files` | readonly, nullable </br>
+offers all info regarding the uploaded files such as: buffers, progress, stage...etc. this would be very handy in building components.
+
+It's worth noting that files array is updated asynchronously so you might notice multiple state updates when using this field type.
+
+> EXAMPLE
+
+you can look into how the file component is build in the next chapter `components`.
+
+```tsx
+import { createForm } from "@qundus/qform";
+export default createForm(
+  {
+    picture: {
+			type: 'file',
+			value: '/placeholders/avatar.svg' // you can set an initial placeholder here, any string values will be trasnformed to extras.fallback
+			multiple: true // optinoal, affects final value
+		}
+  }
+);
+```
+
+## Select
+
+select fields have always been a little bit annoying to deal with when it comes to data handling, options array, what type of data to store, what key should we store as the value and so on. Here i've tried to simplify things as much as possible while keeping it flexible and scalable, essentially, you can set the options array to whatever you like and the final options array will always be adjusted to an array of objects, for example, let's say options array is set to `[11, true, 'yeah']` then during runtime it will get normalized to an array of object with label and value -> `{label: "11", value: 11}`.
+There's so much happening here to simplify the experience and i think it's better explained with the example below.
+
+> API
+
+`options` </br>
+you can set the options array here and/or update it during `onMount` or `onChange` through the update addon/api, also you can set it to a certain type like `null as unknown as {code: string}[]` and that type would follow along as you use it.
+
+`valueKey` </br>
+the value key used to determine the key to take value from within object, defaults to 'value'
+
+`labelKey` </br>
+the value key used to determine the key to take value from within object, defaults to 'label'
+
+`throwOnKeyNotFound` </br>
+safety option to throw errors if value or label keys are not found in object, default to false.
+
+`dynamic` </br>
+used when options are set dynamically, for example you don't want to set the options array from the start but rather are using a select element with options and you wish those options whatever they maybe during runtime to be recorded as options internally, in other words, the options array are filled dynamically upon user selection in runtime. defaults to false
+
+`selected` | readonly </br>
+offers currently selected index.
+
+`prev` | readonly </br>
+offers previously selected options indecies.
+
+`current` | readonly </br>
+offers currently selected options indecies.
+
+> RENDER 
+
+this field type has it's own special render method of applying to dom.
+
+```tsx
+import form from "./path/to/form";
+const field = form.fields.<your-field-name> // of type 'select'
+// for triggers you can use
+<div {...field.render.trigger()}>select</div>
+// for options you can use
+<option {...field.render.option(<selected-option>)}>option</option>
+```
+
+> EXAMPLE
+```tsx
+import { createForm } from "@qundus/qform";
+export default createForm(
+  {
+    cities: {
+			type: 'select',
+			multiple: true, // optinoal, affects final value
+			select: {
+				options: ['sudan', 'saudi', {label: 'ir', name: 'iraq', __valueKey: 'name'}],// notice the per object valueKey renaming
+				// valueKey: 'value', // global valueKey change
+				// labelKey: 'value', // global valueKey change
+			}
+		}
+  }
+);
+
+// somewhere in your code, let's assume we're using solidjs
+import form from "./path/to/form";
+
+export function SelectCities() {
+	const field = form.fields.cities;
+	const state = field.store.hooks.solid();
+
+	return (
+		// 
+		<div>
+			{/* value, assuming not multiples */}
+			<p {...field.render.trigger()}>{state.value?.[state.value.__labelKey ?? state.extras.labelKey]}</p>
+			{state.extras.options?.map((option) => {
+				return (
+					<option
+					class={option.selected? "text-blue" : "text-gray"}
+					{...field.render.solid.option(option)}
+					>{option[option.__labelKey ?? state.extras.labelKey]}</option>
+				)
+			}}
+		</div>
+	)
+}
+```
+
+this does not check for when the field is set to have `multiple` in which case it will use `extras.current` array to loop over options and display the chosen value, for a broader example please check `components` chapter.
+
+## Tel
+documentation coming soon, sorry i'm too busy
+
+## Date
+documentation coming soon, sorry i'm too busy
+
+<!-- components -->
+<br />
+<img height="50px" src="https://img.shields.io/badge/components-black?style=for-the-badge" />
+<br />
+<br />
+
+in this chapter i'm going to demonstrate how components are built with qform, this is a huge topic and while i'd really like to just dump everything i have here and explain it, i'm afraid this doc will get massively bigger, so until i build a website for this i'm going to stick to very few examples
+
+## File
+
+let's start with a file uploader and say we're using preact framework here.
+
+```tsx
+import { useStore } from '@nanostores/preact';
+import { useEffect, useMemo, useRef } from 'preact/hooks';
+import type * as _QFORM from '@qundus/qform';
+
+interface Props<F extends _QFORM.Field.Setup<'file'>> extends ElementAttributesNoChildren<'input'> {
+  field: _QFORM.Field.Factory<F, any>;
+  description?: string;
+  buttonLabel?: string;
+}
+export default function FileUpload<F extends _QFORM.Field.Setup<'file'>>(props: Props<F>) {
+  const { field, description, buttonLabel, ...other } = props;
+  const state = useStore(field.store);
+  const ref = useRef<HTMLInputElement>(null);
+
+  function onInputClick(e: Event) {
+    //
+    e.preventDefault();
+    const clickEvent = new MouseEvent('click', {
+      view: window,
+      bubbles: true,
+      cancelable: true,
+    });
+    ref.current?.dispatchEvent(clickEvent);
+  }
+
+  return (
+    <div class="flex flex-col w-full group-left gap5 debug">
+      {/* input */}
+      <input
+        {...other}
+        {...field.render.preact()}
+        hidden
+        ref={(_ref) => {
+          ref.current = _ref;
+        }}
+      />
+      {/* preview */}
+      <div
+        class="flex flex-col items-center justify-center min-w-64px min-h-64px w-64px h-64px max-w-64px max-h-64px cursor-pointer rounded-avatar"
+        onClick={onInputClick}
+      >
+        {state.extras.files || state.extras.fallback ? (
+          <img
+            src={state.extras.files?.[0]?.url ?? state.extras.fallback?.[0]?.url}
+            alt="avatar-placeholder"
+            class="object-cover w-full h-full rounded-avatar"
+          />
+        ) : (
+          <i class="icon-design:avatar w-full h-full" />
+        )}
+      </div>
+      {/* label/discription/button */}
+      <div class="flex flex-row flex-[1] items-start justify-between w-full h-full">
+        <p class="flex flex-col items-center justify-center gap1 py1">
+          {/* label */}
+          <span class="text-sm font-medium capitalize">{state.element.label}</span>
+          {state?.element.required && <span class="text-sm color-text-required ">*</span>}
+        </p>
+        <span class="flex flex-row w-full h-full style-text-secondary mt1">
+          {description ?? 'upload your file please'}
+        </span>
+        <div class="flex flex-row items-center justify-start gap2">
+          <button
+            class="min-w-71px min-h-32px h-32px max-h-32px text-sm font-medium style-btn-outline capitalize mt3"
+            onClick={onInputClick}
+          >
+            {buttonLabel ?? 'upload'}
+          </button>
+          {state.value != null && (
+            <button
+              class="min-w-71px min-h-32px h-32px max-h-32px text-sm font-medium style-btn-danger capitalize mt3"
+              onClick={(event) => {
+                event.preventDefault();
+                // event.stopPropagation();
+                // event.stopImmediatePropagation();
+                field.reset.value({ clear: true });
+              }}
+            >
+              {buttonLabel ?? 'Remove'}
+            </button>
+          )}
+        </div>
+      </div>
+      {state?.element.focused && state?.errors && (
+        <p class="flex flex-col items-center justify-center gap2 color-icon-fill-ds">
+          <i class="icon-local:alert?size=sm&stroke=sm"></i>
+          <span class="text-sm capitalize">{state?.errors?.[0]}</span>
+        </p>
+      )}
+    </div>
+  );
+}
+```
+
+this example uses `qform`'s types/namespaces to set it's interface, the type where it calls the setup `_QFORM.Field.Setup<'file'>>` is where the type magic happens, if you set the field type to anything other than `file` then the whole field object will just follow, you can ofcourse follow a whole different approach here and say you just want a regular component that has all the attributes to function like: onclick, id, name...etc, and that would be awesome for a more loosely-coupled integration with `qform` and wider inclusion of libraries but then you lose all the benefits `qform` offers such as extras, so it's up to you how you build your components :).
+
+## Select
+
+here's another example that builds a component for select element
+
+```tsx
+import type * as _QFORM from '@qundus/qform';
+import { useStore } from '@nanostores/preact';
+import { useEffect, useMemo, useState } from 'preact/hooks';
+import { FIELD } from '@qundus/qform/const';
+
+interface Props<F extends _QFORM.Field.Setup<'select'>>
+  extends ElementAttributesNoChildren<'select', 'value'> {
+  field: _QFORM.Field.Factory<F, _QFORM.Form.Options>;
+  noLabel?: boolean;
+}
+export function Select<F extends _QFORM.Field.Setup<'select'>>(props: Props<F>) {
+  const { field, noLabel = false, value, ...other } = props;
+  const state = useStore(field?.store);
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    // console.log('wow :: ', state.value);
+    if (state.element.entered) {
+      // console.log('entered ', state.element);
+      showList();
+    }
+    if (state.event.DOM === FIELD.DOM.CLICK) {
+      setShow((prev) => !prev);
+    }
+    if (state.event.DOM === FIELD.DOM.BLUR) {
+      hideList();
+    }
+  }, [state]);
+  function showList() {
+    setShow(true);
+  }
+  function hideList() {
+    setShow(false);
+  }
+  return (
+    //
+    <label
+      class={
+        (state?.element.hidden ? ' hidden ' : ' wrap-col ') +
+        (state?.event.CYCLE === FIELD.CYCLE.SUBMIT || state.element.disabled
+          ? ' opacity-50 '
+          : ' ') +
+        ' w-full group-left gap2 '
+      }
+    >
+      {!noLabel && (
+        <p class="wrap-row group-center gap1 py1">
+          {/* label */}
+          <span class="text-sm font-medium capitalize">{state?.element.label}</span>
+          {state?.element.required && <span class="text-sm color-text-required ">*</span>}
+        </p>
+      )}
+
+      <div
+        class={
+          'relative wrap-row w-full group-between style-input style-input-height ' +
+          (state.condition.error
+            ? 'style-input-error'
+            : state.element.focused
+              ? 'style-input-focus'
+              : ' ')
+        }
+        {...field.render.preact.trigger()}
+      >
+        {state.value == null ? (
+          <p>Select an option</p>
+        ) : !state.element.multiple ? (
+          <p>{state.value?.[state.value.__labelKey ?? state.extras.labelKey]}</p>
+        ) : (
+          <div className="wrap-row group-left gap2">
+            {state.extras.current.map((index) => {
+              const option = state.extras.options[index];
+              return (
+                //
+                <p
+                  key={option.__key}
+                  className={
+                    'wrap-row group-center w-fit h-full bg-bg-accent-gray-bolder text-sm text-text-accent-gray rounded-md gap2 px2 py1'
+                  }
+                >
+                  <span>{option[option.__labelKey ?? state.extras.labelKey]}</span>
+                  <i
+                    className="icon-local:close text-icon-outline-secondary z-50 cursor-pointer"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      field.remove.option(option);
+                    }}
+                  ></i>
+                </p>
+              );
+            })}
+          </div>
+        )}
+
+        <i
+          class={
+            'icon-local:chevron-down color-icon-outline-secondary ' + (show ? 'rotate-180' : '')
+          }
+        ></i>
+      </div>
+      <div class="relative inline-block w-full h-inherit gap2">
+        <div
+          style={{ minHeight: '50px', maxHeight: '150px' }}
+          class={
+            (show ? 'flex flex-col' : 'hidden') +
+            ' absolute z-1000 bg-bg-select w-full p0 style-input mt2 overflow-x-hidden overflow-y-auto'
+          }
+        >
+          {state.extras.options && state.extras.options.length > 0
+            ? state.extras.options?.map((option) => {
+                const selected = option.__selected;
+                return (
+                  <div
+                    key={option.__key}
+                    class={
+                      'wrap-row w-full style-input-height items-center gap2 capitalize py2 ltr:(pr2 pl3) rtl:(pr3 pl2) cursor-pointer hover:(bg-bg-select-item-hover) ' +
+                      (selected ? ' bg-bg-select-item-hover ' : '')
+                    }
+                    {...field.render.preact.option(option)}
+                  >
+                    {/* checkbox for multiple */}
+                    {state.element.multiple && (
+                      <div
+                        class={
+                          (other.class ?? '') +
+                          ' wrap-row w-10px h-10px min-w-10px min-h-10px overflow-hidden group-center style-checkbox  ' +
+                          (selected ? 'style-checkbox-checked' : '')
+                        }
+                      >
+                        {selected && (
+                          <i class="min-w-16px min-h-16px icon-local:check-3 color-icon-outline-brand" />
+                        )}
+                      </div>
+                    )}
+                    <span className="text-sm leading-6 w-full">
+                      {option[option.__labelKey ?? state.extras.labelKey]}
+                    </span>
+                    {/* check mark for non-multiple */}
+                    {!state.element.multiple && selected && (
+                      <i class="min-w-16px min-h-16px icon-local:check-3 text-icon-fill-discovery mx2"></i>
+                    )}
+                  </div>
+                );
+              })
+            : 'no options offered'}
+        </div>
+      </div>
+    </label>
+  );
+}
+```
+
+> for now, i'm only going to demonstrate file component since i don't have time for more examples or guidelines but i think this is more than enough to pass the idea on how components are built, contact me or open an issue if you think more examples are necessary, thanx :)
+
 <!-- addons -->
 <br />
 <img height="50px" src="https://img.shields.io/badge/addons-yellow?style=for-the-badge" />
 <br />
 <br />
 
-addons are form and field helpers, for now they're forced (sorry) but in the future you'll be able to pick and choose which ones you want to use.
+addons are form and field helpers, for now they're forced (sorry) but in the future you'll be able to pick and choose which ones you want to add to form/field object.
 
 <!-- addons: submit -->
 <br />
@@ -552,6 +1037,8 @@ export function Page() {
 	)
 }
 ```
+
+> not all addons are listed here, i'll try to finish them soon.
 
 <!-- converters -->
 <br />
@@ -634,15 +1121,21 @@ and then use it how you would use the login from before.
 <br />
 <br />
 
-- convert field value to accept primitives and also a function processor, allowing to shape value however user likes
-- reduce number of states used per form
-- optimize apis for processors and wherever possible
-- adopt plugins/addons bahavior to use form actions, form button..etc and
-- reduce main form object size through plugins/addons mentioned above
-- document how components can be written with `extras`
-- document examples and use cases for special input types like `select`
-- offer render framework apis as per need basis.
-- document validators like vFile
+- [x] convert field value to accept primitives and also a function processor, allowing to shape value however user likes
+- [-] reduce number of states used per form
+	- partially done, currently one store per field, and one store per form
+	- here store approach weather to realy entirely on one store (form) or split into mini stores (per fields) must be an option, to give user full controll over it.
+- [-] optimize apis for processors and wherever possible
+- [ ] adopt plugins/addons bahavior to use form actions, form button..etc and
+- [ ] reduce main form object size through plugins/addons mentioned above
+- [-] document how components can be written with `extras`
+	- partially done with extras chapter, missing 
+- [-] document examples and use cases for special input types like `select`
+	- partially done with components and extras chapters
+- [ ] offer render framework apis as per need basis.
+- [ ] document validators like vFile
+- [ ] reduce bundle size
+- [ ] make a website for better documentation and recognisabity.
 
 
 <!-- refs & thanks -->
