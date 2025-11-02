@@ -624,6 +624,9 @@ safety option to throw errors if value or label keys are not found in object, de
 `dynamic` </br>
 used when options are set dynamically, for example you don't want to set the options array from the start but rather are using a select element with options and you wish those options whatever they maybe during runtime to be recorded as options internally, in other words, the options array are filled dynamically upon user selection in runtime. defaults to false
 
+`removeOnReselect` </br>
+what should happen if an option is selected and it's clicked/chosen again?. by default, the option will get deselected, you can prevent that here by setting this option to false which will disallow option deselection. defaults to true
+
 `selected` | readonly </br>
 offers currently selected index.
 

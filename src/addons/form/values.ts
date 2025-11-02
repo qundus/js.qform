@@ -8,8 +8,11 @@ export function formValuesAddon<F extends Form.Fields, O extends Form.Options<F>
 ) {
 	const { fields, store } = props;
 	return {
-		get<KC extends FieldsKeysCaseMap<F>>(special?: KC) {
-			return _getValues({ fields, store, defaultCase: "same", special });
+		get<RV extends FieldsReturnedValues<F>, KC extends FieldsKeysCaseMap<F>>(
+			rv?: RV,
+			special?: KC,
+		) {
+			return _getValues({ fields, store, defaultCase: "same", special, rv });
 		},
 		getLowercase<KC extends FieldsKeysCaseMap<F>>(special?: KC) {
 			return _getValues({ fields, store, defaultCase: "lowercase", special });
@@ -47,12 +50,14 @@ function _getValues<
 	L extends Form.Options<F>,
 	S extends Form.Store<F, L>,
 	D extends FieldKeyCase,
-	O extends FieldsKeysCaseMap<F> = FieldsKeysCaseMap<F>,
->(props: { fields: F; store: S; defaultCase: D; special?: O }) {
+	KC extends FieldsKeysCaseMap<F> = FieldsKeysCaseMap<F>,
+	RV extends FieldsReturnedValues<F> = FieldsReturnedValues<F>,
+>(props: { fields: F; store: S; defaultCase: D; special?: KC; rv?: RV }) {
 	const result = {} as any;
 	const values = props.store.get().values;
 	for (const key in props.fields) {
 		const field = props.fields[key];
+		const store = field.store.get();
 		const key_case = _getValueCase(key, props.special?.[key] ?? props.defaultCase);
 		let value = values[key];
 		// postprocess values
@@ -63,18 +68,40 @@ function _getValues<
 		// }
 		if (value != null) {
 			if (field.setup.type.startsWith("select")) {
+				const extras = store.extras as Extras.Select.Out<Field.Setup<"select">>;
+				const valueType = props.rv?.[key as any];
 				const isArray = Array.isArray(value);
 				value = (isArray ? value : [value]) as Extras.Select.Out<Field.Setup<"select">>["options"];
-				value.forEach((item, idx, arr) => {
-					const next = {};
-					for (const key in item) {
-						if (key.startsWith("__")) {
-							continue;
+				for (let i = 0; i < value.length; i++) {
+					const item = value[i];
+					if (valueType == null) {
+						const next = {};
+						for (const key in item) {
+							if (key.startsWith("__")) {
+								continue;
+							}
+							next[key] = item[key];
 						}
-						next[key] = item[key];
+						value[i] = next;
+					} else if (valueType === "index") {
+						let idx = extras.options.findIndex(
+							(option) =>
+								option[option.__valueKey ?? extras.valueKey] ===
+								item[item.__valueKey ?? extras.valueKey],
+						);
+						if (idx < 0) {
+							console.warn(
+								"qform: somehow item ",
+								item,
+								" is not found in the extras.options list, falling back to index 0",
+							);
+							idx = 0;
+						}
+						value[i] = idx;
+					} else {
+						value[i] = item[item.__valueKey ?? extras.valueKey];
 					}
-					arr[idx] = next;
-				});
+				}
 				value = isArray ? value : value[0];
 			} else if (field.setup.type === "tel") {
 				const extras = field.store.value?.extras as Extras.Tel.Out<Field.Setup<"tel">>;
@@ -90,8 +117,19 @@ function _getValues<
 		// attach final value
 		result[key_case] = value;
 	}
-	return result as FieldsValues<F, D, O>;
+	return result as FieldsValues<F, D, KC>;
 }
+
+//
+type FieldsKeysCaseMap<T extends Form.Fields> = {
+	[K in keyof T]?: FieldKeyCase;
+};
+
+type FieldsReturnedValues<T extends Form.Fields> = {
+	[K in keyof T as T[K]["setup"]["type"] extends "select" | "select.radio" ? K : never]?:
+		| "index"
+		| "value";
+};
 
 // basics
 export type CamelToSnakeCase<
@@ -114,9 +152,7 @@ export type CamelToSnakeCase<
 			: CamelToSnakeCase<U, Sep, UppercaseIsNewWord, false, false>}`
 	: S;
 // type ControlGroup = Fields; //{ [K: string]: ICollection<any, any> };
-type FieldsKeysCaseMap<T extends Form.Fields> = {
-	[K in keyof T]?: FieldKeyCase;
-};
+
 type FieldKeyCase =
 	| "same"
 	| "snake"

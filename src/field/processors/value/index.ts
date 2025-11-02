@@ -29,7 +29,7 @@ export function processValue<S extends Field.Setup, O extends Form.Options>(
 	} else if (setup.type === "date") {
 		value = processDateValue(props as any, processor as any);
 	} else {
-		value = !manualUpdate ? el?.value : value;
+		value = manualUpdate === true ? processor.value : el?.value;
 	}
 
 	// check empty strings

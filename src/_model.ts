@@ -406,6 +406,13 @@ export namespace Extras {
 			 * list or creating a whole selection options dynamically.
 			 */
 			dynamic?: boolean;
+			/**
+			 * what should happen if an option is selected and it's clicked/chosen again?.
+			 * by default, the option will get deselected, you can prevent that here by setting
+			 * this option to false which will disallow option deselection.
+			 * @default true
+			 */
+			removeOnReselect?: boolean;
 		};
 
 		export type Out<S extends Field.Setup> = {
@@ -416,6 +423,7 @@ export namespace Extras {
 			throwOnKeyNotFound: boolean;
 			prev: number[];
 			current: number[];
+			removeOnReselect: boolean;
 			options: ((S["select"] extends In
 				? S["select"]["options"] extends (infer option)[]
 					? option extends string | number

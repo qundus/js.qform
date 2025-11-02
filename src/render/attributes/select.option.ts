@@ -46,37 +46,6 @@ export function renderAttributesSelectOption<
 	const attrs = {
 		name, // affects target ability to detect onblur, edit with care
 		id: name + "-id",
-		// [attrType !== "vdom" ? "autocomplete" : "autoComplete"]: "off",
-		// for radio
-		// [attrType !== "vdom" ? "onfocus" : "onFocus"]: (event: FocusEvent) => {
-		// 	event.preventDefault();
-		// 	event.stopImmediatePropagation();
-		// 	event.stopPropagation();
-		// 	//
-		// 	const next = { ...store.get() };
-		// 	next.element.focused = true;
-		// 	next.element.visited = true;
-		// 	next.__internal.manual = false;
-		// 	//
-		// 	next.event.DOM = DOM.FOCUS;
-		// 	next.event.MUTATE = MUTATE.IDLE;
-		// 	next.event.ev = event;
-		// 	store.set(next);
-		// },
-		// [attrType !== "vdom" ? "onblur" : "onBlur"]: (event: Event) => {
-		// 	event.preventDefault();
-		// 	event.stopImmediatePropagation();
-		// 	event.stopPropagation();
-		// 	const next = { ...store.get() };
-		// 	next.element.focused = false;
-		// 	next.element.visited = true;
-		// 	next.__internal.manual = false;
-		// 	//
-		// 	next.event.DOM = DOM.BLUR;
-		// 	next.event.MUTATE = MUTATE.IDLE;
-		// 	next.event.ev = event;
-		// 	store.set(next);
-		// },
 		// for all select options type
 		checked: option.__selected ?? false,
 		[attrType !== "vdom" ? "onclick" : "onClick"]: (event: PointerEvent) => {
@@ -120,10 +89,13 @@ export function renderAttributesSelectOption<
 			} else if (next.value == null) {
 				next.value = next.element.multiple ? [option] : option;
 			} else {
-				next.value =
-					next.value[next.value.__valueKey ?? valueKey] === option[optionValueKey ?? valueKey]
-						? undefined
-						: option;
+				const same_same =
+					next.value[next.value.__valueKey ?? valueKey] === option[optionValueKey ?? valueKey];
+				if (same_same && !next.extras.removeOnReselect) {
+					// no need for any further updates;
+					return;
+				}
+				next.value = same_same ? undefined : option;
 			}
 
 			// special handling for radio buttons
@@ -145,6 +117,7 @@ export function renderAttributesSelectOption<
 									return;
 								}
 								// Remove the listener after detecting outside click
+								// console.log("removing listener ");
 								document.removeEventListener("click", outsideClick);
 								const next = { ...store.get() };
 								next.element.focused = false;
@@ -169,7 +142,6 @@ export function renderAttributesSelectOption<
 			next.event.MUTATE = FIELD.MUTATE.VALUE;
 			next.event.ev = {
 				value: (event.target as any).value,
-				// checked: event.target.value,
 			};
 			store.set(next);
 		},
@@ -177,11 +149,9 @@ export function renderAttributesSelectOption<
 
 	// if radio
 	if (setup.type === "select.radio") {
-		// multiple: state?.element.multiple,
 		attrs.type = "radio";
 		attrs.required = state?.element.required;
 		attrs.disabled = state?.element.disabled;
-		// attrs.value =
 	}
 
 	// process trigger

@@ -28,6 +28,8 @@ export type FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> = {
 	) => G extends FIELD.CYCLE.IDLE ? void : () => void;
 	// extras indvidually
 	select: <E extends Extras.Select.In>(props: Partial<E> | ((prev: E) => Partial<E>)) => void;
+	selectByValue: (values: any | any[]) => void;
+	selectByIndex: (indecies: number | number[]) => void;
 	checkbox: <E extends Extras.Checkbox.In>(props: Partial<E> | ((prev: E) => Partial<E>)) => void;
 	tel: (
 		props: { country?: (typeof MISC.COUNTRIES)[number] | string; value?: string },
@@ -146,6 +148,71 @@ export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 			next.event.MUTATE = FIELD.MUTATE.EXTRAS;
 			next.event.DOM = FIELD.DOM.IDLE;
 			store.set(next);
+		},
+		selectByValue: (_values) => {
+			const next = { ...store.get() } as Field.StoreObject<Field.Setup<"select">>;
+			const values = Array.isArray(_values) ? _values : _values == null ? [] : [_values];
+			const options = next.extras.options;
+			if (values.length <= 0 || options == null || options.length <= 0) {
+				return;
+			}
+			const result = [] as any[];
+			for (const value of values) {
+				if (value == null) {
+					continue;
+				}
+				const valueKey = next.extras.valueKey;
+				const idx = options.findIndex((item) => item[item.__valueKey ?? valueKey] === value);
+				if (idx < 0) {
+					continue;
+				}
+				const option = options[idx];
+				result.push(option);
+			}
+
+			if (result.length <= 0) {
+				return;
+			}
+			//
+			next.value = next.element.multiple ? result : result[0];
+			next.__internal.manual = true;
+			next.event.MUTATE = FIELD.MUTATE.VALUE;
+			next.event.DOM = FIELD.DOM.IDLE;
+			store.set(next as any);
+		},
+		selectByIndex: (_indieces) => {
+			const next = { ...store.get() } as Field.StoreObject<Field.Setup<"select">>;
+			const indieces = Array.isArray(_indieces) ? _indieces : _indieces == null ? [] : [_indieces];
+			const options = next.extras.options;
+			if (indieces.length <= 0 || options == null || options.length <= 0) {
+				return;
+			}
+			const result = [] as any[];
+			for (const index of indieces) {
+				if (
+					index == null ||
+					typeof index !== "number" ||
+					index < 0 ||
+					index >= next.extras.options.length
+				) {
+					continue;
+				}
+				const option = options[index];
+				if (option == null) {
+					continue;
+				}
+				result.push(option);
+			}
+
+			if (result.length <= 0) {
+				return;
+			}
+			//
+			next.value = next.element.multiple ? result : result[0];
+			next.__internal.manual = true;
+			next.event.MUTATE = FIELD.MUTATE.VALUE;
+			next.event.DOM = FIELD.DOM.IDLE;
+			store.set(next as any);
 		},
 		checkbox: (value) => {
 			const next = { ...store.get() };

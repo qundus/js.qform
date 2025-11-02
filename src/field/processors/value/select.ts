@@ -14,12 +14,14 @@ export function processSelectValue<
 	const extras = ($next.extras ?? setup.select ?? {}) as Extras.Select.Out<S>;
 	const _value = !manualUpdate ? $next.value : processor.value;
 	const result = Array.isArray(_value) ? _value : _value == null ? [] : [_value];
-	//
+	// setup
 	extras.valueKey = extras.valueKey ?? "value";
 	extras.labelKey = extras.labelKey ?? "label";
+	extras.removeOnReselect = extras.removeOnReselect ?? true;
+
+	// logic
 	extras.prev = [];
 	extras.current = [];
-	//
 	if (extras.options?.length > 0) {
 		if (!Array.isArray(extras.options)) {
 			throw new Error("qform: only arrays are allowed as selections of fields!");
