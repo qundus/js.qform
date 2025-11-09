@@ -12,7 +12,7 @@ export const IGNORED_SETUP_KEYS = {
 	//
 	labelReplace: undefined,
 	props: undefined,
-	nested: undefined,
+	// nested: undefined,
 	//
 	select: undefined,
 	checkbox: undefined,
@@ -31,7 +31,7 @@ export const IGNORED_SETUP_KEYS = {
 	// make sure to update the keys above
 	| "labelReplace"
 	| "props"
-	| "nested"
+	// | "nested"
 	// extras
 	| "select"
 	| "checkbox"

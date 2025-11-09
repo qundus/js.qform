@@ -8,11 +8,17 @@ export function changeCycle<F extends Form.Fields, O extends Form.Options<F>>(
 	update: Addon.FormUpdate<F, O>,
 ) {
 	const { fields, store, options } = props;
+	const SSR = options.ssr;
+
+	//
 	const stores = [] as Field.Store<any, O>[];
 	for (const key in fields) {
 		const field = fields[key];
 		stores.push(field.store as any);
 	}
+
+	//
+	let onMountFinished = false;
 	effect(stores, (...stores) => {
 		const $next = { ...store.get() } as Form.StoreObject<F, O>;
 		const count = {
@@ -83,15 +89,15 @@ export function changeCycle<F extends Form.Fields, O extends Form.Options<F>>(
 		const eventprops = {
 			form: $next,
 			prev: store.get(),
-			isServerSide,
+			SSR,
 			fields,
 			getForm: () => store.get(),
 			update,
-		};
+		} as any;
 		if (eventprops.prev.status === FORM.STATUS.INIT) {
 			task(async () => {
 				await options?.onMount?.(eventprops, (stores, func) => {
-					if (isServerSide()) {
+					if (isServerSide() || func == null) {
 						return;
 					}
 					let init = true;
@@ -105,9 +111,12 @@ export function changeCycle<F extends Form.Fields, O extends Form.Options<F>>(
 						});
 					});
 				});
+				onMountFinished = true;
 			});
 		} else {
-			options?.onEffect?.(eventprops);
+			if (onMountFinished) {
+				options?.onEffect?.(eventprops);
+			}
 		}
 
 		// console.log("form batched :: ", $next);

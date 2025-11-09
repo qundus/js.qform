@@ -20,6 +20,7 @@ import type { IntegrationReact } from "./integrations/react";
 import type { IntegrationSolid } from "./integrations/solid";
 import type { IntegrationSvelte } from "./integrations/svelte";
 import type { SelectedList } from "./render/helpers/date/selected-list";
+import type { DateAttributeCells } from "./render/attributes/date.cell";
 
 // checkers
 export namespace Check {
@@ -81,7 +82,7 @@ export namespace Field {
 	export type OnMount<T extends Type, V> = (props: {
 		setup: Setup;
 		update: Addon.FieldUpdate<Setup, Form.Options>;
-		isServerSide: () => boolean;
+		SSR: boolean;
 	}) => void | (() => void) | Promise<void | (() => void)>;
 	export type OnChange<T extends Type, V> = (props: {
 		$next: StoreObject<Setup>;
@@ -89,7 +90,7 @@ export namespace Field {
 		setup: Setup;
 		form: Form.StoreObject<any, any> | undefined;
 		update: Addon.FieldUpdate<Setup, Form.Options>;
-		isServerSide: () => boolean;
+		SSR: boolean;
 		// prevForm: Form.StoreObject<Form.Fields>;
 	}) => void | Promise<void>;
 	export type OnRender<T extends Type> = (
@@ -174,6 +175,8 @@ export namespace Field {
 		 */
 		initCycle?: FIELD.CYCLE;
 
+		ssr?: boolean;
+
 		//## value effects
 		/**
 		 * Value Manual Change Mechanism (VMCM), happens when values are updated from api
@@ -213,7 +216,7 @@ export namespace Field {
 
 		//## passables
 		/** coming soon, a way to defing nested field fields */
-		nested?: any;
+		// nested?: any;
 		props?: Record<string, any>;
 		multiple?: boolean;
 
@@ -281,19 +284,12 @@ export namespace Field {
 		visited: boolean;
 		entered: boolean;
 		left: boolean;
+		// then list down all setup options with user defined types if any
 	} & {
-		[K in keyof Setup as K extends keyof typeof IGNORED_SETUP_KEYS | "select" | "checkbox"
-			? never
-			: K]: S[K] extends
-			| Check.IsUnknown<S[K]>
-			| Check.IsUndefined<S[K]>
-			| Check.IsNull<S[K]>
-			| Check.IsEmpty<S[K]>
-			? Setup[K]
-			: S[K];
+		[K in keyof Setup as K extends keyof typeof IGNORED_SETUP_KEYS ? never : K]: Setup[K];
 	};
 
-	// store
+	// stores
 	export type StoreObject<S extends Setup> = {
 		readonly __internal: {
 			key: string;
@@ -317,6 +313,11 @@ export namespace Field {
 		extras: Extras.Factory<S>;
 		errors?: string[];
 	};
+	export type StoreRenderObject<
+		S extends Setup,
+		O extends Form.Options,
+		D extends Render.Attributes.Type,
+	> = Render.Factory<S, O, D>;
 	export type StoreState<S extends Setup> = _QSTATE.Nano.Atom<StoreObject<S>>;
 	export type Store<S extends Setup, O extends Form.Options> = _QSTATE.Store.Factory<
 		StoreState<S>,
@@ -327,6 +328,16 @@ export namespace Field {
 			};
 		}
 	>;
+	export type StoreRender<
+		S extends Setup,
+		O extends Form.Options,
+		D extends Render.Attributes.Type,
+	> = _QSTATE.StoreDerived.Factory<
+		StoreRenderObject<S, O, D>,
+		{
+			hooks: O["storeHooks"];
+		}
+	>;
 
 	// factory
 	export type Factory<S extends Setup, O extends Form.Options> = {
@@ -335,14 +346,16 @@ export namespace Field {
 		readonly store: Store<S, O>;
 		// readonly store: Omit<Store<S, O>, "set" | "setKey">; //Store<S, O>;
 		// readonly render: ReturnType<typeof createElement<S, O>>;
-		readonly render: {
-			dom: IntegrationDom<S, O>;
-			ref: IntegrationRef<S, O>;
-			preact: IntegrationPreact<S, O>;
-			react: IntegrationReact<S, O>;
-			solid: IntegrationSolid<S, O>;
-			svelte: IntegrationSvelte<S, O>;
-		};
+		// readonly render: {
+		// 	dom: IntegrationDom<S, O>;
+		// 	ref: IntegrationRef<S, O>;
+		// 	preact: IntegrationPreact<S, O>;
+		// 	react: IntegrationReact<S, O>;
+		// 	solid: IntegrationSolid<S, O>;
+		// 	svelte: IntegrationSvelte<S, O>;
+		// };
+		readonly attrs: StoreRender<S, O, "dom">;
+		readonly attrsV: StoreRender<S, O, "vdom">;
 		// addons
 		readonly update: Addon.FieldUpdate<S, O>;
 		readonly remove: Addon.FieldRemove<S, O>;
@@ -795,7 +808,7 @@ export namespace Form {
 		storeHooks?: _QSTATE.Option.Hooks.In<any>;
 		onMount?: (
 			props: {
-				readonly isServerSide: () => boolean;
+				readonly SSR: boolean;
 				readonly form: StoreObject<F, Options<F>>;
 				readonly prev: StoreObject<F, Options<F>>;
 				readonly getForm: () => StoreObject<F, Options<F>>;
@@ -808,11 +821,14 @@ export namespace Form {
 			) => void,
 		) => void | Promise<void>;
 		onEffect?: (props: {
-			readonly isServerSide: () => boolean;
+			readonly SSR: boolean;
 			readonly form: StoreObject<F, Options<F>>;
 			readonly prev: StoreObject<F, Options<F>>;
 			readonly fields: F;
 		}) => void;
+
+		//
+		ssr?: boolean;
 
 		//## fields
 		/**
@@ -1151,6 +1167,31 @@ export namespace Render {
 		// factory
 		export type Factory<R> = R;
 	}
+
+	export type Factory<
+		S extends Field.Setup,
+		O extends Form.Options,
+		D extends Render.Attributes.Type,
+	> = S extends { type: "select" } | { type: "select.radio" }
+		? {
+				trigger: Render.Attributes.SelectTrigger<S, O, D>;
+				option: (option: any) => Render.Attributes.SelectOption<S, O, D>;
+			}
+		: S extends { type: "date" }
+			? {
+					input: Render.Attributes.DateInput<S, O, D>;
+					event: {
+						(event: CALENDAR.EVENTS): Render.Attributes.DateEvent<S, O, D>;
+						(eventName: keyof typeof CALENDAR.EVENTS): Render.Attributes.DateEvent<S, O, D>;
+					};
+					cell: {
+						(dateCell: Extras.Date.CellDate): Render.Attributes.DateCell<S, O, D>;
+						(timeCell: Extras.Date.CellTime): Render.Attributes.DateCell<S, O, D>;
+						(items: DateAttributeCells): Render.Attributes.DateCell<S, O, D>;
+					};
+					option: (option: Extras.Date.Option) => Render.Attributes.DateCell<S, O, D>;
+				}
+			: Render.Attributes.Input<S, O, D>;
 }
 
 export namespace Integration {

@@ -1,9 +1,8 @@
-import { onSet } from "@qundus/qstate";
+import { onNotify, onSet } from "@qundus/qstate";
 import type { Addon, Field, Form, FunctionProps } from "../../_model";
 import { isFieldIncomplete } from "../checks/is-field-incomplete";
 import { processValue } from "../processors/value";
 import { FIELD } from "../../const";
-import { isServerSide } from "@qundus/qstate/checks";
 
 const REFRESH = "__REFRESH";
 export function changeCycle<
@@ -28,6 +27,7 @@ export function changeCycle<
 	// });
 	onSet(store, async (payload) => {
 		const $next = payload.newValue;
+		// console.log("changed state :: ", key, " :: ", $next.event.CYCLE);
 		// TODO: check if this is causing the radio to not update on some jumping back
 		// and fouth between options too fast sometimes
 		if ($next.__internal[REFRESH]) {
@@ -45,6 +45,7 @@ export function changeCycle<
 			$next.element.preprocessValue) as boolean;
 		const VMCM = (MANUAL_UPDATE ? $next.element.vmcm : "normal") as Field.VMCM;
 		const NO_VALIDATION = $next.__internal.noValidation ?? false;
+		const SSR = setup.ssr;
 		const SHOULD_VALIDATE =
 			_MUTATE === FIELD.MUTATE.VALUE ||
 			_MUTATE === FIELD.MUTATE.ELEMENT ||
@@ -94,7 +95,7 @@ export function changeCycle<
 				prev: prev as any,
 				$next: $next as any,
 				update: update as any,
-				isServerSide,
+				SSR: SSR as any,
 			};
 			// global onchange field if any
 			if (options?.fieldsOnChange != null && typeof options?.fieldsOnChange === "function") {
@@ -208,9 +209,9 @@ export function changeCycle<
 
 		// for some reason the effect of the form doesn't run properly so i have to rerun it by aborting and sending
 		// another store update
-		payload.abort();
-		$next.__internal[REFRESH] = true;
-		store.set($next);
+		// payload.abort();
+		// $next.__internal[REFRESH] = true;
+		// store.set($next);
 		return $next;
 
 		// many to one store update could cause race condition, don't like it :(
@@ -224,4 +225,8 @@ export function changeCycle<
 		// nextForm.values[key] = $next.value;
 		// formStore.set(nextForm);
 	});
+
+	// onNotify(store, (value) => {
+	// 	console.log("notifying :: ", key,  " :: ", value.);
+	// });
 }

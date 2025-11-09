@@ -1,5 +1,5 @@
 import type { Form } from "../../_model";
-
+import { isServerSide } from "../../methods/is-server-side";
 const PROCESSED = "__PROCESSED";
 export function prepareOptions<O extends Form.Options>(options?: O) {
 	if (options?.[PROCESSED]) {
@@ -24,6 +24,13 @@ export function prepareOptions<O extends Form.Options>(options?: O) {
 	result.flatLabelJoinChar = result.flatLabelJoinChar ?? " ";
 	// result.abortOnChangeException = result.abortOnChangeException ?? false;
 	result.propsMergeStrategy = result.propsMergeStrategy ?? "none";
+	result.ssr = result.ssr ?? isServerSide();
+
+	// checks
+	if (typeof result.ssr !== "boolean") {
+		// better to let user know their doing a mistake than handling all edge cases
+		throw new Error("qform: ssr option must be a boolean!");
+	}
 
 	// mark processed
 	result[PROCESSED] = true;

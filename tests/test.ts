@@ -25,9 +25,9 @@ export const tel = createField("tel", {
 	tel: {},
 });
 
-// radio.render.preact.
+name.attrs;
 
-tel.store.get().element.focused;
+// tel.store.get().element.focused;
 
 // cities.store.get().element.select.options.map((item) => {
 // 	// item.

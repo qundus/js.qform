@@ -33,7 +33,8 @@ export function createField<
 	// addons
 	const fieldProps = { key, setup, options, store, init };
 	// render
-	const render = createRender(fieldProps);
+	let attrs: any = null;
+	let attrsV: any = null;
 
 	const remove = fieldAddonRemove(fieldProps);
 	const update = fieldAddonUpdate(fieldProps);
@@ -47,7 +48,18 @@ export function createField<
 		key,
 		setup: setup as any,
 		store: store as any,
-		render: render as any,
+		get attrs() {
+			if (attrs == null) {
+				attrs = createRender(fieldProps, "dom");
+			}
+			return attrs;
+		},
+		get attrsV() {
+			if (attrsV == null) {
+				attrsV = createRender(fieldProps, "vdom");
+			}
+			return attrsV;
+		},
 		//
 		update: update as any,
 		remove,

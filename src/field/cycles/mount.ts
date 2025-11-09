@@ -1,6 +1,5 @@
 import { onMount, task } from "@qundus/qstate";
 import type { Addon, Field, Form, FunctionProps } from "../../_model";
-import { isServerSide } from "@qundus/qstate/checks";
 
 export function mountCycle<S extends Field.Setup, O extends Form.Options>(
 	props: FunctionProps.Field<S, O>,
@@ -15,7 +14,7 @@ export function mountCycle<S extends Field.Setup, O extends Form.Options>(
 				ureturns = await setup?.onMount?.({
 					setup,
 					update: update as any,
-					isServerSide,
+					SSR: setup.ssr as boolean,
 				});
 				next_cycle?.();
 			});

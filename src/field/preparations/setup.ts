@@ -1,6 +1,7 @@
 import type { Field, Form } from "../../_model";
 import { FIELD } from "../../const";
 import { mergeFieldProps } from "../../methods/merge-field-props";
+import { isServerSide } from "../../methods/is-server-side";
 
 export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToSetup<F>>(
 	key: string,
@@ -40,6 +41,7 @@ export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToS
 	setup.onChangeException = setup.onChangeException ?? false;
 	setup.props = mergeFieldProps(setup.props, options?.props, options?.propsMergeStrategy) as any;
 	setup.initCycle = setup.initCycle ?? options?.fieldsInitCycle ?? FIELD.CYCLE.IDLE;
+	setup.ssr = setup.ssr ?? options?.ssr ?? isServerSide();
 
 	// SPECIAL ASSIGNMENTS
 	// label
@@ -69,6 +71,10 @@ export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToS
 	// vital checks
 	if (typeof setup.preprocessValue !== "boolean") {
 		throw new Error("form: preprocessValue of " + key + " must be boolean!");
+	}
+	if (typeof setup.ssr !== "boolean") {
+		// better to let user know their doing a mistake than handling all edge cases
+		throw new Error("qform: ssr option must be a boolean!, field :: " + String(key));
 	}
 
 	// finally, do props things

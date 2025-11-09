@@ -1,16 +1,26 @@
+import { isServerSide } from "@qundus/qstate/checks";
 import type { Field, Form, FunctionProps, Render } from "../../_model";
 import { FIELD } from "../../const";
 
+// export const isServerSide = (): boolean =>
+// 	typeof window === "undefined" || typeof document === "undefined";
 export function renderAttributesInput<
 	S extends Field.Setup,
 	O extends Form.Options,
 	A extends Render.Attributes.Type,
->(basic: FunctionProps.Field<S, O>, props: FunctionProps.RenderAttributes<S, O, A>) {
+>(basic: FunctionProps.Field<S, O>, props: FunctionProps.RenderAttributes<S, O, A>, test?: true) {
 	const { key, options, store, setup } = basic;
 	const { attrType, reactive } = props;
 	const state = reactive;
+	const ssr = setup.ssr;
+	const id = `${state?.element?.label ?? setup.label}-${ssr ? "server" : "client"}`;
+
+	// console.log("key field :: ", key, " :: ", ssr);
+
 	const attrs = {
-		id: state?.element?.label ?? setup.label,
+		key: `${key}-${ssr ? "server" : "client"}`,
+		id,
+		"data-hydrated": !ssr,
 		type: state?.element.hidden ? "hidden" : setup.type,
 		name: state.__internal.key,
 		multiple: state?.element.multiple,
@@ -103,6 +113,12 @@ export function renderAttributesInput<
 		next.event.MUTATE = FIELD.MUTATE.__RENDER;
 		store.set(next);
 	}
+
+	// else if (ssr && state.event.RENDER === FIELD.RENDER.READY) {
+	// 	// ssr
+	// 	console.log("rendered field :: ", key, " :: ", state.element.disabled);
+	// 	return {};
+	// }
 
 	// console.log("element input :: ", key, " :: ", result.value);
 	return attrs as Render.Attributes.Input<S, O, A>;

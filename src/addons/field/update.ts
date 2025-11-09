@@ -49,7 +49,7 @@ export type FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> = {
 export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 	props: FunctionProps.FieldAddon<S, O>,
 ): FieldAddonUpdate<S, O> {
-	const { store, options, setup } = props;
+	const { key, store, options, setup } = props;
 	let cycle_tracker = 0;
 	return {
 		value: (value, configs) => {

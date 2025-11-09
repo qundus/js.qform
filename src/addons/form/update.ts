@@ -80,6 +80,15 @@ export function formUpdateAddon<F extends Form.Fields, O extends Form.Options<F>
 				field.update.element(element);
 			}
 		},
+		elementsForAll: (element: Partial<Field.Element<any>>) => {
+			if (element == null) {
+				return;
+			}
+			for (const key in fields) {
+				const field = fields[key];
+				field.update.element(element);
+			}
+		},
 		props: <G extends O["props"]>(props: Partial<G>) => {
 			store.set({ ...store.get(), props });
 			if (options == null || options.propsMergeStrategy === "none") {
