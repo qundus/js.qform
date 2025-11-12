@@ -4,14 +4,14 @@ import { FIELD, type MISC } from "../../const";
 export type FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> = {
 	value: (
 		value: S["value"] | ((prev: undefined) => S["value"] | undefined) | undefined,
-		configs?: { preprocess?: boolean; noValidate?: boolean },
+		configs?: { preprocess?: boolean; validate?: boolean },
 	) => void;
 	condition: (
 		value: Partial<Field.Condition> | ((prev: Field.Condition) => Partial<Field.Condition>),
 	) => void;
 	element: (
 		value: Partial<Field.Element<S>> | ((prev: Field.Element<S>) => Partial<Field.Element<S>>),
-		configs?: { noValidate?: boolean },
+		configs?: { validate?: boolean },
 	) => void;
 	props: <G extends S["props"]>(
 		value: Partial<G> | ((prev: G) => Partial<G> | undefined) | undefined,
@@ -33,11 +33,11 @@ export type FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> = {
 	checkbox: <E extends Extras.Checkbox.In>(props: Partial<E> | ((prev: E) => Partial<E>)) => void;
 	tel: (
 		props: { country?: (typeof MISC.COUNTRIES)[number] | string; value?: string },
-		configs?: { preprocess?: boolean; noValidate?: boolean },
+		configs?: { preprocess?: boolean; validate?: boolean },
 	) => void;
 	date: (
 		props: Partial<Extras.Date.In>,
-		configs?: { preprocess?: boolean; noValidate?: boolean },
+		configs?: { preprocess?: boolean; validate?: boolean },
 	) => void;
 	// cycleUnsafe:  (cycle: CYCLE) => void;
 	// validation(): (func: Field.Validate) => (() => void) | null;
@@ -58,7 +58,7 @@ export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 			next.value = typeof value === "function" ? (value as any)(prev) : value;
 			next.__internal.manual = true;
 			next.__internal.preprocess = configs?.preprocess;
-			next.__internal.noValidation = configs?.noValidate;
+			next.__internal.validate = configs?.validate;
 			//
 			next.event.MUTATE = FIELD.MUTATE.VALUE;
 			next.event.DOM = FIELD.DOM.IDLE;
@@ -82,7 +82,7 @@ export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 			const vv = typeof value === "function" ? value(prev) : value;
 			next.element = { ...prev, ...vv };
 			next.__internal.manual = true;
-			next.__internal.noValidation = configs?.noValidate;
+			next.__internal.validate = configs?.validate ?? false;
 			// state.__internal.preprocess = configs?.preprocess;
 			next.event.MUTATE = FIELD.MUTATE.ELEMENT;
 			next.event.DOM = FIELD.DOM.IDLE;
@@ -247,7 +247,7 @@ export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 			next.value = `${country}${props.value ?? vv}`;
 			next.__internal.manual = true;
 			next.__internal.preprocess = configs?.preprocess;
-			next.__internal.noValidation = configs?.noValidate;
+			next.__internal.validate = configs?.validate;
 			// state.__internal.preprocess = configs?.preprocess;
 			next.event.MUTATE = FIELD.MUTATE.EXTRAS;
 
@@ -265,7 +265,7 @@ export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 			next.extras = { ...props, ...extras } as any;
 			next.__internal.manual = true;
 			next.__internal.preprocess = configs?.preprocess;
-			next.__internal.noValidation = configs?.noValidate;
+			next.__internal.validate = configs?.validate;
 			// state.__internal.preprocess = configs?.preprocess;
 			next.event.MUTATE = FIELD.MUTATE.EXTRAS;
 

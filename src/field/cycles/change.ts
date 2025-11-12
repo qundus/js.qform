@@ -44,7 +44,7 @@ export function changeCycle<
 		const PREPROCESS_VALUE = ($next.__internal.preprocess ??
 			$next.element.preprocessValue) as boolean;
 		const VMCM = (MANUAL_UPDATE ? $next.element.vmcm : "normal") as Field.VMCM;
-		const NO_VALIDATION = $next.__internal.noValidation ?? false;
+		const MANUAL_VALIDATE = $next.__internal.validate ?? true;
 		const SSR = setup.ssr;
 		const SHOULD_VALIDATE =
 			_MUTATE === FIELD.MUTATE.VALUE ||
@@ -62,7 +62,7 @@ export function changeCycle<
 		$next.__internal.key = key;
 		$next.__internal.preprocess = undefined;
 		$next.__internal.manual = false;
-		$next.__internal.noValidation = undefined;
+		$next.__internal.validate = undefined;
 
 		// pre user intervention
 		if (!prev.element.focused && $next.element.focused) {
@@ -124,7 +124,7 @@ export function changeCycle<
 		// validate on update of type value
 		if (
 			SHOULD_VALIDATE &&
-			!NO_VALIDATION &&
+			MANUAL_VALIDATE &&
 			$next.event.MUTATE !== FIELD.MUTATE.__ABORT_VALIDATION
 		) {
 			$next.errors = [];
