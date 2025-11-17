@@ -25,7 +25,16 @@ export const tel = createField("tel", {
 	tel: {},
 });
 
-name.attrs;
+// name.update.value("wow");
+
+// name.attrs.get()
+
+// export function Image() {
+// 	return (
+// 		//
+// 		<input {...tel.attrs.} />
+// 	)
+// }
 
 // tel.store.get().element.focused;
 
@@ -60,6 +69,22 @@ const form = createForm(
 				}
 				return null;
 			},
+			onRender({ attrs, attrType }) {
+				// interception
+				// init -> setup/checkup -> mount -> change -> {logic <-> render} ->
+				attrs[attrType === "dom" ? "oninput" : "onInput"] = () => {};
+				onRef((element) => {
+					element;
+				});
+				const ref = attrs.ref;
+				attrs.ref = (element) => {
+					ref(element);
+				};
+				attrs.allowed = ".png,.jpg";
+				attrs.disabled;
+			},
+			// react
+			// <input {...attrs} oninput={() => {}} />
 		},
 		phone: {
 			hidden: true,
@@ -154,10 +179,36 @@ const form = createForm(
 	},
 );
 
-const createWOw = createFormSetup({
-	fieldsRequired: false,
-	onEffect(props) {},
-});
+// const name = form.fields.name.attrsVH.useStore();
+// vanilla
+// form.store.listen((value) => {
+// 	// ??
+// 	// if (name != null) {
+//   //     // value.attrs.name.ref(name);
+//   //   }
+//   //   if (email != null) {
+//   //     const atom = loginForm.fields.password.render.ref(email);
+//   //   }
+// });
+
+// const attrs = form.fields.cities.attrsh.useStore()
+const attrs = form.attrs.hooks.useStore();
+
+// attrs({dom: true}).oninput
+// attrs.ref
+
+// modifying store
+// attrs.dom.oninput
+// attrs.vdom.onInput
+
+// attrs.vdom()
+// attrs.Input.onInput
+
+// <input {...attrs} />
+
+// <input {...form.fields.name.attrs.get()} />
+// <input {...form.fields.name.attrs.get()} />
+// <input disabled={attrs.disabled} />
 
 // const [res, err] = await form.submit.start();
 
@@ -192,7 +243,7 @@ form.fields.name.store.listen((value) => {
 	if (value.event.MUTATE === FIELD.MUTATE.VALUE) {
 		// do something when the field value has been mutated
 	}
-	if (value.event.RENDER === FIELD.RENDER.READY) {
+	if (value.event.ATTRIBUTE === FIELD.ATTRIBUTE.READY) {
 		// do something when the field render elements have been mounted
 	}
 });

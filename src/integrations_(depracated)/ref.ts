@@ -1,4 +1,4 @@
-import type { Extras, Field, Form, FunctionProps, Integration, Render } from "../_model";
+import type { Extras, Field, Form, FunctionProps, Integration, Attributes } from "../_model";
 //
 import { renderAttributesInput } from "../render/attributes/input";
 import { renderAttributesSelectTrigger } from "../render/attributes/select.trigger";

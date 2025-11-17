@@ -1,4 +1,4 @@
-import type { Extras, Field, Form, FunctionProps, Integration, Render } from "../_model";
+import type { Extras, Field, Form, FunctionProps, Integration, Attributes } from "../_model";
 import { renderAttributesInput } from "../render/attributes/input";
 import { renderAttributesSelectTrigger } from "../render/attributes/select.trigger";
 import { renderAttributesSelectOption } from "../render/attributes/select.option";
@@ -16,62 +16,62 @@ export type IntegrationDom<
 	O,
 	"DOM",
 	{
-		input: <D extends Render.Attributes.Type = "dom">(props?: {
+		input: <D extends Attributes.Objects.Type = "dom">(props?: {
 			attrType?: D;
-		}) => Render.Attributes.Input<S, O, D>;
+		}) => Attributes.Objects.Input<S, O, D>;
 		select: {
-			trigger: <D extends Render.Attributes.Type = "dom">(props?: {
+			trigger: <D extends Attributes.Objects.Type = "dom">(props?: {
 				attrType?: D;
-			}) => Render.Attributes.SelectTrigger<S, O, D>;
-			option: <D extends Render.Attributes.Type = "dom">(
+			}) => Attributes.Objects.SelectTrigger<S, O, D>;
+			option: <D extends Attributes.Objects.Type = "dom">(
 				option: any,
 				props?: { attrType?: D },
-			) => Render.Attributes.SelectOption<S, O, D>;
+			) => Attributes.Objects.SelectOption<S, O, D>;
 		};
 		date: {
-			input: <D extends Render.Attributes.Type = "dom">(props?: {
+			input: <D extends Attributes.Objects.Type = "dom">(props?: {
 				attrType?: D;
-			}) => Render.Attributes.DateInput<S, O, D>;
+			}) => Attributes.Objects.DateInput<S, O, D>;
 			event: {
-				<D extends Render.Attributes.Type = "dom">(
+				<D extends Attributes.Objects.Type = "dom">(
 					event: CALENDAR.EVENTS,
 					props?: {
 						attrType?: D;
 					},
-				): Render.Attributes.DateEvent<S, O, D>;
-				<D extends Render.Attributes.Type = "dom">(
+				): Attributes.Objects.DateEvent<S, O, D>;
+				<D extends Attributes.Objects.Type = "dom">(
 					eventName: keyof typeof CALENDAR.EVENTS,
 					props?: {
 						attrType?: D;
 					},
-				): Render.Attributes.DateEvent<S, O, D>;
+				): Attributes.Objects.DateEvent<S, O, D>;
 			};
 			cell: {
-				<D extends Render.Attributes.Type = "dom">(
+				<D extends Attributes.Objects.Type = "dom">(
 					dateCell: Extras.Date.CellDate,
 					props?: {
 						attrType?: D;
 					},
-				): Render.Attributes.DateCell<S, O, D>;
-				<D extends Render.Attributes.Type = "dom">(
+				): Attributes.Objects.DateCell<S, O, D>;
+				<D extends Attributes.Objects.Type = "dom">(
 					timeCell: Extras.Date.CellTime,
 					props?: {
 						attrType?: D;
 					},
-				): Render.Attributes.DateCell<S, O, D>;
-				<D extends Render.Attributes.Type = "dom">(
+				): Attributes.Objects.DateCell<S, O, D>;
+				<D extends Attributes.Objects.Type = "dom">(
 					items: DateAttributeCells,
 					props?: {
 						attrType?: D;
 					},
-				): Render.Attributes.DateCell<S, O, D>;
+				): Attributes.Objects.DateCell<S, O, D>;
 			};
-			option: <D extends Render.Attributes.Type = "dom">(
+			option: <D extends Attributes.Objects.Type = "dom">(
 				option: Extras.Date.Option,
 				props?: {
 					attrType?: D;
 				},
-			) => Render.Attributes.DateCell<S, O, D>;
+			) => Attributes.Objects.DateCell<S, O, D>;
 		};
 	}
 >;

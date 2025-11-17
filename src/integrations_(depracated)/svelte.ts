@@ -1,4 +1,4 @@
-import type { Extras, Field, Form, FunctionProps, Integration, Render } from "../_model";
+import type { Extras, Field, Form, FunctionProps, Integration, Attributes } from "../_model";
 import { renderAttributesInput } from "../render/attributes/input";
 //
 import { renderAttributesSelectTrigger } from "../render/attributes/select.trigger";
@@ -18,23 +18,23 @@ export type IntegrationSvelte<
 	O,
 	"SOLID",
 	{
-		input: { input: Render.Attributes.Input<S, O, "dom"> };
+		input: { input: Attributes.Objects.Input<S, O, "dom"> };
 		select: {
-			trigger: Render.Attributes.SelectTrigger<S, O, "dom">;
-			option: (option: any) => Render.Attributes.SelectOption<S, O, "dom">;
+			trigger: Attributes.Objects.SelectTrigger<S, O, "dom">;
+			option: (option: any) => Attributes.Objects.SelectOption<S, O, "dom">;
 		};
 		date: {
-			input: Render.Attributes.DateInput<S, O, "dom">;
+			input: Attributes.Objects.DateInput<S, O, "dom">;
 			event: {
-				(event: CALENDAR.EVENTS): Render.Attributes.DateEvent<S, O, "dom">;
-				(eventName: keyof typeof CALENDAR.EVENTS): Render.Attributes.DateEvent<S, O, "dom">;
+				(event: CALENDAR.EVENTS): Attributes.Objects.DateEvent<S, O, "dom">;
+				(eventName: keyof typeof CALENDAR.EVENTS): Attributes.Objects.DateEvent<S, O, "dom">;
 			};
 			cell: {
-				(dateCell: Extras.Date.CellDate): Render.Attributes.DateCell<S, O, "dom">;
-				(timeCell: Extras.Date.CellTime): Render.Attributes.DateCell<S, O, "dom">;
-				(items: DateAttributeCells): Render.Attributes.DateCell<S, O, "dom">;
+				(dateCell: Extras.Date.CellDate): Attributes.Objects.DateCell<S, O, "dom">;
+				(timeCell: Extras.Date.CellTime): Attributes.Objects.DateCell<S, O, "dom">;
+				(items: DateAttributeCells): Attributes.Objects.DateCell<S, O, "dom">;
 			};
-			option: (option: Extras.Date.Option) => Render.Attributes.DateCell<S, O, "dom">;
+			option: (option: Extras.Date.Option) => Attributes.Objects.DateCell<S, O, "dom">;
 		};
 	}
 >;

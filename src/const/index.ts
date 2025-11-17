@@ -100,12 +100,12 @@ export namespace FIELD {
 		EXTRAS = "MUTATE.EXTRAS",
 		// internals
 		__EXTRAS = "MUTATE.__EXTRAS",
-		__RENDER = "MUTATE.__RENDER",
+		__ATTRIBUTE = "MUTATE.__ATTRIBUTE",
 		__RESET = "MUTATE.__RESET",
 		__ABORT_VALIDATION = "MUTATE.__ABORT_VALIDATION",
 	}
 
-	export enum RENDER {
+	export enum ATTRIBUTE {
 		INIT = 0,
 		READY = 1,
 	}

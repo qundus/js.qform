@@ -1,10 +1,10 @@
-import type { Extras, Field, Form, FunctionProps, Render } from "../../_model";
+import type { Extras, Field, Form, FunctionProps, Attributes } from "../../_model";
 import { FIELD } from "../../const";
 
 export function renderAttributesDateInput<
 	S extends Field.Setup,
 	O extends Form.Options,
-	A extends Render.Attributes.Type,
+	A extends Attributes.Objects.Type,
 >(basic: FunctionProps.Field<S, O>, props: FunctionProps.RenderAttributes<S, O, A>) {
 	const { key, options, store, setup } = basic;
 	const { attrType, reactive } = props;
@@ -102,38 +102,27 @@ export function renderAttributesDateInput<
 		},
 	} as any;
 
-	// process input
-	type PP = Parameters<Field.OnRender<Field.Type>>[0];
-	const processProps: PP = { key, data: reactive, attrType, attrs, attrFor: "input" };
-	options?.fieldsOnRender?.(processProps);
-	setup.onRender?.(processProps);
-
 	// mark rendered and initialize element search and mount onto picker instance
-	if (state.event.RENDER === FIELD.RENDER.INIT) {
-		const next = { ...store.get() };
-		next.event.RENDER = FIELD.RENDER.READY;
-		next.event.MUTATE = FIELD.MUTATE.__RENDER;
-		store.set(next);
-
-		// search for dom element only on the client side
-		// if (!isServerSide()) {
-		// 	(async () => {
-		// 		let element = null as null | HTMLInputElement;
-		// 		while (element == null) {
-		// 			element = document.querySelector(`[data-qform-const="${setup.type}.${setup.label}"]`);
-		// 		}
-		// 		// const next = { ...store.get() } as Field.StoreObject<Field.Setup<"date">>;
-		// 		if (state.extras == null || state.extras.instance == null) {
-		// 			throw new Error(
-		// 				"qform: date extras.instance is null, please intilize it in date value processor!",
-		// 			);
-		// 		}
-		// 		state.extras.instance.attachTo(element);
-		// 		// store.set(next as any);
-		// 	})();
-		// }
-	}
+	// if (state.event.ATTRIBUTE === FIELD.ATTRIBUTE.INIT) {
+	// 	// search for dom element only on the client side
+	// 	// if (!isServerSide()) {
+	// 	// 	(async () => {
+	// 	// 		let element = null as null | HTMLInputElement;
+	// 	// 		while (element == null) {
+	// 	// 			element = document.querySelector(`[data-qform-const="${setup.type}.${setup.label}"]`);
+	// 	// 		}
+	// 	// 		// const next = { ...store.get() } as Field.StoreObject<Field.Setup<"date">>;
+	// 	// 		if (state.extras == null || state.extras.instance == null) {
+	// 	// 			throw new Error(
+	// 	// 				"qform: date extras.instance is null, please intilize it in date value processor!",
+	// 	// 			);
+	// 	// 		}
+	// 	// 		state.extras.instance.attachTo(element);
+	// 	// 		// store.set(next as any);
+	// 	// 	})();
+	// 	// }
+	// }
 
 	// console.log("element input :: ", key, " :: ", result.value);
-	return attrs as Render.Attributes.DateInput<S, O, A>;
+	return attrs as Attributes.Objects.DateInput<S, O, A>;
 }

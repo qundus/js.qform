@@ -37,6 +37,11 @@ export function createForm<
 
 	// other helpers
 	let keys = null as (keyof F)[] | null;
+
+	// attributes
+	const dom: any = null;
+	const vdom: any = null;
+
 	return {
 		store,
 		fields: fields as any,
@@ -55,6 +60,7 @@ export function createForm<
 		update,
 		values,
 		button,
+		//
 	};
 }
 

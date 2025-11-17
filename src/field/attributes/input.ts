@@ -1,5 +1,4 @@
-import { isServerSide } from "@qundus/qstate/checks";
-import type { Field, Form, FunctionProps, Render } from "../../_model";
+import type { Field, Form, FunctionProps, Attributes } from "../../_model";
 import { FIELD } from "../../const";
 
 // export const isServerSide = (): boolean =>
@@ -7,9 +6,9 @@ import { FIELD } from "../../const";
 export function renderAttributesInput<
 	S extends Field.Setup,
 	O extends Form.Options,
-	A extends Render.Attributes.Type,
->(basic: FunctionProps.Field<S, O>, props: FunctionProps.RenderAttributes<S, O, A>, test?: true) {
-	const { key, options, store, setup } = basic;
+	A extends Attributes.Objects.Type,
+>(basic: FunctionProps.Field<S, O>, props: FunctionProps.RenderAttributes<S, O, A>) {
+	const { key, store, setup } = basic;
 	const { attrType, reactive } = props;
 	const state = reactive;
 	const ssr = setup.ssr;
@@ -20,7 +19,6 @@ export function renderAttributesInput<
 	const attrs = {
 		key: `${key}-${ssr ? "server" : "client"}`,
 		id,
-		"data-hydrated": !ssr,
 		type: state?.element.hidden ? "hidden" : setup.type,
 		name: state.__internal.key,
 		multiple: state?.element.multiple,
@@ -100,26 +98,6 @@ export function renderAttributesInput<
 		store.set(next);
 	};
 
-	// process input
-	type PP = Parameters<Field.OnRender<Field.Type>>[0];
-	const processProps: PP = { key, data: reactive, attrType, attrs, attrFor: "input" };
-	options?.fieldsOnRender?.(processProps);
-	setup.onRender?.(processProps);
-
-	// mark rendered
-	if (state.event.RENDER === FIELD.RENDER.INIT) {
-		const next = { ...store.get() };
-		next.event.RENDER = FIELD.RENDER.READY;
-		next.event.MUTATE = FIELD.MUTATE.__RENDER;
-		store.set(next);
-	}
-
-	// else if (ssr && state.event.RENDER === FIELD.RENDER.READY) {
-	// 	// ssr
-	// 	console.log("rendered field :: ", key, " :: ", state.element.disabled);
-	// 	return {};
-	// }
-
 	// console.log("element input :: ", key, " :: ", result.value);
-	return attrs as Render.Attributes.Input<S, O, A>;
+	return attrs as Attributes.Objects.Input<S, O, A>;
 }

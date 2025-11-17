@@ -13,14 +13,9 @@ import type { FormAddonUpdate } from "./addons/form/update";
 import type { FormAddonValues } from "./addons/form/values";
 import type { FormAddonButton } from "./addons/form/button";
 
-import type { IntegrationDom } from "./integrations/dom";
-import type { IntegrationRef } from "./integrations/ref";
-import type { IntegrationPreact } from "./integrations/preact";
-import type { IntegrationReact } from "./integrations/react";
-import type { IntegrationSolid } from "./integrations/solid";
-import type { IntegrationSvelte } from "./integrations/svelte";
-import type { SelectedList } from "./render/helpers/date/selected-list";
-import type { DateAttributeCells } from "./render/attributes/date.cell";
+//
+import type { SelectedList } from "./field/attributes/helpers/date/selected-list";
+import type { DateAttributeCells } from "./field/attributes/date.cell";
 
 // checkers
 export namespace Check {
@@ -96,22 +91,23 @@ export namespace Field {
 	export type OnRender<T extends Type> = (
 		props: {
 			key: string;
-			attrType: Render.Attributes.Type;
+			attrType: Attributes.Objects.Type;
 			data: StoreObject<any>;
 			// attrs: undefined;
 		} /** this is the final attributes passed to the element */ & (
 			| {
 					attrFor: "input";
-					attrs: Render.Attributes.Input<Setup<T>, Form.Options, Render.Attributes.Type>;
+					attrs: Attributes.Objects.Input<Setup<T>, Form.Options, Attributes.Objects.Type>;
 			  }
 			| {
 					attrFor: "trigger";
-					attrs: Render.Attributes.SelectTrigger<Setup<T>, Form.Options, Render.Attributes.Type>;
+					attrs: Attributes.Objects.SelectTrigger<Setup<T>, Form.Options, Attributes.Objects.Type>;
 			  }
 			| {
 					attrFor: "option";
-					attrs: Render.Attributes.SelectOption<Setup<T>, Form.Options, Render.Attributes.Type>;
+					attrs: Attributes.Objects.SelectOption<Setup<T>, Form.Options, Attributes.Objects.Type>;
 			  }
+			// TODO: finish attrFor for date types
 		),
 	) => void;
 	export type Event = { value?: any; checked?: any; files?: FileList };
@@ -301,7 +297,7 @@ export namespace Field {
 			DOM: FIELD.DOM;
 			MUTATE: FIELD.MUTATE;
 			CYCLE: FIELD.CYCLE;
-			RENDER: FIELD.RENDER;
+			ATTRIBUTE: FIELD.ATTRIBUTE;
 			ev: undefined | Event;
 		};
 		// user
@@ -313,11 +309,11 @@ export namespace Field {
 		extras: Extras.Factory<S>;
 		errors?: string[];
 	};
-	export type StoreRenderObject<
+	export type StoreAttributesObject<
 		S extends Setup,
 		O extends Form.Options,
-		D extends Render.Attributes.Type,
-	> = Render.Factory<S, O, D>;
+		D extends Attributes.Objects.Type,
+	> = Attributes.Factory<S, O, D>;
 	export type StoreState<S extends Setup> = _QSTATE.Nano.Atom<StoreObject<S>>;
 	export type Store<S extends Setup, O extends Form.Options> = _QSTATE.Store.Factory<
 		StoreState<S>,
@@ -328,12 +324,12 @@ export namespace Field {
 			};
 		}
 	>;
-	export type StoreRender<
+	export type StoreAttributes<
 		S extends Setup,
 		O extends Form.Options,
-		D extends Render.Attributes.Type,
+		D extends Attributes.Objects.Type,
 	> = _QSTATE.StoreDerived.Factory<
-		StoreRenderObject<S, O, D>,
+		StoreAttributesObject<S, O, D>,
 		{
 			hooks: O["storeHooks"];
 		}
@@ -344,22 +340,19 @@ export namespace Field {
 		readonly key: string;
 		readonly setup: S;
 		readonly store: Store<S, O>;
-		// readonly store: Omit<Store<S, O>, "set" | "setKey">; //Store<S, O>;
-		// readonly render: ReturnType<typeof createElement<S, O>>;
-		// readonly render: {
-		// 	dom: IntegrationDom<S, O>;
-		// 	ref: IntegrationRef<S, O>;
-		// 	preact: IntegrationPreact<S, O>;
-		// 	react: IntegrationReact<S, O>;
-		// 	solid: IntegrationSolid<S, O>;
-		// 	svelte: IntegrationSvelte<S, O>;
-		// };
-		readonly attrs: StoreRender<S, O, "dom">;
-		readonly attrsV: StoreRender<S, O, "vdom">;
 		// addons
 		readonly update: Addon.FieldUpdate<S, O>;
 		readonly remove: Addon.FieldRemove<S, O>;
 		readonly reset: Addon.FieldReset<S, O>;
+		// attributes
+		readonly attrs: StoreAttributes<S, O, "dom">;
+		readonly attrsh: "hooks" extends keyof StoreAttributes<S, O, "dom">
+			? StoreAttributes<S, O, "dom">["hooks"]
+			: undefined;
+		readonly attrsv: StoreAttributes<S, O, "vdom">;
+		readonly attrsvh: "hooks" extends keyof StoreAttributes<S, O, "vdom">
+			? StoreAttributes<S, O, "vdom">["hooks"]
+			: undefined;
 	};
 }
 
@@ -944,6 +937,15 @@ export namespace Form {
 		status: FORM.STATUS;
 		// changed: undefined | { root: keyof StoreObject<F>; key?: keyof F; value: any };
 	}
+	export type StoreAttributesObject<
+		F extends Fields,
+		O extends Options<F>,
+		D extends Attributes.Objects.Type,
+	> = {
+		[K in keyof F]: "dom" extends D
+			? ReturnType<F[K]["attrs"]["get"]>
+			: ReturnType<F[K]["attrsv"]["get"]>;
+	};
 	export type StoreState<F extends Fields, O extends Options<F>> = _QSTATE.Nano.Map<
 		StoreObject<F, O>
 	>;
@@ -957,24 +959,42 @@ export namespace Form {
 			};
 		}
 	>;
+	export type StoreAttributes<
+		F extends Fields,
+		O extends Options<F>,
+		D extends Attributes.Objects.Type,
+	> = _QSTATE.StoreDerived.Factory<
+		StoreAttributesObject<F, O, D>,
+		{
+			hooks: O["storeHooks"];
+		}
+	>;
 
 	// factory/result
 	export type Factory<I extends FieldsIn, F extends Fields<I>, O extends Options<F>> = {
 		/**
 		 * extreme low-level control of form, use setters with extreme care as this affects
-		 * the core logic of the form, it's advised to not modify form atoms/elements
-		 * directly but use form.actions or atom.<method-name>
+		 * the core logic of the form, it's advised to not modify form store
+		 * directly, instead use update, submit..etc to safely mutate form.
 		 */
 		readonly store: Store<F, O>;
 		readonly fields: Fields<I, O>;
 		readonly options: O;
-		// readonly placeholders: typeof PLACEHOLDERS;
 		get keys(): () => (keyof F)[];
 		// addons
 		submit: Addon.FormSubmit<F, O>;
 		update: Addon.FormUpdate<F, O>;
 		values: Addon.FormValues<F, O>;
 		button: Addon.FormButton<F, O>;
+		//
+		readonly attrs: StoreAttributes<F, O, "dom">;
+		readonly attrsh: "hooks" extends keyof StoreAttributes<F, O, "dom">
+			? StoreAttributes<F, O, "dom">["hooks"]
+			: undefined;
+		readonly attrsv: StoreAttributes<F, O, "vdom">;
+		readonly attrsvh: "hooks" extends keyof StoreAttributes<F, O, "vdom">
+			? StoreAttributes<F, O, "vdom">["hooks"]
+			: undefined;
 	};
 }
 
@@ -1009,7 +1029,7 @@ export namespace FunctionProps {
 	export type RenderAttributes<
 		S extends Field.Setup,
 		O extends Form.Options,
-		A extends Render.Attributes.Type,
+		A extends Attributes.Objects.Type,
 	> = {
 		attrType: A;
 		reactive: Field.StoreObject<S>;
@@ -1033,8 +1053,8 @@ export namespace Addon {
 
 //
 
-export namespace Render {
-	export namespace Attributes {
+export namespace Attributes {
+	export namespace Objects {
 		// /**
 		//  * when element props is accessed, usually the returned keys are
 		//  * all that support for html element, this gives user the option
@@ -1051,6 +1071,7 @@ export namespace Render {
 		// input
 		export type InputDom = ToDom<InputVdom>;
 		export type InputVdom = {
+			ref: () => void;
 			id: string;
 			required: boolean;
 			disabled: boolean;
@@ -1171,76 +1192,25 @@ export namespace Render {
 	export type Factory<
 		S extends Field.Setup,
 		O extends Form.Options,
-		D extends Render.Attributes.Type,
+		D extends Objects.Type,
 	> = S extends { type: "select" } | { type: "select.radio" }
 		? {
-				trigger: Render.Attributes.SelectTrigger<S, O, D>;
-				option: (option: any) => Render.Attributes.SelectOption<S, O, D>;
+				trigger(props?: { ref?: any }): Objects.SelectTrigger<S, O, D>;
+				option: (props: { option: any; ref?: any }) => Objects.SelectOption<S, O, D>;
 			}
 		: S extends { type: "date" }
 			? {
-					input: Render.Attributes.DateInput<S, O, D>;
-					event: {
-						(event: CALENDAR.EVENTS): Render.Attributes.DateEvent<S, O, D>;
-						(eventName: keyof typeof CALENDAR.EVENTS): Render.Attributes.DateEvent<S, O, D>;
-					};
-					cell: {
-						(dateCell: Extras.Date.CellDate): Render.Attributes.DateCell<S, O, D>;
-						(timeCell: Extras.Date.CellTime): Render.Attributes.DateCell<S, O, D>;
-						(items: DateAttributeCells): Render.Attributes.DateCell<S, O, D>;
-					};
-					option: (option: Extras.Date.Option) => Render.Attributes.DateCell<S, O, D>;
+					input(props?: { ref?: any }): Objects.DateInput<S, O, D>;
+					event(props: {
+						event: CALENDAR.EVENTS | keyof typeof CALENDAR.EVENTS;
+						ref?: any;
+					}): Objects.DateEvent<S, O, D>;
+					cell(props: {
+						cell: Extras.Date.CellDate | Extras.Date.CellTime | DateAttributeCells;
+						lang: string;
+						ref?: any;
+					}): Objects.DateCell<S, O, D>;
+					option: (option: Extras.Date.Option) => Objects.DateCell<S, O, D>;
 				}
-			: Render.Attributes.Input<S, O, D>;
+			: Objects.Input<S, O, D>;
 }
-
-export namespace Integration {
-	export type Template<S extends Field.Setup, O extends Form.Options> = {
-		input: any;
-		select: {
-			trigger: any;
-			option: any;
-		};
-		date: {
-			input: any;
-			event: any;
-			cell: any;
-			option: any;
-		};
-	};
-
-	//
-	export type RenderFactory<
-		S extends Field.Setup,
-		O extends Form.Options,
-		N extends string,
-		T extends Template<S, O>,
-	> = (S extends { type: "select" } | { type: "select.radio" }
-		? T["select"]
-		: S extends { type: "date" }
-			? T["date"]
-			: T["input"]) & {
-		__integrationFor: N;
-		__integrationName: `${N}-RENDER`;
-	};
-}
-
-// export namespace Plugin {
-// 	export namespace Render {
-// 		//
-// 		export type Factory<
-// 		S extends Field.Setup,
-// 		O extends Form.Options,
-// 		A extends Render.Attributes.Type,
-// 		I,
-// 	> = (
-// 		basic: FunctionProps.Field<S, O>,
-// 		props: FunctionProps.RenderAttributes<S, O, A>,
-// 	) => {
-// 		instance: I
-// 	}
-
-// 	//
-// 	export type AirDatePicker<>
-// 	}
-// }

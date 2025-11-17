@@ -1,19 +1,19 @@
 // import { isServerSide } from "@qundus/qstate/checks";
-import type { Field, Form, FunctionProps, Render } from "../../_model";
+import type { Field, Form, FunctionProps, Attributes } from "../../_model";
 import type { Extras } from "../../_model";
 import { FIELD } from "../../const";
-import { formatDate, formatTime12h, formatTime24h } from "../helpers/date/parse";
-import { nextMode } from "../helpers/date/mode";
+import { formatDate, formatTime12h, formatTime24h } from "./helpers/date/parse";
+import { nextMode } from "./helpers/date/mode";
 
 //
-import DATE from "../helpers/date/DATE";
-import TIME from "../helpers/date/TIME";
-import YEAR from "../helpers/date/YEAR";
-import MONTH from "../helpers/date/MONTH";
-import DAY from "../helpers/date/DAY";
-import HOUR from "../helpers/date/HOUR";
-import MINUTE from "../helpers/date/MINUTE";
-import SECOND from "../helpers/date/SECOND";
+import DATE from "./helpers/date/DATE";
+import TIME from "./helpers/date/TIME";
+import YEAR from "./helpers/date/YEAR";
+import MONTH from "./helpers/date/MONTH";
+import DAY from "./helpers/date/DAY";
+import HOUR from "./helpers/date/HOUR";
+import MINUTE from "./helpers/date/MINUTE";
+import SECOND from "./helpers/date/SECOND";
 
 export type DateAttributeCells = {
 	YEAR?: Extras.Date.CellDate;
@@ -26,7 +26,7 @@ export type DateAttributeCells = {
 export function renderAttributesDateCell<
 	S extends Field.Setup,
 	O extends Form.Options,
-	A extends Render.Attributes.Type,
+	A extends Attributes.Objects.Type,
 >(
 	basic: FunctionProps.Field<S, O>,
 	props: FunctionProps.RenderAttributes<S, O, A>,
@@ -172,20 +172,6 @@ export function renderAttributesDateCell<
 		},
 	} as any;
 
-	// process input
-	type PP = Parameters<Field.OnRender<Field.Type>>[0];
-	const processProps: PP = { key, data: reactive, attrType, attrs, attrFor: "option" };
-	options?.fieldsOnRender?.(processProps);
-	setup.onRender?.(processProps);
-
-	// mark rendered and initialize element search and mount onto picker instance
-	if (state.event.RENDER === FIELD.RENDER.INIT) {
-		const next = { ...store.get() };
-		next.event.RENDER = FIELD.RENDER.READY;
-		next.event.MUTATE = FIELD.MUTATE.__RENDER;
-		store.set(next);
-	}
-
 	// console.log("element input :: ", key, " :: ", result.value);
-	return attrs as Render.Attributes.DateCell<S, O, A>;
+	return attrs as Attributes.Objects.DateCell<S, O, A>;
 }

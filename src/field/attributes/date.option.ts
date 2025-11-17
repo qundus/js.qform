@@ -1,20 +1,20 @@
-import type { Extras, Field, Form, FunctionProps, Render } from "../../_model";
+import type { Extras, Field, Form, FunctionProps, Attributes } from "../../_model";
 import { CALENDAR, FIELD } from "../../const";
 
 //
-import DATE from "../helpers/date/DATE";
-import TIME from "../helpers/date/TIME";
-import YEAR from "../helpers/date/YEAR";
-import MONTH from "../helpers/date/MONTH";
-import DAY from "../helpers/date/DAY";
-import HOUR from "../helpers/date/HOUR";
-import MINUTE from "../helpers/date/MINUTE";
-import SECOND from "../helpers/date/SECOND";
+import DATE from "./helpers/date/DATE";
+import TIME from "./helpers/date/TIME";
+import YEAR from "./helpers/date/YEAR";
+import MONTH from "./helpers/date/MONTH";
+import DAY from "./helpers/date/DAY";
+import HOUR from "./helpers/date/HOUR";
+import MINUTE from "./helpers/date/MINUTE";
+import SECOND from "./helpers/date/SECOND";
 
 export function renderAttributesDateOption<
 	S extends Field.Setup,
 	O extends Form.Options,
-	A extends Render.Attributes.Type,
+	A extends Attributes.Objects.Type,
 >(
 	basic: FunctionProps.Field<S, O>,
 	props: FunctionProps.RenderAttributes<S, O, A>,
@@ -66,5 +66,5 @@ export function renderAttributesDateOption<
 	setup.onRender?.(processProps);
 
 	// console.log("element input :: ", key, " :: ", result.value);
-	return attrs as Render.Attributes.DateOption<S, O, A>;
+	return attrs as Attributes.Objects.DateOption<S, O, A>;
 }

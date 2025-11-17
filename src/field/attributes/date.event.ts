@@ -1,27 +1,27 @@
-import type { Field, Form, FunctionProps, Render } from "../../_model";
+import type { Field, Form, FunctionProps, Attributes } from "../../_model";
 import { CALENDAR, FIELD } from "../../const";
-import { goToMode } from "../helpers/date/mode";
+import { goToMode } from "./helpers/date/mode";
 
 //
-import DATE from "../helpers/date/DATE";
-import TIME from "../helpers/date/TIME";
-import YEAR from "../helpers/date/YEAR";
-import MONTH from "../helpers/date/MONTH";
-import DAY from "../helpers/date/DAY";
-import HOUR from "../helpers/date/HOUR";
-import MINUTE from "../helpers/date/MINUTE";
-import SECOND from "../helpers/date/SECOND";
+import DATE from "./helpers/date/DATE";
+import TIME from "./helpers/date/TIME";
+import YEAR from "./helpers/date/YEAR";
+import MONTH from "./helpers/date/MONTH";
+import DAY from "./helpers/date/DAY";
+import HOUR from "./helpers/date/HOUR";
+import MINUTE from "./helpers/date/MINUTE";
+import SECOND from "./helpers/date/SECOND";
 
 export function renderAttributesDateEvent<
 	S extends Field.Setup,
 	O extends Form.Options,
-	A extends Render.Attributes.Type,
+	A extends Attributes.Objects.Type,
 >(
 	basic: FunctionProps.Field<S, O>,
 	props: FunctionProps.RenderAttributes<S, O, A>,
 	_event: keyof typeof CALENDAR.EVENTS | CALENDAR.EVENTS,
 ) {
-	const { key, options, store, setup } = basic;
+	const { store, setup } = basic;
 	const { attrType, reactive } = props;
 	const state = reactive as unknown as Field.StoreObject<Field.Setup<"date">>;
 	const EVENT = typeof _event === "number" ? _event : CALENDAR.EVENTS[_event];
@@ -77,12 +77,6 @@ export function renderAttributesDateEvent<
 		},
 	} as any;
 
-	// process input
-	type PP = Parameters<Field.OnRender<Field.Type>>[0];
-	const processProps: PP = { key, data: reactive, attrType, attrs, attrFor: "option" };
-	options?.fieldsOnRender?.(processProps);
-	setup.onRender?.(processProps);
-
 	// console.log("element input :: ", key, " :: ", result.value);
-	return attrs as Render.Attributes.DateEvent<S, O, A>;
+	return attrs as Attributes.Objects.DateEvent<S, O, A>;
 }

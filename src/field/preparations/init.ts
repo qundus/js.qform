@@ -23,7 +23,7 @@ export function prepareInit<S extends Field.Setup, O extends Form.Options>(
 			DOM: FIELD.DOM.INIT,
 			CYCLE: FIELD.CYCLE.INIT,
 			MUTATE: FIELD.MUTATE.INIT,
-			RENDER: FIELD.RENDER.INIT,
+			ATTRIBUTE: FIELD.ATTRIBUTE.INIT,
 			ev: undefined,
 		},
 		value: setup.value,

@@ -1,10 +1,10 @@
-import type { Field, Form, FunctionProps, Render } from "../../_model";
+import type { Field, Form, FunctionProps, Attributes } from "../../_model";
 import { FIELD } from "../../const";
 
 export function renderAttributesSelectOption<
 	S extends Field.Setup,
 	O extends Form.Options,
-	A extends Render.Attributes.Type,
+	A extends Attributes.Objects.Type,
 >(
 	basic: FunctionProps.Field<S, O>,
 	props: FunctionProps.RenderAttributes<S, O, A> & { optionValue: any },
@@ -154,19 +154,5 @@ export function renderAttributesSelectOption<
 		attrs.disabled = state?.element.disabled;
 	}
 
-	// process trigger
-	type PP = Parameters<Field.OnRender<Field.Type>>[0];
-	const processProps: PP = { key, data: reactive, attrType, attrs, attrFor: "option" };
-
-	options?.onFieldRender?.(processProps);
-	setup.onRender?.(processProps);
-
-	// mark rendered
-	if (state.event.RENDER === FIELD.RENDER.INIT) {
-		const next = { ...store.get() };
-		next.event.RENDER = FIELD.RENDER.READY;
-		next.event.MUTATE = FIELD.MUTATE.__RENDER;
-		store.set(next);
-	}
-	return attrs as Render.Attributes.SelectOption<S, O, A>;
+	return attrs as Attributes.Objects.SelectOption<S, O, A>;
 }

@@ -7,7 +7,7 @@ import { prepareStore } from "./preparations/store";
 
 //
 import { changeCycle } from "./cycles/change";
-import { createRender } from "../render";
+import { createAttributes } from "./attributes";
 import { mountCycle } from "./cycles/mount";
 //
 import { fieldAddonRemove } from "../addons/field/remove";
@@ -32,9 +32,6 @@ export function createField<
 
 	// addons
 	const fieldProps = { key, setup, options, store, init };
-	// render
-	let attrs: any = null;
-	let attrsV: any = null;
 
 	const remove = fieldAddonRemove(fieldProps);
 	const update = fieldAddonUpdate(fieldProps);
@@ -44,25 +41,42 @@ export function createField<
 	mountCycle(fieldProps, update);
 	changeCycle(fieldProps, formStore, update);
 
+	// attributes
+	let attrs: any = null;
+	let attrsv: any = null;
+
 	return {
 		key,
 		setup: setup as any,
 		store: store as any,
-		get attrs() {
-			if (attrs == null) {
-				attrs = createRender(fieldProps, "dom");
-			}
-			return attrs;
-		},
-		get attrsV() {
-			if (attrsV == null) {
-				attrsV = createRender(fieldProps, "vdom");
-			}
-			return attrsV;
-		},
 		//
 		update: update as any,
 		remove,
 		reset,
+		//
+		get attrs() {
+			if (attrs == null) {
+				attrs = createAttributes(fieldProps, "dom");
+			}
+			return attrs;
+		},
+		get attrsv() {
+			if (attrsv == null) {
+				attrsv = createAttributes(fieldProps, "vdom");
+			}
+			return attrsv;
+		},
+		get attrsh() {
+			if (attrs == null) {
+				attrs = createAttributes(fieldProps, "dom");
+			}
+			return attrs.hooks;
+		},
+		get attrsvh() {
+			if (attrsv == null) {
+				attrsv = createAttributes(fieldProps, "vdom");
+			}
+			return attrsv.hooks;
+		},
 	};
 }
