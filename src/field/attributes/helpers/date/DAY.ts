@@ -1,5 +1,5 @@
-import type { Extras } from "../../../_model";
-import { CALENDAR } from "../../../const";
+import type { Extras } from "../../../../_model";
+import { CALENDAR } from "../../../../const";
 
 function daysHeaders(locale: string, firstDayOfWeek: number): Extras.Date.Header[] {
 	const headers: Extras.Date.Header[] = [];

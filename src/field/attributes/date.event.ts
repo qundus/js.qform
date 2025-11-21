@@ -11,6 +11,7 @@ import DAY from "./helpers/date/DAY";
 import HOUR from "./helpers/date/HOUR";
 import MINUTE from "./helpers/date/MINUTE";
 import SECOND from "./helpers/date/SECOND";
+import { processAttrs } from "../processors/attributes";
 
 export function renderAttributesDateEvent<
 	S extends Field.Setup,
@@ -18,12 +19,10 @@ export function renderAttributesDateEvent<
 	A extends Attributes.Objects.Type,
 >(
 	basic: FunctionProps.Field<S, O>,
-	props: FunctionProps.RenderAttributes<S, O, A>,
+	state: Field.StoreObject<Field.Setup<"date">, O>,
 	_event: keyof typeof CALENDAR.EVENTS | CALENDAR.EVENTS,
 ) {
 	const { store, setup } = basic;
-	const { attrType, reactive } = props;
-	const state = reactive as unknown as Field.StoreObject<Field.Setup<"date">>;
 	const EVENT = typeof _event === "number" ? _event : CALENDAR.EVENTS[_event];
 	if (EVENT === null) throw new Error("qform: unknown date event :: " + _event);
 	const id = (state?.element?.label ?? setup.label) + ".event." + EVENT + ".id";
@@ -31,9 +30,9 @@ export function renderAttributesDateEvent<
 	const attrs = {
 		id,
 		name,
-		[attrType !== "vdom" ? "onclick" : "onClick"]: function onclick(event: PointerEvent) {
+		onClick: function onclick(event: PointerEvent) {
 			event.preventDefault();
-			const next = { ...store.get() } as Field.StoreObject<Field.Setup<"date">>;
+			const next = { ...store.get() } as Field.StoreObject<Field.Setup<"date">, O>;
 			let update = false;
 			let mode = next.extras.mode;
 			const month = next.extras.MONTH.active;
@@ -78,5 +77,5 @@ export function renderAttributesDateEvent<
 	} as any;
 
 	// console.log("element input :: ", key, " :: ", result.value);
-	return attrs as Attributes.Objects.DateEvent<S, O, A>;
+	return processAttrs(basic, state as any, attrs, "input"); //attrs as Attributes.Objects.DateEvent<S, O, A>;
 }

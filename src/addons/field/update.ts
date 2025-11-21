@@ -1,11 +1,18 @@
 import type { Extras, Field, Form, FunctionProps } from "../../_model";
 import { FIELD, type MISC } from "../../const";
 
-export type FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> = {
-	value: (
-		value: S["value"] | ((prev: undefined) => S["value"] | undefined) | undefined,
-		configs?: { preprocess?: boolean; validate?: boolean },
-	) => void;
+type Configs = { preprocess?: boolean; validate?: boolean };
+export interface FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> {
+	value: {
+		<V extends S["value"]>(
+			value: V | undefined | null,
+			configs?: Pick<Configs, "preprocess" | "validate">,
+		): void;
+		<V extends S["value"]>(
+			value: (prev: V) => V | undefined | null,
+			configs?: Pick<Configs, "preprocess" | "validate">,
+		): void;
+	};
 	condition: (
 		value: Partial<Field.Condition> | ((prev: Field.Condition) => Partial<Field.Condition>),
 	) => void;
@@ -45,7 +52,7 @@ export type FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> = {
 	//  * special api to update selections extras
 	//  */
 	// extras: <G extends Field.Extras<S>>(props: Partial<G> | ((value: G) => Partial<G>)) => void;
-};
+}
 export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 	props: FunctionProps.FieldAddon<S, O>,
 ): FieldAddonUpdate<S, O> {
@@ -150,7 +157,7 @@ export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 			store.set(next);
 		},
 		selectByValue: (_values) => {
-			const next = { ...store.get() } as Field.StoreObject<Field.Setup<"select">>;
+			const next = { ...store.get() } as Field.StoreObject<Field.Setup<"select">, O>;
 			const values = Array.isArray(_values) ? _values : _values == null ? [] : [_values];
 			const options = next.extras.options;
 			if (values.length <= 0 || options == null || options.length <= 0) {
@@ -181,7 +188,7 @@ export function fieldAddonUpdate<S extends Field.Setup, O extends Form.Options>(
 			store.set(next as any);
 		},
 		selectByIndex: (_indieces) => {
-			const next = { ...store.get() } as Field.StoreObject<Field.Setup<"select">>;
+			const next = { ...store.get() } as Field.StoreObject<Field.Setup<"select">, O>;
 			const indieces = Array.isArray(_indieces) ? _indieces : _indieces == null ? [] : [_indieces];
 			const options = next.extras.options;
 			if (indieces.length <= 0 || options == null || options.length <= 0) {

@@ -69,17 +69,9 @@ const form = createForm(
 				}
 				return null;
 			},
-			onRender({ attrs, attrType }) {
+			onAttrs({ attrs }) {
 				// interception
 				// init -> setup/checkup -> mount -> change -> {logic <-> render} ->
-				attrs[attrType === "dom" ? "oninput" : "onInput"] = () => {};
-				onRef((element) => {
-					element;
-				});
-				const ref = attrs.ref;
-				attrs.ref = (element) => {
-					ref(element);
-				};
 				attrs.allowed = ".png,.jpg";
 				attrs.disabled;
 			},
@@ -192,10 +184,10 @@ const form = createForm(
 // });
 
 // const attrs = form.fields.cities.attrsh.useStore()
-const attrs = form.attrs.hooks.useStore();
+const attrs = form.storeh.useStore();
 
 // attrs({dom: true}).oninput
-// attrs.ref
+// name.store.get().attrs.trigger.ref
 
 // modifying store
 // attrs.dom.oninput

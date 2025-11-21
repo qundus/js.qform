@@ -13,6 +13,7 @@ import { setupOptionsMerger } from "../methods/setup-options-merger";
 import { prepareOptions } from "./preparations/options";
 // import { mountCycle } from "./cycles/mount";
 import { changeCycle } from "./cycles/change";
+import { createAttributes } from "./attributes";
 
 export function createForm<
 	I extends Form.FieldsIn,
@@ -38,12 +39,9 @@ export function createForm<
 	// other helpers
 	let keys = null as (keyof F)[] | null;
 
-	// attributes
-	const dom: any = null;
-	const vdom: any = null;
-
 	return {
 		store,
+		storeh: (store as any).hooks,
 		fields: fields as any,
 		// placeholders: PLACEHOLDERS,
 		options: options as any,
@@ -60,7 +58,6 @@ export function createForm<
 		update,
 		values,
 		button,
-		//
 	};
 }
 

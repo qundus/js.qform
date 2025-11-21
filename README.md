@@ -142,15 +142,17 @@ Render is the api used to pass html element attributes, essentially it's what br
     <input id="password"  />
   </label>
   <script type="module">
-    import loginForm from "./login-form.mjs";
-    const name = document.getElementById("name");
+    import form from "./login-form.mjs";
+    const email = document.getElementById("email");
     const password = document.getElementById("password");
-    if (name != null) {
-      const atom = loginForm.fields.name.render.ref(name);
-    }
-    if (email != null) {
-      const atom = loginForm.fields.password.render.ref(email);
-    }
+    form.attrs.subscribe((value) => {
+      if (email != null) {
+        value.email.ref(email)
+      }
+      if (password != null) {
+        value.password.ref(password)
+      }
+    })
   </script>
 </div>
 ```

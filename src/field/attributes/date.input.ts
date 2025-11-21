@@ -1,14 +1,12 @@
 import type { Extras, Field, Form, FunctionProps, Attributes } from "../../_model";
 import { FIELD } from "../../const";
+import { processAttrs } from "../processors/attributes";
 
-export function renderAttributesDateInput<
-	S extends Field.Setup,
-	O extends Form.Options,
-	A extends Attributes.Objects.Type,
->(basic: FunctionProps.Field<S, O>, props: FunctionProps.RenderAttributes<S, O, A>) {
+export function renderAttributesDateInput<S extends Field.Setup, O extends Form.Options>(
+	basic: FunctionProps.Field<S, O>,
+	state: Field.StoreObject<Field.Setup<"date">, O>,
+) {
 	const { key, options, store, setup } = basic;
-	const { attrType, reactive } = props;
-	const state = reactive as unknown as Field.StoreObject<Field.Setup<"date">>;
 	const attrs = {
 		// "data-qform-const": `${setup.type}.${setup.label}`,
 		id: state?.element?.label ?? setup.label,
@@ -17,10 +15,10 @@ export function renderAttributesDateInput<
 		multiple: state?.element.multiple,
 		required: state?.element.required,
 		disabled: state?.element.disabled,
-		placeholder: state?.element.placeholder ?? state.extras.format,
+		placeholder: state?.element.placeholder ?? state.extras.format ?? "",
 		value: state.value ?? "",
-		[attrType !== "vdom" ? "autocomplete" : "autoComplete"]: "off",
-		[attrType !== "vdom" ? "onfocus" : "onFocus"]: (event: FocusEvent) => {
+		autoComplete: "off",
+		onFocus: (event: FocusEvent) => {
 			event.preventDefault();
 			event.stopImmediatePropagation();
 			event.stopPropagation();
@@ -80,7 +78,7 @@ export function renderAttributesDateInput<
 		// 	next.event.ev = undefined;
 		// 	store.set(next);
 		// },
-		[attrType !== "vdom" ? "oninput" : "onInput"]: (event: Event) => {
+		onInput: (event: Event) => {
 			event.preventDefault();
 			event.stopImmediatePropagation();
 			event.stopPropagation();
@@ -124,5 +122,5 @@ export function renderAttributesDateInput<
 	// }
 
 	// console.log("element input :: ", key, " :: ", result.value);
-	return attrs as Attributes.Objects.DateInput<S, O, A>;
+	return processAttrs(basic, state as any, attrs, "input"); // attrs as Attributes.Objects.DateInput<S, O, A>;
 }

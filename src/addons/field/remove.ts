@@ -11,7 +11,7 @@ export function fieldAddonRemove<S extends Field.Setup, O extends Form.Options>(
 	const { setup, store } = props;
 	return {
 		option: (option) => {
-			const next = { ...store.get() } as Field.StoreObject<Field.Setup<"select">>;
+			const next = { ...store.get() } as Field.StoreObject<Field.Setup<"select">, O>;
 			const valueKey = next.extras.valueKey;
 			let value = next.value as any | any[];
 			if (next.element.multiple) {

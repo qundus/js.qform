@@ -1,14 +1,12 @@
 import type { Field, Form, FunctionProps, Attributes } from "../../_model";
 import { FIELD } from "../../const";
+import { processAttrs } from "../processors/attributes";
 
-export function renderAttributesSelectTrigger<
-	S extends Field.Setup,
-	O extends Form.Options,
-	A extends Attributes.Objects.Type,
->(basic: FunctionProps.Field<S, O>, props: FunctionProps.RenderAttributes<S, O, A>) {
+export function renderAttributesSelectTrigger<S extends Field.Setup, O extends Form.Options>(
+	basic: FunctionProps.Field<S, O>,
+	state: Field.StoreObject<S, O>,
+) {
 	const { key, options, store, setup } = basic;
-	const { attrType, reactive } = props;
-	const state = reactive;
 	const attrs = {
 		id: state?.element?.label ?? setup.label,
 		// type: state?.element.hidden ? "hidden" : setup.type,
@@ -17,7 +15,7 @@ export function renderAttributesSelectTrigger<
 		// required: state?.element.required,
 		// disabled: state?.element.disabled,
 		// [attrType !== "vdom" ? "autocomplete" : "autoComplete"]: "off",
-		[attrType !== "vdom" ? "onclick" : "onClick"]: function onclick(event: PointerEvent) {
+		onClick: function onclick(event: PointerEvent) {
 			event.preventDefault();
 			const next = { ...store.get() };
 			if (next.element.disabled) {
@@ -66,7 +64,7 @@ export function renderAttributesSelectTrigger<
 			};
 			store.set(next);
 		},
-	} as any;
+	};
 
-	return attrs as Attributes.Objects.SelectTrigger<S, O, A>;
+	return processAttrs(basic, state, attrs, "trigger");
 }

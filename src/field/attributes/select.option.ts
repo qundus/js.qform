@@ -1,20 +1,17 @@
 import type { Field, Form, FunctionProps, Attributes } from "../../_model";
 import { FIELD } from "../../const";
+import { processAttrs } from "../processors/attributes";
 
-export function renderAttributesSelectOption<
-	S extends Field.Setup,
-	O extends Form.Options,
-	A extends Attributes.Objects.Type,
->(
+export function renderAttributesSelectOption<S extends Field.Setup, O extends Form.Options>(
 	basic: FunctionProps.Field<S, O>,
-	props: FunctionProps.RenderAttributes<S, O, A> & { optionValue: any },
+	state: Field.StoreObject<Field.Setup<"select" | "select.radio">, O>,
+	// state: Field.StoreObject<S, O>,
+	_optionValue: any,
 ) {
 	const { key, options, store, setup } = basic as unknown as FunctionProps.Field<
 		Field.Setup<"select" | "select.radio">,
 		any
 	>;
-	const { attrType, reactive, optionValue: _optionValue } = props;
-	const state = reactive as unknown as Field.StoreObject<Field.Setup<"select" | "select.radio">>;
 	// const extras = (state.extras ?? {}) as Extras.SelectOut<S>;
 	// prepare option value
 	let option = _optionValue;
@@ -48,7 +45,7 @@ export function renderAttributesSelectOption<
 		id: name + "-id",
 		// for all select options type
 		checked: option.__selected ?? false,
-		[attrType !== "vdom" ? "onclick" : "onClick"]: (event: PointerEvent) => {
+		onClick: (event: PointerEvent) => {
 			event.preventDefault();
 			event.stopImmediatePropagation();
 			event.stopPropagation();
@@ -154,5 +151,5 @@ export function renderAttributesSelectOption<
 		attrs.disabled = state?.element.disabled;
 	}
 
-	return attrs as Attributes.Objects.SelectOption<S, O, A>;
+	return processAttrs(basic, state as any, attrs, "option"); //attrs as Attributes.Objects.SelectOption<S, O, A>;
 }

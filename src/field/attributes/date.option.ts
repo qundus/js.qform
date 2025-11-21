@@ -10,6 +10,7 @@ import DAY from "./helpers/date/DAY";
 import HOUR from "./helpers/date/HOUR";
 import MINUTE from "./helpers/date/MINUTE";
 import SECOND from "./helpers/date/SECOND";
+import { processAttrs } from "../processors/attributes";
 
 export function renderAttributesDateOption<
 	S extends Field.Setup,
@@ -17,12 +18,10 @@ export function renderAttributesDateOption<
 	A extends Attributes.Objects.Type,
 >(
 	basic: FunctionProps.Field<S, O>,
-	props: FunctionProps.RenderAttributes<S, O, A>,
+	state: Field.StoreObject<Field.Setup<"date">, O>,
 	option: Extras.Date.Option,
 ) {
 	const { key, options, store, setup } = basic;
-	const { attrType, reactive } = props;
-	const state = reactive as unknown as Field.StoreObject<Field.Setup<"date">>;
 	if (option === null) throw new Error("qform: unknown date option :: " + option);
 	const id =
 		(state?.element?.label ?? setup.label) +
@@ -35,9 +34,9 @@ export function renderAttributesDateOption<
 	const attrs = {
 		id,
 		name,
-		[attrType !== "vdom" ? "onclick" : "onClick"]: function onclick(event: PointerEvent) {
+		onClick: function onclick(event: PointerEvent) {
 			event.preventDefault();
-			const next = { ...store.get() } as Field.StoreObject<Field.Setup<"date">>;
+			const next = { ...store.get() } as Field.StoreObject<Field.Setup<"date">, O>;
 			let update = false;
 			const period = next.extras.TIME.activePeriod;
 			if (option.type === CALENDAR.OPTIONS.TIME_PERIOD) {
@@ -59,12 +58,6 @@ export function renderAttributesDateOption<
 		},
 	} as any;
 
-	// process input
-	type PP = Parameters<Field.OnRender<Field.Type>>[0];
-	const processProps: PP = { key, data: reactive, attrType, attrs, attrFor: "option" };
-	options?.fieldsOnRender?.(processProps);
-	setup.onRender?.(processProps);
-
 	// console.log("element input :: ", key, " :: ", result.value);
-	return attrs as Attributes.Objects.DateOption<S, O, A>;
+	return processAttrs(basic, state as any, attrs, "option"); //attrs as Attributes.Objects.DateOption<S, O, A>;
 }

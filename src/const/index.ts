@@ -8,7 +8,7 @@ export const IGNORED_SETUP_KEYS = {
 	//
 	onMount: undefined,
 	onChange: undefined,
-	onRender: undefined,
+	onAttrs: undefined,
 	//
 	labelReplace: undefined,
 	props: undefined,
@@ -27,7 +27,7 @@ export const IGNORED_SETUP_KEYS = {
 	// make sure to update the keys above
 	| "onMount"
 	| "onChange"
-	| "onRender"
+	| "onAttrs"
 	// make sure to update the keys above
 	| "labelReplace"
 	| "props"

@@ -26,13 +26,17 @@ export function createField<
 	const options = prepareOptions<O>(formOptions) as O;
 	const setup = prepareSetup<F, S>(key, inn, options);
 	const store = prepareStore(options);
-	const init = prepareInit(key, setup, options, store);
+	const init = prepareInit(key, setup, options, store) as any;
 	// console.log("key :: ", key, " :: ", init);
-	store.set(init);
 
-	// addons
+	// create basic object
 	const fieldProps = { key, setup, options, store, init };
 
+	// generate attributes separately from init preparations and before commiting to store
+	init.attrs = createAttributes(fieldProps, init);
+	store.set(init);
+
+	// create necessary addons before cycles begin
 	const remove = fieldAddonRemove(fieldProps);
 	const update = fieldAddonUpdate(fieldProps);
 	const reset = fieldAddonReset(fieldProps);
@@ -41,42 +45,14 @@ export function createField<
 	mountCycle(fieldProps, update);
 	changeCycle(fieldProps, formStore, update);
 
-	// attributes
-	let attrs: any = null;
-	let attrsv: any = null;
-
 	return {
 		key,
 		setup: setup as any,
 		store: store as any,
+		storeh: (store as any).hooks,
 		//
 		update: update as any,
 		remove,
 		reset,
-		//
-		get attrs() {
-			if (attrs == null) {
-				attrs = createAttributes(fieldProps, "dom");
-			}
-			return attrs;
-		},
-		get attrsv() {
-			if (attrsv == null) {
-				attrsv = createAttributes(fieldProps, "vdom");
-			}
-			return attrsv;
-		},
-		get attrsh() {
-			if (attrs == null) {
-				attrs = createAttributes(fieldProps, "dom");
-			}
-			return attrs.hooks;
-		},
-		get attrsvh() {
-			if (attrsv == null) {
-				attrsv = createAttributes(fieldProps, "vdom");
-			}
-			return attrsv.hooks;
-		},
 	};
 }

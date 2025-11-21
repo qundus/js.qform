@@ -80,32 +80,30 @@ export namespace Field {
 		SSR: boolean;
 	}) => void | (() => void) | Promise<void | (() => void)>;
 	export type OnChange<T extends Type, V> = (props: {
-		$next: StoreObject<Setup>;
-		prev: StoreObject<Setup>;
+		$next: StoreObject<Setup, Form.Options>;
+		prev: StoreObject<Setup, Form.Options>;
 		setup: Setup;
 		form: Form.StoreObject<any, any> | undefined;
 		update: Addon.FieldUpdate<Setup, Form.Options>;
 		SSR: boolean;
 		// prevForm: Form.StoreObject<Form.Fields>;
 	}) => void | Promise<void>;
-	export type OnRender<T extends Type> = (
+	export type OnAttrs<T extends Type> = (
 		props: {
 			key: string;
-			attrType: Attributes.Objects.Type;
-			data: StoreObject<any>;
-			// attrs: undefined;
+			state: StoreObject<any, Form.Options>;
 		} /** this is the final attributes passed to the element */ & (
 			| {
 					attrFor: "input";
-					attrs: Attributes.Objects.Input<Setup<T>, Form.Options, Attributes.Objects.Type>;
+					attrs: Attributes.Objects.Input<Setup<T>, Form.Options, "vdom">;
 			  }
 			| {
 					attrFor: "trigger";
-					attrs: Attributes.Objects.SelectTrigger<Setup<T>, Form.Options, Attributes.Objects.Type>;
+					attrs: Attributes.Objects.SelectTrigger<Setup<T>, Form.Options, "vdom">;
 			  }
 			| {
 					attrFor: "option";
-					attrs: Attributes.Objects.SelectOption<Setup<T>, Form.Options, Attributes.Objects.Type>;
+					attrs: Attributes.Objects.SelectOption<Setup<T>, Form.Options, "vdom">;
 			  }
 			// TODO: finish attrFor for date types
 		),
@@ -150,10 +148,9 @@ export namespace Field {
 		 */
 		onChange?: OnChange<T, V> | OnChange<T, V>[];
 		/**
-		 * html bare element props passed, this is so preliminary right
-		 * now and requires extra work for vdom, expect breaking changes here.
+		 * html bare element attributes passed to dom.
 		 */
-		onRender?: OnRender<T>;
+		onAttrs?: OnAttrs<T>;
 
 		//## conditions
 		hidden?: boolean;
@@ -286,7 +283,7 @@ export namespace Field {
 	};
 
 	// stores
-	export type StoreObject<S extends Setup> = {
+	export type StoreObject<S extends Setup, O extends Form.Options> = {
 		readonly __internal: {
 			key: string;
 			manual: boolean;
@@ -308,15 +305,13 @@ export namespace Field {
 		props: S["props"];
 		extras: Extras.Factory<S>;
 		errors?: string[];
+		attrs: Attributes.Factory<S, O>;
 	};
-	export type StoreAttributesObject<
-		S extends Setup,
-		O extends Form.Options,
-		D extends Attributes.Objects.Type,
-	> = Attributes.Factory<S, O, D>;
-	export type StoreState<S extends Setup> = _QSTATE.Nano.Atom<StoreObject<S>>;
+	export type StoreState<S extends Setup, O extends Form.Options> = _QSTATE.Nano.Atom<
+		StoreObject<S, O>
+	>;
 	export type Store<S extends Setup, O extends Form.Options> = _QSTATE.Store.Factory<
-		StoreState<S>,
+		StoreState<S, O>,
 		{
 			hooks: O["storeHooks"];
 			addons: {
@@ -324,36 +319,20 @@ export namespace Field {
 			};
 		}
 	>;
-	export type StoreAttributes<
-		S extends Setup,
-		O extends Form.Options,
-		D extends Attributes.Objects.Type,
-	> = _QSTATE.StoreDerived.Factory<
-		StoreAttributesObject<S, O, D>,
-		{
-			hooks: O["storeHooks"];
-		}
-	>;
 
 	// factory
-	export type Factory<S extends Setup, O extends Form.Options> = {
+	export type Factory<S extends Setup<any>, O extends Form.Options> = {
 		readonly key: string;
 		readonly setup: S;
-		readonly store: Store<S, O>;
 		// addons
 		readonly update: Addon.FieldUpdate<S, O>;
 		readonly remove: Addon.FieldRemove<S, O>;
 		readonly reset: Addon.FieldReset<S, O>;
-		// attributes
-		readonly attrs: StoreAttributes<S, O, "dom">;
-		readonly attrsh: "hooks" extends keyof StoreAttributes<S, O, "dom">
-			? StoreAttributes<S, O, "dom">["hooks"]
-			: undefined;
-		readonly attrsv: StoreAttributes<S, O, "vdom">;
-		readonly attrsvh: "hooks" extends keyof StoreAttributes<S, O, "vdom">
-			? StoreAttributes<S, O, "vdom">["hooks"]
-			: undefined;
+		// store
+		readonly store: Store<S, O>;
+		readonly storeh: "hooks" extends keyof Store<S, O> ? Store<S, O>["hooks"] : undefined;
 	};
+	export type Component<T extends Type> = Omit<Factory<Setup<T, any>, Form.Options>, "storeh">;
 }
 
 export namespace Extras {
@@ -852,10 +831,11 @@ export namespace Form {
 		 */
 		fieldsOnChange?: Field.OnChange<Field.Type, any>;
 		/**
-		 * global per element render listener, gets called before or after field's specific
-		 * onElement based on onFieldElementOrder option.
+		 * global per element dom attributes listener, gets called after field's specific
+		 * onAttrs event if it exists.
 		 */
-		fieldsOnRender?: Field.OnRender<Field.Type>;
+		fieldsOnAttrs?: Field.OnAttrs<Field.Type>;
+
 		//## exportation and usage
 		/**
 		 * the last step of checking for form validity is to check for
@@ -915,6 +895,9 @@ export namespace Form {
 	// store
 	export interface StoreObject<F extends Fields, O extends Options<F>>
 		extends _QSTATE.NanoType.DeepMapObject {
+		status: FORM.STATUS;
+		incomplete: string[];
+		//
 		values: {
 			[K in keyof F]: F[K]["setup"]["value"];
 		};
@@ -933,19 +916,11 @@ export namespace Form {
 			>;
 		};
 		props: O["props"];
-		incomplete: string[];
-		status: FORM.STATUS;
+		attrs: {
+			[K in keyof F]: ReturnType<F[K]["store"]["get"]>["attrs"];
+		};
 		// changed: undefined | { root: keyof StoreObject<F>; key?: keyof F; value: any };
 	}
-	export type StoreAttributesObject<
-		F extends Fields,
-		O extends Options<F>,
-		D extends Attributes.Objects.Type,
-	> = {
-		[K in keyof F]: "dom" extends D
-			? ReturnType<F[K]["attrs"]["get"]>
-			: ReturnType<F[K]["attrsv"]["get"]>;
-	};
 	export type StoreState<F extends Fields, O extends Options<F>> = _QSTATE.Nano.Map<
 		StoreObject<F, O>
 	>;
@@ -955,29 +930,12 @@ export namespace Form {
 			hooks: O["storeHooks"];
 			addons: {
 				derive: typeof deriveAddon;
-				// update: typeof updateAddon;
 			};
-		}
-	>;
-	export type StoreAttributes<
-		F extends Fields,
-		O extends Options<F>,
-		D extends Attributes.Objects.Type,
-	> = _QSTATE.StoreDerived.Factory<
-		StoreAttributesObject<F, O, D>,
-		{
-			hooks: O["storeHooks"];
 		}
 	>;
 
 	// factory/result
 	export type Factory<I extends FieldsIn, F extends Fields<I>, O extends Options<F>> = {
-		/**
-		 * extreme low-level control of form, use setters with extreme care as this affects
-		 * the core logic of the form, it's advised to not modify form store
-		 * directly, instead use update, submit..etc to safely mutate form.
-		 */
-		readonly store: Store<F, O>;
 		readonly fields: Fields<I, O>;
 		readonly options: O;
 		get keys(): () => (keyof F)[];
@@ -986,15 +944,14 @@ export namespace Form {
 		update: Addon.FormUpdate<F, O>;
 		values: Addon.FormValues<F, O>;
 		button: Addon.FormButton<F, O>;
-		//
-		readonly attrs: StoreAttributes<F, O, "dom">;
-		readonly attrsh: "hooks" extends keyof StoreAttributes<F, O, "dom">
-			? StoreAttributes<F, O, "dom">["hooks"]
-			: undefined;
-		readonly attrsv: StoreAttributes<F, O, "vdom">;
-		readonly attrsvh: "hooks" extends keyof StoreAttributes<F, O, "vdom">
-			? StoreAttributes<F, O, "vdom">["hooks"]
-			: undefined;
+		// store
+		/**
+		 * extreme low-level control of form, use setters with extreme care as this affects
+		 * the core logic of the form, it's advised to not modify form store
+		 * directly, instead use update, submit..etc to safely mutate form.
+		 */
+		readonly store: Store<F, O>;
+		readonly storeh: "hooks" extends keyof Store<F, O> ? Store<F, O>["hooks"] : undefined;
 	};
 }
 
@@ -1014,7 +971,7 @@ export namespace FunctionProps {
 		el: Field.Event | undefined;
 		manualUpdate: boolean;
 		preprocessValue: boolean;
-		$next: Field.StoreObject<S>;
+		$next: Field.StoreObject<S, O>;
 	}
 
 	// form
@@ -1026,13 +983,8 @@ export namespace FunctionProps {
 	export type FormAddon<F extends Form.Fields, O extends Form.Options> = FormCycle<F, O>;
 
 	// render
-	export type RenderAttributes<
-		S extends Field.Setup,
-		O extends Form.Options,
-		A extends Attributes.Objects.Type,
-	> = {
-		attrType: A;
-		reactive: Field.StoreObject<S>;
+	export type RenderAttributes<S extends Field.Setup, O extends Form.Options> = {
+		reactive: Field.StoreObject<S, O>;
 	};
 }
 
@@ -1071,7 +1023,7 @@ export namespace Attributes {
 		// input
 		export type InputDom = ToDom<InputVdom>;
 		export type InputVdom = {
-			ref: () => void;
+			// ref: (element: any) => void;
 			id: string;
 			required: boolean;
 			disabled: boolean;
@@ -1094,9 +1046,10 @@ export namespace Attributes {
 		// select
 		export type SelectTriggerDom = ToDom<SelectTriggerVdom>;
 		export type SelectTriggerVdom = {
+			// ref: (element: any) => void;
+			onClick: (event: Event) => void;
 			name: string;
 			value: any;
-			onClick: (event: Event) => void;
 		};
 		export type SelectTrigger<
 			S extends Field.Setup,
@@ -1107,6 +1060,7 @@ export namespace Attributes {
 		// option
 		export type SelectOptionDom = ToDom<SelectOptionVdom>;
 		export type SelectOptionVdom = {
+			// ref: (element: any) => void;
 			value: any;
 			selected: boolean;
 			onClick: (event: Event) => void;
@@ -1114,6 +1068,7 @@ export namespace Attributes {
 
 		export type SelectOptionRadioDom = ToDom<SelectOptionRadioVdom>;
 		export type SelectOptionRadioVdom = {
+			// ref: (element: any) => void;
 			value: any;
 			selected: boolean;
 			// onClick: (event: Event) => void;
@@ -1131,6 +1086,7 @@ export namespace Attributes {
 		// date
 		export type DateInputDom = ToDom<DateInputVdom>;
 		export type DateInputVdom = {
+			// ref: (element: any) => void;
 			id: string;
 			required: boolean;
 			disabled: boolean;
@@ -1147,6 +1103,7 @@ export namespace Attributes {
 		// date
 		export type DateEventDom = ToDom<DateEventVdom>;
 		export type DateEventVdom = {
+			// ref: (element: any) => void;
 			id: string;
 			name: string;
 			onClick: (event: Event) => void;
@@ -1159,6 +1116,7 @@ export namespace Attributes {
 
 		export type DateCellDom = ToDom<DateCellVdom>;
 		export type DateCellVdom = {
+			// ref: (element: any) => void;
 			id: string;
 			name: string;
 			onClick: (event: Event) => void;
@@ -1171,6 +1129,7 @@ export namespace Attributes {
 
 		export type DateOptionDom = ToDom<DateOptionVdom>;
 		export type DateOptionVdom = {
+			// ref: (element: any) => void;
 			id: string;
 			name: string;
 			onClick: (event: Event) => void;
@@ -1189,28 +1148,64 @@ export namespace Attributes {
 		export type Factory<R> = R;
 	}
 
-	export type Factory<
-		S extends Field.Setup,
-		O extends Form.Options,
-		D extends Objects.Type,
-	> = S extends { type: "select" } | { type: "select.radio" }
+	// export type ProcessedAttributes<
+	// 	S extends Field.Setup,
+	// 	O extends Form.Options,
+	// > = {
+	// 	ref: (element: any) => void;
+	// 	dom: Objects.SelectTrigger<S, O, "dom">;
+	// 	vdom: Objects.SelectTrigger<S, O, "vdom">;
+	// };
+
+	// TODO: create a dynamically named and created attributes for dom
+	// based on a user set option, something like attrType: {mine: 'vdom'}
+	// which would be used in this factory making them ref,dom,vdom,mine
+	// this allows for smother transition from one framework to another by
+	// just changing the 'mine' dom attributes type :) when using
+
+	export type Factory<S extends Field.Setup, O extends Form.Options> = S extends
+		| { type: "select" }
+		| { type: "select.radio" }
 		? {
-				trigger(props?: { ref?: any }): Objects.SelectTrigger<S, O, D>;
-				option: (props: { option: any; ref?: any }) => Objects.SelectOption<S, O, D>;
+				trigger: {
+					ref: (element: any) => void;
+					dom: Objects.SelectTrigger<S, O, "dom">;
+					vdom: Objects.SelectTrigger<S, O, "vdom">;
+				};
+				option: (option: any) => {
+					ref: (element: any) => void;
+					dom: Objects.SelectOption<S, O, "dom">;
+					vdom: Objects.SelectOption<S, O, "vdom">;
+				};
 			}
 		: S extends { type: "date" }
 			? {
-					input(props?: { ref?: any }): Objects.DateInput<S, O, D>;
-					event(props: {
-						event: CALENDAR.EVENTS | keyof typeof CALENDAR.EVENTS;
-						ref?: any;
-					}): Objects.DateEvent<S, O, D>;
-					cell(props: {
-						cell: Extras.Date.CellDate | Extras.Date.CellTime | DateAttributeCells;
-						lang: string;
-						ref?: any;
-					}): Objects.DateCell<S, O, D>;
-					option: (option: Extras.Date.Option) => Objects.DateCell<S, O, D>;
+					input: {
+						ref: (element: any) => void;
+						dom: Objects.DateInput<S, O, "dom">;
+						vdom: Objects.DateInput<S, O, "vdom">;
+					};
+					event(event: CALENDAR.EVENTS | keyof typeof CALENDAR.EVENTS): {
+						ref: (element: any) => void;
+						dom: Objects.DateEvent<S, O, "dom">;
+						vdom: Objects.DateEvent<S, O, "vdom">;
+					};
+					cell(cell: Extras.Date.CellDate | Extras.Date.CellTime | DateAttributeCells): {
+						ref: (element: any) => void;
+						dom: Objects.DateCell<S, O, "dom">;
+						vdom: Objects.DateCell<S, O, "vdom">;
+					};
+					option(option: Extras.Date.Option): {
+						ref: (element: any) => void;
+						dom: Objects.DateOption<S, O, "dom">;
+						vdom: Objects.DateOption<S, O, "vdom">;
+					};
 				}
-			: Objects.Input<S, O, D>;
+			: {
+					input: {
+						ref: (element: any) => void;
+						dom: Objects.Input<S, O, "dom">;
+						vdom: Objects.Input<S, O, "vdom">;
+					};
+				};
 }

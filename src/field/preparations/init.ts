@@ -2,6 +2,7 @@ import type { Field, Form, FunctionProps } from "../../_model";
 import { isFieldIncomplete } from "../checks/is-field-incomplete";
 import { IGNORED_SETUP_KEYS, FIELD } from "../../const";
 import { processValue } from "../processors/value";
+import { createAttributes } from "../attributes";
 
 // TODO: atom store may become inconsistent with onchange function
 // find another way to do it!
@@ -10,10 +11,10 @@ export function prepareInit<S extends Field.Setup, O extends Form.Options>(
 	setup: S,
 	options: O | undefined,
 	store: Field.Store<S, O>,
-): Field.StoreObject<S> {
+): Field.StoreObject<S, O> {
 	// initialize
 	const fieldProps = { key, setup, store, options };
-	const init: Field.StoreObject<S> = {
+	const init: Field.StoreObject<S, O> = {
 		__internal: {
 			key: key,
 			manual: false,
@@ -42,6 +43,7 @@ export function prepareInit<S extends Field.Setup, O extends Form.Options>(
 			entered: false,
 			left: false,
 		},
+		attrs: null as any,
 	};
 
 	// setup element

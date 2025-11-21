@@ -3,6 +3,7 @@ import type { Addon, Field, Form, FunctionProps } from "../../_model";
 import { isFieldIncomplete } from "../checks/is-field-incomplete";
 import { processValue } from "../processors/value";
 import { FIELD } from "../../const";
+import { createAttributes } from "../attributes";
 
 const REFRESH = "__REFRESH";
 export function changeCycle<
@@ -27,7 +28,7 @@ export function changeCycle<
 	// });
 	onSet(store, async (payload) => {
 		const $next = payload.newValue;
-		// console.log("changed state :: ", key, " :: ", $next.event.CYCLE);
+		// console.log("changed state :: ", key, " :: ", $next.yeah);
 		// TODO: check if this is causing the radio to not update on some jumping back
 		// and fouth between options too fast sometimes
 		if ($next.__internal[REFRESH]) {
@@ -35,6 +36,7 @@ export function changeCycle<
 			return $next;
 		} else if ($next.event.CYCLE > FIELD.CYCLE.IDLE) {
 			// console.log("current cycle :: ", $next.event.CYCLE);
+			$next.attrs = createAttributes(props, $next) as any;
 			return $next;
 		}
 		const _DOM = $next.event.DOM;
@@ -206,6 +208,17 @@ export function changeCycle<
 				$next.condition.valid = $next.condition.error ? false : true;
 			}
 		}
+
+		// defined attrs
+		$next.attrs = createAttributes(props, $next) as any;
+
+		// $next.wow = { yeah: "aha" };
+		// Object.defineProperty($next, "wow", {
+		// 	get() {
+		// 		console.log("wow has been intialized!!!!!!!!!!");
+		// 		return "yeah wow";
+		// 	},
+		// });
 
 		// for some reason the effect of the form doesn't run properly so i have to rerun it by aborting and sending
 		// another store update

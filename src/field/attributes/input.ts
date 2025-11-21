@@ -1,21 +1,18 @@
 import type { Field, Form, FunctionProps, Attributes } from "../../_model";
 import { FIELD } from "../../const";
+import { processAttrs } from "../processors/attributes";
 
 // export const isServerSide = (): boolean =>
 // 	typeof window === "undefined" || typeof document === "undefined";
-export function renderAttributesInput<
-	S extends Field.Setup,
-	O extends Form.Options,
-	A extends Attributes.Objects.Type,
->(basic: FunctionProps.Field<S, O>, props: FunctionProps.RenderAttributes<S, O, A>) {
+export function renderAttributesInput<S extends Field.Setup, O extends Form.Options>(
+	basic: FunctionProps.Field<S, O>,
+	state: Field.StoreObject<S, O>,
+) {
 	const { key, store, setup } = basic;
-	const { attrType, reactive } = props;
-	const state = reactive;
 	const ssr = setup.ssr;
 	const id = `${state?.element?.label ?? setup.label}-${ssr ? "server" : "client"}`;
 
 	// console.log("key field :: ", key, " :: ", ssr);
-
 	const attrs = {
 		key: `${key}-${ssr ? "server" : "client"}`,
 		id,
@@ -24,9 +21,9 @@ export function renderAttributesInput<
 		multiple: state?.element.multiple,
 		required: state?.element.required,
 		disabled: state?.element.disabled,
-		placeholder: state?.element.placeholder,
-		[attrType !== "vdom" ? "autocomplete" : "autoComplete"]: "off",
-		[attrType !== "vdom" ? "onfocus" : "onFocus"]: (event: FocusEvent) => {
+		placeholder: state?.element.placeholder ?? "",
+		autoComplete: "off",
+		onFocus: (event: FocusEvent) => {
 			event.preventDefault();
 			event.stopImmediatePropagation();
 			event.stopPropagation();
@@ -46,7 +43,7 @@ export function renderAttributesInput<
 
 			store.set(next);
 		},
-		[attrType !== "vdom" ? "onblur" : "onBlur"]: (event: Event) => {
+		onBlur: (event: Event) => {
 			event.preventDefault();
 			event.stopImmediatePropagation();
 			event.stopPropagation();
@@ -60,7 +57,27 @@ export function renderAttributesInput<
 			next.event.ev = undefined;
 			store.set(next);
 		},
-	} as any;
+		[state.element.validateOn === "change" ? "onChange" : "onInput"]: (event: Event) => {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			event.stopPropagation();
+			const next = { ...store.get() };
+			if (next.element.disabled) {
+				return;
+			}
+			next.__internal.manual = false;
+			//
+			next.event.DOM = FIELD.DOM.IDLE; // questionable?
+			next.event.MUTATE = FIELD.MUTATE.VALUE;
+			const value = (event.target as any).value;
+			next.event.ev = {
+				value: value === "" ? undefined : value,
+				checked: (event.target as any).checked,
+				files: (event.target as any).files,
+			};
+			store.set(next);
+		},
+	};
 
 	// check if value should be added to object
 	if (setup.type === "checkbox") {
@@ -69,35 +86,5 @@ export function renderAttributesInput<
 		attrs.value = state?.value ?? "";
 	}
 
-	// type
-	// event listener id
-	let listenerId = undefined as string | undefined;
-	if (state.element.validateOn === "change") {
-		listenerId = attrType !== "vdom" ? "onchange" : "onChange";
-	} else {
-		listenerId = attrType !== "vdom" ? "oninput" : "onInput";
-	}
-	attrs[listenerId] = (event: Event) => {
-		event.preventDefault();
-		event.stopImmediatePropagation();
-		event.stopPropagation();
-		const next = { ...store.get() };
-		if (next.element.disabled) {
-			return;
-		}
-		next.__internal.manual = false;
-		//
-		next.event.DOM = FIELD.DOM.IDLE; // questionable?
-		next.event.MUTATE = FIELD.MUTATE.VALUE;
-		const value = (event.target as any).value;
-		next.event.ev = {
-			value: value === "" ? undefined : value,
-			checked: (event.target as any).checked,
-			files: (event.target as any).files,
-		};
-		store.set(next);
-	};
-
-	// console.log("element input :: ", key, " :: ", result.value);
-	return attrs as Attributes.Objects.Input<S, O, A>;
+	return processAttrs(basic, state, attrs, "input");
 }

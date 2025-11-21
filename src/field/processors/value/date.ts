@@ -1,17 +1,17 @@
 import type { Extras, Field, Form, FunctionProps } from "../../../_model";
-import { parseDateEnhanced } from "../../../render/helpers/date/parse";
-import { initMode } from "../../../render/helpers/date/mode";
+import { parseDateEnhanced } from "../../attributes/helpers/date/parse";
+import { initMode } from "../../attributes/helpers/date/mode";
 import { FIELD } from "../../../const";
-import { createSelectedList } from "../../../render/helpers/date/selected-list";
+import { createSelectedList } from "../../attributes/helpers/date/selected-list";
 //
-import DATE from "../../../render/helpers/date/DATE";
-import TIME from "../../../render/helpers/date/TIME";
-import YEAR from "../../../render/helpers/date/YEAR";
-import MONTH from "../../../render/helpers/date/MONTH";
-import DAY from "../../../render/helpers/date/DAY";
-import HOUR from "../../../render/helpers/date/HOUR";
-import MINUTE from "../../../render/helpers/date/MINUTE";
-import SECOND from "../../../render/helpers/date/SECOND";
+import DATE from "../../attributes/helpers/date/DATE";
+import TIME from "../../attributes/helpers/date/TIME";
+import YEAR from "../../attributes/helpers/date/YEAR";
+import MONTH from "../../attributes/helpers/date/MONTH";
+import DAY from "../../attributes/helpers/date/DAY";
+import HOUR from "../../attributes/helpers/date/HOUR";
+import MINUTE from "../../attributes/helpers/date/MINUTE";
+import SECOND from "../../attributes/helpers/date/SECOND";
 
 export function processDateValue<S extends Field.Setup<"date">, O extends Form.Options>(
 	props: FunctionProps.Field<S, O>,

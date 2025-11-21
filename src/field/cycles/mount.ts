@@ -6,6 +6,7 @@ export function mountCycle<S extends Field.Setup, O extends Form.Options>(
 	update: Addon.FieldUpdate<S, O>,
 ) {
 	const { setup, store } = props;
+
 	const next_cycle = update.cycle(setup.initCycle);
 	onMount(store, () => {
 		let ureturns = null as null | void | (() => void);

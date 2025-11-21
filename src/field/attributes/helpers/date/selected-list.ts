@@ -1,4 +1,4 @@
-import type { Extras } from "../../../_model";
+import type { Extras } from "../../../../_model";
 
 export type SelectedList = ReturnType<typeof createSelectedList>;
 export function createSelectedList(extras: Extras.Date.Out<any>) {

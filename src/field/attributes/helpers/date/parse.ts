@@ -1,4 +1,4 @@
-import type { Extras } from "../../../_model";
+import type { Extras } from "../../../../_model";
 
 type DateComponents = Extras.Date.ParsedDate;
 type TimeComponents = Extras.Date.ParsedTime;

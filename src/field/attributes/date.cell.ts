@@ -14,6 +14,7 @@ import DAY from "./helpers/date/DAY";
 import HOUR from "./helpers/date/HOUR";
 import MINUTE from "./helpers/date/MINUTE";
 import SECOND from "./helpers/date/SECOND";
+import { processAttrs } from "../processors/attributes";
 
 export type DateAttributeCells = {
 	YEAR?: Extras.Date.CellDate;
@@ -23,31 +24,25 @@ export type DateAttributeCells = {
 	MINUTE?: Extras.Date.CellTime;
 	SECOND?: Extras.Date.CellTime;
 };
-export function renderAttributesDateCell<
-	S extends Field.Setup,
-	O extends Form.Options,
-	A extends Attributes.Objects.Type,
->(
+export function renderAttributesDateCell<S extends Field.Setup, O extends Form.Options>(
 	basic: FunctionProps.Field<S, O>,
-	props: FunctionProps.RenderAttributes<S, O, A>,
+	state: Field.StoreObject<Field.Setup<"date">, O>,
 	_cells: Extras.Date.CellDate | Extras.Date.CellTime | DateAttributeCells,
 ) {
 	const { key, options, store, setup } = basic;
-	const { attrType, reactive } = props;
-	const state = reactive as unknown as Field.StoreObject<Field.Setup<"date">>;
 	const id = (state?.element?.label ?? setup.label) + "body.cell.id";
 	const name = state.__internal.key + "body.cell";
 	const attrs = {
 		id,
 		name,
-		[attrType !== "vdom" ? "onclick" : "onClick"]: function onclick(event: PointerEvent) {
+		onClick: function onclick(event: PointerEvent) {
 			event.preventDefault();
 			const cells = "modeName" in _cells ? { [_cells.modeName]: _cells } : _cells;
 			// const dayCells =
 			if (cells.DAY != null && cells.DAY.isOtherMonth) {
 				return;
 			}
-			const next = { ...store.get() } as Field.StoreObject<Field.Setup<"date">>;
+			const next = { ...store.get() } as Field.StoreObject<Field.Setup<"date">, O>;
 			const mode = next.extras.mode;
 			const multiple = next.element.multiple;
 			const multipleTime = next.extras.multipleTime;
@@ -173,5 +168,5 @@ export function renderAttributesDateCell<
 	} as any;
 
 	// console.log("element input :: ", key, " :: ", result.value);
-	return attrs as Attributes.Objects.DateCell<S, O, A>;
+	return processAttrs(basic, state as any, attrs, "option"); // attrs as Attributes.Objects.DateCell<S, O, A>;
 }
