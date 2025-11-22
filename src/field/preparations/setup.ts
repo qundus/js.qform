@@ -67,6 +67,18 @@ export function prepareSetup<F extends Field.SetupIn, S extends Field.SetupInToS
 			}
 		}
 	}
+	if (setup.attrs != null || options?.attrs != null) {
+		setup.attrs = {
+			...options?.attrs,
+			...setup.attrs,
+		};
+		if (setup.attrs.map != null) {
+			setup.attrs.map = {
+				...options?.attrs?.map,
+				...setup?.attrs?.map,
+			};
+		}
+	}
 
 	// vital checks
 	if (typeof setup.preprocessValue !== "boolean") {

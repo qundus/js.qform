@@ -305,7 +305,7 @@ export namespace Field {
 		condition: Condition;
 		element: Element<S>;
 		/** user defined data */
-		props: S["props"];
+		props: undefined | unknown extends S["props"] ? any : S["props"];
 		extras: Extras.Factory<S>;
 		errors?: string[];
 		attrs: Attributes.Factory<S, O>;
@@ -1038,10 +1038,10 @@ export namespace Attributes {
 			name: string;
 			multiple: boolean;
 			value: any;
-			onInput: (event: Event) => void;
-			onChange: (event: Event) => void;
-			onFocus: (event: FocusEvent) => void;
-			onBlur: (event: FocusEvent) => void;
+			onInput: (event: any) => void; // Event
+			onChange: (event: any) => void;
+			onFocus: (event: any) => void;
+			onBlur: (event: any) => void; // FocusEvent
 		}
 
 		// export type AllInputDom = HTMLInputElement;
@@ -1051,7 +1051,7 @@ export namespace Attributes {
 	export namespace Select {
 		export interface Trigger extends Record<string, unknown> {
 			// ref: (element: any) => void;
-			onClick: (event: Event) => void;
+			onClick: (event: any) => void;
 			name: string;
 			value: any;
 		}
@@ -1060,7 +1060,7 @@ export namespace Attributes {
 			// ref: (element: any) => void;
 			value: any;
 			selected: boolean;
-			onClick: (event: Event) => void;
+			onClick: (event: any) => void;
 		}
 
 		export interface Radio extends Record<string, unknown> {
@@ -1096,21 +1096,21 @@ export namespace Attributes {
 			// ref: (element: any) => void;
 			id: string;
 			name: string;
-			onClick: (event: Event) => void;
+			onClick: (event: any) => void;
 		}
 
 		export interface Cell extends Record<string, unknown> {
 			// ref: (element: any) => void;
 			id: string;
 			name: string;
-			onClick: (event: Event) => void;
+			onClick: (event: any) => void;
 		}
 
 		export interface Option extends Record<string, unknown> {
 			// ref: (element: any) => void;
 			id: string;
 			name: string;
-			onClick: (event: Event) => void;
+			onClick: (event: any) => void;
 		}
 	}
 
@@ -1120,13 +1120,22 @@ export namespace Attributes {
 		T extends Record<string, any>,
 	> = (S["attrs"] extends object
 		? S["attrs"]["map"] extends Record<any, any>
-			? { [K in keyof S["attrs"]["map"]]: "vdom" extends S["attrs"]["map"] ? T : ToDom<T> }
+			? { [K in keyof S["attrs"]["map"]]: "vdom" extends S["attrs"]["map"][K] ? T : ToDom<T> }
 			: {}
-		: {}) & {
-		ref: (element: any) => void;
-		vdom: T;
-		dom: ToDom<T>;
-	};
+		: {}) &
+		(O["attrs"] extends object
+			? O["attrs"]["map"] extends Record<any, any>
+				? { [K in keyof O["attrs"]["map"]]: "vdom" extends O["attrs"]["map"][K] ? T : ToDom<T> }
+				: {}
+			: {}) extends infer G
+		? Omit<G, "dom" | "vdom" | "ref"> & {
+				ref: (element: any) => void;
+				vdom: T; //"vdom" extends keyof G ? G["vdom"] : T;
+				dom: ToDom<T>; // "dom" extends keyof G ? G["dom"] : ToDom<T>;
+			} extends infer L
+			? { [K in keyof L]: L[K] }
+			: never
+		: never;
 
 	// TODO: create a dynamically named and created attributes for dom
 	// based on a user set option, something like attrType: {mine: 'vdom'}

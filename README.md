@@ -124,66 +124,167 @@ const state = loginForm.fields.name.store.hooks.useStore();
 hooks are a massive part of [qState] please check it out.
 
 
-<!-- basics: render -->
+<!-- basics: attributes -->
 <br />
-<img height="50px" src="https://img.shields.io/badge/basics-render-blue?style=for-the-badge" />
+<img height="50px" src="https://img.shields.io/badge/basics-attributes-blue?style=for-the-badge" />
 <br />
 
-Render is the api used to pass html element attributes, essentially it's what brings the input/component element to live with interactivity and other meta attributes like id, name, onclick...etc
+Attributes is the api used to pass html element attributes, essentially it's what brings the input/component element to live with interactivity and other meta attributes like id, name, onclick...etc. 
 
-> Vanilla
+Generally there are only `vdom` and `dom` html attribute types, these are keys used by your choosing to apply dom attributes, there's also `ref` which can be used to apply `dom` attributes to any element in vanilla js or can be used as ref in `react`, `preact` or any framework.
+
+Attributes are also super helpful when it comes to building ui libraries because it sets the standard for dom attributes and it's already built in.
+
+### Usage
+
+You can just create a form as usual
+
+```ts
+// file: form.ts
+import { createForm } from ":setup/form";
+export default createForm(
+  {
+    name: null, // fallback input.type="text"
+  }
+);
+```
+
+and then use the attributes any where you like
+
+```tsx
+// file: component.<ext> // <- according to your framework or vanilla
+import form from "./form";
+
+// vanilla
+const nameAttrs = form.fields.name.store.get().attrs.input.dom
+
+// react, preact or framework that accepts vdom attributes
+const nameAttrs = form.fields.name.store.get().attrs.input.vdom
+
+// you can also access them directly from form.store
+const nameAttrs = form.store.get().attrs.name.input.dom
+
+```
+
+### Extend
+
+you can set your own keys to map to `dom attributes` of your liking, here we define the key `svelte` and map it to `dom` attributes, this is extremely useful if the need to switch dev environment occurs, for example the need to change from `react` to `solidjs` and you wish to switch `vdom` attributes used in react with `dom` attributes for `solid` for example, here all you have to is change dom for vdom:
+
+```ts
+import { createForm } from "@qundus/qform";
+
+const form = createForm(
+  {
+    name: {
+      type: 'text',
+      // we can define attrs per field
+      attrs: {
+        map: {
+          svelte: 'dom'
+        }
+      }
+    },
+  },
+  {
+    // or we can define attrs per form
+    attrs: {
+      map: {
+        svelte: 'dom' // field specific attrs definitions will take precedence
+      }
+    }
+  }
+);
+
+// now you can use it as this; notice that key is defined
+const attrs = form.fields.name.store.get().attrs.input.svelte
+```
+
+awesome, but we're not finished yet, what if you want your whole app to have `svelte` as a key to dom attributes
+
+```ts
+import { createFormSetup } from "@qundus/qform";
+
+const appWideForm = createFormSetup({
+	attrs: {
+		map: {
+			svelte: "dom", // notice that this is double
+		},
+	},
+});
+
+// now any form created will have that key
+const myForm = appWideForm({
+  name: null
+})
+
+// and get the attributes
+const attrs = myForm.fields.name.store.get().attrs.input.svelte
+```
+
+
+### Examples
+
+#### DOM (Vanilla, SolidJS...etc)
+
+`dom` attributes can be used by any envorenment that accepts plain (vanilla) js attributes:
 
 ```html
 <div class="flex flex-col h-fit self-start">
-  <label for="name" class="flex flex-row gap-2">
-    <input id="name" />
+  <label for="email" class="flex flex-row gap-2">
+    <p>Email</p>
+    <input id="email" class="self-end m5" />
+    <div id="email_errors" class="text-red"></div>
   </label>
-  <label for="password" class="flex flex-row gap-2">
-    <input id="password"  />
-  </label>
-  <script type="module">
-    import form from "./login-form.mjs";
+  <script>
+    import form from "./form";
     const email = document.getElementById("email");
-    const password = document.getElementById("password");
-    form.attrs.subscribe((value) => {
+    const email_errors = document.getElementById("email_errors");
+    form.store.subscribe((value) => {
       if (email != null) {
-        value.email.ref(email)
+        const errors = value.errors.email;
+        value.attrs.email.input.ref(email);
+        if (email_errors) {
+          email_errors.innerHTML = errors == null ? "" : JSON.stringify(errors);
+        }
       }
-      if (password != null) {
-        value.password.ref(password)
-      }
-    })
+    });
   </script>
 </div>
 ```
-> Preact React Solid tsx jsx
+
+#### Vdom (React, Preact...etc)
+
+`vdom` attributes can be used by any framework that accepts/expects modified vdom attributes:
 
 ```ts
-import loginForm from "./login-form";
+import form from "./form";
 
 interface Props extends IntrinsicElement<"input"> {}
 export default function (props: Props) {
-	const field = loginForm.fields.name;
+	const field = form.fields.name;
+  const state = field.storeh.react() // assuming you added react to form creation
 
 	return (
 		<label className="flex flex-col gap-2">
 			<p>Name</p>
 			<input
 				{...props}
-				ref={field.render.ref}
-				// {...field.render.react()} // or use your hooks
+				// ref={state.attrs.input.ref} // you can also add
+				{...state.attrs.input.vdom}
 			/>
 		</label>
 	);
 }
 ```
 
-> Svelte
+#### Svelte
+
+here's an example how to be used with svelte:
 
 ```html
 <script lang="ts">
-  import loginForm from "./login-form";
-  const field = loginForm.fields.password;
+  import form from "./form";
+  const field = form.fields.password;
   const state = field.store;
   // const state = atom.$store.hooks.useSvelte(); // or use your hooks
   const props = $props();
@@ -193,7 +294,7 @@ export default function (props: Props) {
   <p>Password</p>
   <input
     {...props}
-    {...field.render.svelte.input}
+    {...$state.attrs.input.dom}
     class={`border-2px border-solid ${$state.element.focused "!border-black" : "border-gray"}`}
   />
   {$state.errors?.[0]}
@@ -235,7 +336,7 @@ each field has independant set of events devided into 4 groups:
 - DOM: events that denote dom events.
 - MUTATE: events that denote changes in data.
 - CYCLE: state machine to mark the current active cycle the field is in.
-- RENDER: events to mark the readiness or state of the render object.
+- ATTRIBUTE: events to mark the readiness or state of the attributes object.
 
 ```ts
 import loginForm from "./login-form.mjs";
@@ -250,8 +351,8 @@ form.fields.name.store.listen((value) => {
 	if (value.event.MUTATE === FIELD.MUTATE.VALUE) {
 		// do something when the field value has been mutated
 	}
-	if (value.event.RENDER === FIELD.RENDER.READY) {
-		// do something when the field render elements have been mounted
+	if (value.event.ATTRIBUTE === FIELD.ATTRIBUTE.READY) {
+		// do something when the field attribute elements have been called/requested
 	}
 })
 
@@ -266,7 +367,7 @@ export default function Input() {
 			// do something while field is in loading cycle
 		}
 	}, [state]);
-	return <input {...field.render.react()} />
+	return <input {...state.attrs.input.vdom} />
 }
 ```
 
@@ -288,9 +389,9 @@ this describes events that occur through `html dom events`, i won't be listing a
 
 any data change is hapening under a group/umbrella, you can listen or get notified of these data changes through the `FIELD.MUTATE` constant.
 
-### Render
+### Attributes
 
-if the render api is used, it might be handy to know when the field has been mounted, all render elements start off with `INIT` status and changes to `READY` only when the field has been mounted onto any html element.
+if the attributes api is used, it might be handy to know when the field has been mounted, attributes start off with `INIT` status and changes to `READY` only when the field has been mounted onto any html element.
 
 <!-- field setup -->
 <br />
@@ -335,8 +436,8 @@ need to be extracted from field element and the basic html.element.value attribu
 
 > be carefull here, if you set any values within this function it will rerun again so make sure you have solid if statments/conditions to avoid infinite loops/maximum stacks.
 
-`onRender` </br>
-fired when html element is requesting render attributes, you can use this to attach any html attributes during runtime. 
+`onAttrs` </br>
+fired when html element attributes is requested, you can use this to attach any html attributes during runtime. 
 
 > I chose to remove store mutations from here and keep the data handling within the previous onChange method/s, if you have solid reason why you need it here please open an issue on github.
 
@@ -453,8 +554,8 @@ default behavior of form is to start with CYCLES.IDLE, use this to change that d
 `fieldsOnChange` </br>
 listen to all changes occured on any field and alter it's data if necessary, this gets called before the individual field's method if any.
 
-`fieldsOnRender` </br>
-global per element render listener, gets called before or after field's specific onElement based on onFieldElementOrder option.
+`fieldsOnAttrs` </br>
+global per element attributes listener.
 
 ### Exportation and Usage
 `incompleteListCount` </br>
@@ -472,6 +573,7 @@ if the desired data extracted from the form is in the shape of a nested object, 
 
 `flatLabelJoinChar` </br>
 when no label is provided, the key is used as fallback but sometimes the key is meant to be unflattened later on when fetching the form data, so this offers a way to replace the key flatObjectKeysChar with any character. defaults to ' ' or empty space
+
 
 <!-- extras -->
 <br />
@@ -638,22 +740,26 @@ offers previously selected options indecies.
 `current` | readonly </br>
 offers currently selected options indecies.
 
-> RENDER 
+> ATTRIBUTES 
 
-this field type has it's own special render method of applying to dom.
+this field type has it's own special attributes method/s.
 
 ```tsx
 import form from "./path/to/form";
 const field = form.fields.<your-field-name> // of type 'select'
+const state = field.store.get();
+
 // for triggers you can use
-<div {...field.render.trigger()}>select</div>
+<div {...state.attrs.trigger.vdom}>select</div>
 // for options you can use
-<option {...field.render.option(<selected-option>)}>option</option>
+<option {...state.attrs.option(<selected-option>).vdom}>option</option>
 ```
 
 > EXAMPLE
 ```tsx
 import { createForm } from "@qundus/qform";
+import { solidHook } from "@qundus/qstate/solid";
+
 export default createForm(
   {
     cities: {
@@ -665,6 +771,11 @@ export default createForm(
 				// labelKey: 'value', // global valueKey change
 			}
 		}
+  },
+  {
+    storeHooks: {
+			solid: solidHook,
+		},
   }
 );
 
@@ -673,18 +784,18 @@ import form from "./path/to/form";
 
 export function SelectCities() {
 	const field = form.fields.cities;
-	const state = field.store.hooks.solid();
+	const state = field.store.hooks.solid(); // assuming you added solid hook to form creation
 
 	return (
 		// 
 		<div>
 			{/* value, assuming not multiples */}
-			<p {...field.render.trigger()}>{state.value?.[state.value.__labelKey ?? state.extras.labelKey]}</p>
+			<p {...state.attrs.trigger.dom}>{state.value?.[state.value.__labelKey ?? state.extras.labelKey]}</p>
 			{state.extras.options?.map((option) => {
 				return (
 					<option
 					class={option.selected? "text-blue" : "text-gray"}
-					{...field.render.solid.option(option)}
+					{...state.attrs.option(option).dom}
 					>{option[option.__labelKey ?? state.extras.labelKey]}</option>
 				)
 			}}
@@ -718,12 +829,12 @@ import { useStore } from '@nanostores/preact';
 import { useEffect, useMemo, useRef } from 'preact/hooks';
 import type * as _QFORM from '@qundus/qform';
 
-interface Props<F extends _QFORM.Field.Setup<'file'>> extends ElementAttributesNoChildren<'input'> {
-  field: _QFORM.Field.Factory<F, any>;
+interface Props<F extends _QFORM.Field.Component<'file'>> {
+  field: F
   description?: string;
   buttonLabel?: string;
 }
-export default function FileUpload<F extends _QFORM.Field.Setup<'file'>>(props: Props<F>) {
+export default function FileUpload<F extends _QFORM.Field.Component<'file'>>(props: Props<F>) {
   const { field, description, buttonLabel, ...other } = props;
   const state = useStore(field.store);
   const ref = useRef<HTMLInputElement>(null);
@@ -744,7 +855,7 @@ export default function FileUpload<F extends _QFORM.Field.Setup<'file'>>(props: 
       {/* input */}
       <input
         {...other}
-        {...field.render.preact()}
+        {...state.attrs.input.vdom}
         hidden
         ref={(_ref) => {
           ref.current = _ref;
@@ -820,12 +931,11 @@ import { useStore } from '@nanostores/preact';
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { FIELD } from '@qundus/qform/const';
 
-interface Props<F extends _QFORM.Field.Setup<'select'>>
-  extends ElementAttributesNoChildren<'select', 'value'> {
-  field: _QFORM.Field.Factory<F, _QFORM.Form.Options>;
+interface Props<F extends _QFORM.Field.Component<'select'>> {
+  field: F
   noLabel?: boolean;
 }
-export function Select<F extends _QFORM.Field.Setup<'select'>>(props: Props<F>) {
+export function Select<F extends _QFORM.Field.Component<'select'>>(props: Props<F>) {
   const { field, noLabel = false, value, ...other } = props;
   const state = useStore(field?.store);
   const [show, setShow] = useState(false);
@@ -877,7 +987,7 @@ export function Select<F extends _QFORM.Field.Setup<'select'>>(props: Props<F>) 
               ? 'style-input-focus'
               : ' ')
         }
-        {...field.render.preact.trigger()}
+        {...state.attrs.trigger.vdom}
       >
         {state.value == null ? (
           <p>Select an option</p>
@@ -933,7 +1043,7 @@ export function Select<F extends _QFORM.Field.Setup<'select'>>(props: Props<F>) 
                       'wrap-row w-full style-input-height items-center gap2 capitalize py2 ltr:(pr2 pl3) rtl:(pr3 pl2) cursor-pointer hover:(bg-bg-select-item-hover) ' +
                       (selected ? ' bg-bg-select-item-hover ' : '')
                     }
-                    {...field.render.preact.option(option)}
+                    {...state.attrs.option(option).vdom}
                   >
                     {/* checkbox for multiple */}
                     {state.element.multiple && (
@@ -1137,7 +1247,12 @@ and then use it how you would use the login from before.
 	- partially done with extras chapter, missing 
 - [-] document examples and use cases for special input types like `select`
 	- partially done with components and extras chapters
-- [ ] offer render framework apis as per need basis.
+- [x] offer render framework apis as per need basis.
+  - this has been massively changed and now it's no longer called `render` but the `attributes` or `attrs` api
+  - user can now define their map of dom/vdom attributes, allowing for smoother transition between frameworks and/or vanillajs
+  - added attrs shortcut through form object
+  - massive fixes on attributes api and way of working
+  - established seamless experience for setting up attributes type through form setups.
 - [ ] document validators like vFile
 - [ ] reduce bundle size
 - [ ] make a website for better documentation and recognisabity.

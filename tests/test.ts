@@ -162,6 +162,11 @@ const form = createForm(
 		},
 	},
 	{
+		attrs: {
+			map: {
+				gee: "vdom",
+			},
+		},
 		onMount: ({ fields }, listen) => {
 			// init.extras.gender?.[0].
 			// console.log("mounted form loginform :: ", init);
@@ -178,7 +183,35 @@ const form = createForm(
 	},
 );
 
-form.fields.name.store.get().attrs.input;
+const cc = createFormSetup({
+	attrs: {
+		map: {
+			wow: "vdom",
+		},
+	},
+});
+
+const myForm = cc(
+	{
+		name: {
+			type: "select.radio",
+			attrs: {
+				map: {
+					// sadge: "dom"
+					dom: "vdom",
+				},
+			},
+		},
+	},
+	{
+		attrs: {
+			map: {
+				dom: "vdom",
+			},
+		},
+	},
+);
+myForm.fields.name.store.get().attrs.trigger;
 
 // const name = form.fields.name.attrsVH.useStore();
 // vanilla

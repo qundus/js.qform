@@ -27,6 +27,8 @@ export function prepareOptions<O extends Form.Options>(options?: O) {
 	result.ssr = result.ssr ?? isServerSide();
 
 	// checks
+
+	// fatal checks
 	if (typeof result.ssr !== "boolean") {
 		// better to let user know their doing a mistake than handling all edge cases
 		throw new Error("qform: ssr option must be a boolean!");

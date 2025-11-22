@@ -51,6 +51,20 @@ export function setupOptionsMerger<G extends Form.Options>(_base?: G) {
 			};
 		}
 
+		// attributes
+		if (base?.attrs != null || target?.attrs != null) {
+			merged.attrs = {
+				...base.attrs,
+				...target.attrs,
+			};
+			if (merged.attrs.map != null) {
+				merged.attrs.map = {
+					...base.attrs?.map,
+					...target.attrs?.map,
+				};
+			}
+		}
+
 		return merged as any;
 	};
 }

@@ -34,7 +34,35 @@ export function processAttrs<S extends Field.Setup, O extends Form.Options>(
 		basic.store.set(next as any);
 	}
 
-	return { vdom, dom, ref: makeDomRef(basic.key, dom) };
+	const result = {
+		get ref() {
+			return makeDomRef(basic.key, dom);
+		},
+		get vdom() {
+			return vdom;
+		},
+		get dom() {
+			return dom;
+		},
+	};
+
+	// check user defined pairs of keys-attrType
+	if (basic.setup.attrs?.map != null) {
+		for (const key in basic.setup.attrs.map) {
+			// prevent override of original keys
+			if (key === "dom" || key === "vdom" || key === "ref") {
+				continue;
+			}
+			const attrType = basic.setup.attrs.map[key];
+			Object.defineProperty(result, key, {
+				get() {
+					return attrType === "dom" ? dom : vdom;
+				},
+			});
+		}
+	}
+
+	return result;
 }
 
 export function makeDomRef(key: string, attrs: any) {
