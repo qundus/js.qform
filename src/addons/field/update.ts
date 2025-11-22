@@ -2,13 +2,10 @@ import type { Extras, Field, Form, FunctionProps } from "../../_model";
 import { FIELD, type MISC } from "../../const";
 
 type Configs = { preprocess?: boolean; validate?: boolean };
-export interface FieldAddonUpdate<S extends Field.Setup, O extends Form.Options> {
+export interface FieldAddonUpdate<S extends Field.Setup, O extends Form.Options, V = S["value"]> {
 	value: {
-		<V extends S["value"]>(
-			value: V | undefined | null,
-			configs?: Pick<Configs, "preprocess" | "validate">,
-		): void;
-		<V extends S["value"]>(
+		(value: V | undefined | null, configs?: Pick<Configs, "preprocess" | "validate">): void;
+		(
 			value: (prev: V) => V | undefined | null,
 			configs?: Pick<Configs, "preprocess" | "validate">,
 		): void;

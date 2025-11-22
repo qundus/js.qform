@@ -321,7 +321,7 @@ export namespace Field {
 	>;
 
 	// factory
-	export type Factory<S extends Setup<any>, O extends Form.Options> = {
+	export type Factory<S extends Setup, O extends Form.Options> = {
 		readonly key: string;
 		readonly setup: S;
 		// addons
@@ -332,7 +332,12 @@ export namespace Field {
 		readonly store: Store<S, O>;
 		readonly storeh: "hooks" extends keyof Store<S, O> ? Store<S, O>["hooks"] : undefined;
 	};
-	export type Component<T extends Type> = Omit<Factory<Setup<T, any>, Form.Options>, "storeh">;
+	export type Component<T extends Type> = Omit<
+		Factory<Setup<T>, Form.Options>,
+		"storeh" | "update"
+	> & {
+		readonly update: FieldAddonUpdate<Setup<T>, Form.Options, any>;
+	};
 }
 
 export namespace Extras {
