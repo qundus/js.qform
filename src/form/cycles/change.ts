@@ -2,6 +2,7 @@ import { effect, task, batched, computed } from "@qundus/qstate";
 import type { Addon, Field, Form, FunctionProps } from "../../_model";
 import { FIELD, FORM } from "../../const";
 import { isServerSide } from "@qundus/qstate/checks";
+import { createAttributes } from "../attributes";
 
 export function changeCycle<F extends Form.Fields, O extends Form.Options<F>>(
 	props: FunctionProps.FormCycle<F, O>,
@@ -73,6 +74,7 @@ export function changeCycle<F extends Form.Fields, O extends Form.Options<F>>(
 		// before proceeding, check if all fields mounted
 		const allFieldsMounted = count.mounted >= stores.length;
 		if (!allFieldsMounted) {
+			$next.attrs = createAttributes(props);
 			store.set({ ...$next });
 			return;
 		}
@@ -120,6 +122,7 @@ export function changeCycle<F extends Form.Fields, O extends Form.Options<F>>(
 		}
 
 		// console.log("form batched :: ", $next);
+		$next.attrs = createAttributes(props);
 		store.set({ ...$next });
 	});
 }

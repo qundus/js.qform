@@ -13,7 +13,6 @@ import { setupOptionsMerger } from "../methods/setup-options-merger";
 import { prepareOptions } from "./preparations/options";
 // import { mountCycle } from "./cycles/mount";
 import { changeCycle } from "./cycles/change";
-import { createAttributes } from "./attributes";
 
 export function createForm<
 	I extends Form.FieldsIn,
