@@ -55,7 +55,6 @@ export const tel = createField("tel", {
 
 const form = createForm(
 	{
-		name: null,
 		color: "color",
 		email: {
 			type: "email",
@@ -96,9 +95,9 @@ const form = createForm(
 				return undefined;
 			},
 			type: "select.radio",
-			onRender: ({ key, attrFor, attrs }) => {
+			onAttrs: ({ key, attrFor, attrs }) => {
 				if (attrFor === "input") {
-					// attrs.
+					attrs.wow = "string";
 				}
 				console.log("process element :: ", key);
 			},
@@ -153,6 +152,14 @@ const form = createForm(
 			// 	{ label: "female", value: "female", garage: "wow" },
 			// ],
 		},
+		name: {
+			type: "text",
+			attrs: {
+				map: {
+					wow: "dom",
+				},
+			},
+		},
 	},
 	{
 		onMount: ({ fields }, listen) => {
@@ -170,6 +177,8 @@ const form = createForm(
 		},
 	},
 );
+
+form.fields.name.store.get().attrs.input;
 
 // const name = form.fields.name.attrsVH.useStore();
 // vanilla

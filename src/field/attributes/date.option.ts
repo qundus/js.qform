@@ -12,11 +12,7 @@ import MINUTE from "./helpers/date/MINUTE";
 import SECOND from "./helpers/date/SECOND";
 import { processAttrs } from "../processors/attributes";
 
-export function renderAttributesDateOption<
-	S extends Field.Setup,
-	O extends Form.Options,
-	A extends Attributes.Objects.Type,
->(
+export function renderAttributesDateOption<S extends Field.Setup, O extends Form.Options>(
 	basic: FunctionProps.Field<S, O>,
 	state: Field.StoreObject<Field.Setup<"date">, O>,
 	option: Extras.Date.Option,

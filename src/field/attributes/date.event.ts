@@ -13,11 +13,7 @@ import MINUTE from "./helpers/date/MINUTE";
 import SECOND from "./helpers/date/SECOND";
 import { processAttrs } from "../processors/attributes";
 
-export function renderAttributesDateEvent<
-	S extends Field.Setup,
-	O extends Form.Options,
-	A extends Attributes.Objects.Type,
->(
+export function renderAttributesDateEvent<S extends Field.Setup, O extends Form.Options>(
 	basic: FunctionProps.Field<S, O>,
 	state: Field.StoreObject<Field.Setup<"date">, O>,
 	_event: keyof typeof CALENDAR.EVENTS | CALENDAR.EVENTS,

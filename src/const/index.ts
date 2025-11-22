@@ -18,6 +18,7 @@ export const IGNORED_SETUP_KEYS = {
 	checkbox: undefined,
 	tel: undefined,
 	date: undefined,
+	attrs: undefined,
 } as Pick<
 	Field.Setup,
 	// make sure to update the keys above
@@ -37,9 +38,8 @@ export const IGNORED_SETUP_KEYS = {
 	| "checkbox"
 	| "tel"
 	| "date"
-	// | "selections"
-	// | "selectionsValueKey"
-	// | "selectionsLabelKey"
+	//
+	| "attrs"
 >;
 
 export namespace FORM {

@@ -95,15 +95,15 @@ export namespace Field {
 		} /** this is the final attributes passed to the element */ & (
 			| {
 					attrFor: "input";
-					attrs: Attributes.Objects.Input<Setup<T>, Form.Options, "vdom">;
+					attrs: Attributes.Standard.Input;
 			  }
 			| {
 					attrFor: "trigger";
-					attrs: Attributes.Objects.SelectTrigger<Setup<T>, Form.Options, "vdom">;
+					attrs: Attributes.Select.Trigger;
 			  }
 			| {
 					attrFor: "option";
-					attrs: Attributes.Objects.SelectOption<Setup<T>, Form.Options, "vdom">;
+					attrs: Attributes.Select.Option;
 			  }
 			// TODO: finish attrFor for date types
 		),
@@ -219,6 +219,9 @@ export namespace Field {
 		select?: T extends "select" | "select.radio" ? Extras.Select.In : never;
 		checkbox?: T extends "checkbox" ? Extras.Checkbox.In : never;
 		date?: T extends "date" ? Partial<Extras.Date.In> : never;
+
+		//## attributes
+		attrs?: Attributes.Setup;
 	};
 
 	// converters
@@ -874,6 +877,9 @@ export namespace Form {
 		 */
 		flatLabelJoinChar?: string;
 
+		// attrs
+		attrs?: Attributes.Setup;
+
 		//## old ideas
 		// /**
 		//  * checks for missing/required fields results in condition.incomplete = true,
@@ -1011,23 +1017,18 @@ export namespace Addon {
 //
 
 export namespace Attributes {
-	export namespace Objects {
-		// /**
-		//  * when element props is accessed, usually the returned keys are
-		//  * all that support for html element, this gives user the option
-		//  * to choose which ones are wanted.
-		//  * @default "all";
-		//  */
-		// export type Keys = "base" | "dedicated" | "all";
-		export type Type = "dom" | "vdom";
+	export type Type = "dom" | "vdom";
 
-		type ToDom<T extends Record<string, unknown>> = {
-			[K in keyof T as `${Lowercase<K & string>}`]: T[K];
-		};
+	export type Setup = {
+		map?: Record<string, Type>;
+	};
 
-		// input
-		export type InputDom = ToDom<InputVdom>;
-		export type InputVdom = {
+	type ToDom<T extends Record<string, unknown>> = {
+		[K in keyof T as `${Lowercase<K & string>}`]: T[K];
+	};
+
+	export namespace Standard {
+		export interface Input extends Record<string, unknown> {
 			// ref: (element: any) => void;
 			id: string;
 			required: boolean;
@@ -1041,56 +1042,47 @@ export namespace Attributes {
 			onChange: (event: Event) => void;
 			onFocus: (event: FocusEvent) => void;
 			onBlur: (event: FocusEvent) => void;
-		};
-		export type Input<
-			S extends Field.Setup,
-			O extends Form.Options,
-			A extends Type,
-		> = (A extends "dom" ? InputDom : InputVdom) & Record<string, unknown>;
+		}
 
-		// select
-		export type SelectTriggerDom = ToDom<SelectTriggerVdom>;
-		export type SelectTriggerVdom = {
+		// export type AllInputDom = HTMLInputElement;
+		// export type AllInputVdom = PJSX.IntrinsicElements["input"];
+	}
+
+	export namespace Select {
+		export interface Trigger extends Record<string, unknown> {
 			// ref: (element: any) => void;
 			onClick: (event: Event) => void;
 			name: string;
 			value: any;
-		};
-		export type SelectTrigger<
-			S extends Field.Setup,
-			O extends Form.Options,
-			A extends Type,
-		> = (A extends "dom" ? SelectTriggerDom : SelectTriggerVdom) & Record<string, unknown>;
+		}
 
-		// option
-		export type SelectOptionDom = ToDom<SelectOptionVdom>;
-		export type SelectOptionVdom = {
+		export interface Option extends Record<string, unknown> {
 			// ref: (element: any) => void;
 			value: any;
 			selected: boolean;
 			onClick: (event: Event) => void;
-		};
+		}
 
-		export type SelectOptionRadioDom = ToDom<SelectOptionRadioVdom>;
-		export type SelectOptionRadioVdom = {
+		export interface Radio extends Record<string, unknown> {
 			// ref: (element: any) => void;
 			value: any;
 			selected: boolean;
 			// onClick: (event: Event) => void;
-		};
-		export type SelectOption<
-			S extends Field.Setup,
-			O extends Form.Options,
-			A extends Type,
-		> = S extends {
-			type: "select";
 		}
-			? (A extends "dom" ? SelectOptionDom : SelectOptionVdom) & Record<string, unknown>
-			: (A extends "dom" ? SelectOptionRadioDom : SelectOptionRadioVdom) & Record<string, unknown>;
 
-		// date
-		export type DateInputDom = ToDom<DateInputVdom>;
-		export type DateInputVdom = {
+		// export type SelectOption<
+		// 	S extends Field.Setup,
+		// 	O extends Form.Options,
+		// 	A extends Type,
+		// > = S extends {
+		// 	type: "select";
+		// }
+		// 	? (A extends "dom" ? SelectOptionDom : SelectOptionVdom) & Record<string, unknown>
+		// 	: (A extends "dom" ? SelectOptionRadioDom : SelectOptionRadioVdom) & Record<string, unknown>;
+	}
+
+	export namespace Date {
+		export interface Input extends Record<string, unknown> {
 			// ref: (element: any) => void;
 			id: string;
 			required: boolean;
@@ -1098,69 +1090,43 @@ export namespace Attributes {
 			autoComplete: "on" | "off";
 			type: string; // not linking to Field.Type to avoid issues with html.input.type
 			name: string;
-		};
-		export type DateInput<
-			S extends Field.Setup,
-			O extends Form.Options,
-			A extends Type,
-		> = (A extends "dom" ? DateInputDom : DateInputVdom) & Record<string, unknown>;
+		}
 
-		// date
-		export type DateEventDom = ToDom<DateEventVdom>;
-		export type DateEventVdom = {
+		export interface Event extends Record<string, unknown> {
 			// ref: (element: any) => void;
 			id: string;
 			name: string;
 			onClick: (event: Event) => void;
-		};
-		export type DateEvent<
-			S extends Field.Setup,
-			O extends Form.Options,
-			A extends Type,
-		> = (A extends "dom" ? DateEventDom : DateEventVdom) & Record<string, unknown>;
+		}
 
-		export type DateCellDom = ToDom<DateCellVdom>;
-		export type DateCellVdom = {
+		export interface Cell extends Record<string, unknown> {
 			// ref: (element: any) => void;
 			id: string;
 			name: string;
 			onClick: (event: Event) => void;
-		};
-		export type DateCell<
-			S extends Field.Setup,
-			O extends Form.Options,
-			A extends Type,
-		> = (A extends "dom" ? DateCellDom : DateCellVdom) & Record<string, unknown>;
+		}
 
-		export type DateOptionDom = ToDom<DateOptionVdom>;
-		export type DateOptionVdom = {
+		export interface Option extends Record<string, unknown> {
 			// ref: (element: any) => void;
 			id: string;
 			name: string;
 			onClick: (event: Event) => void;
-		};
-		export type DateOption<
-			S extends Field.Setup,
-			O extends Form.Options,
-			A extends Type,
-		> = (A extends "dom" ? DateOptionDom : DateOptionVdom) & Record<string, unknown>;
-
-		// all
-		export type AllInputDom = HTMLInputElement;
-		export type AllInputVdom = PJSX.IntrinsicElements["input"];
-
-		// factory
-		export type Factory<R> = R;
+		}
 	}
 
-	// export type ProcessedAttributes<
-	// 	S extends Field.Setup,
-	// 	O extends Form.Options,
-	// > = {
-	// 	ref: (element: any) => void;
-	// 	dom: Objects.SelectTrigger<S, O, "dom">;
-	// 	vdom: Objects.SelectTrigger<S, O, "vdom">;
-	// };
+	type Attrs<
+		S extends Field.Setup,
+		O extends Form.Options,
+		T extends Record<string, any>,
+	> = (S["attrs"] extends object
+		? S["attrs"]["map"] extends Record<any, any>
+			? { [K in keyof S["attrs"]["map"]]: "vdom" extends S["attrs"]["map"] ? T : ToDom<T> }
+			: {}
+		: {}) & {
+		ref: (element: any) => void;
+		vdom: T;
+		dom: ToDom<T>;
+	};
 
 	// TODO: create a dynamically named and created attributes for dom
 	// based on a user set option, something like attrType: {mine: 'vdom'}
@@ -1168,49 +1134,26 @@ export namespace Attributes {
 	// this allows for smother transition from one framework to another by
 	// just changing the 'mine' dom attributes type :) when using
 
-	export type Factory<S extends Field.Setup, O extends Form.Options> = S extends
-		| { type: "select" }
-		| { type: "select.radio" }
+	export type Factory<S extends Field.Setup, O extends Form.Options> = S extends { type: "select" }
 		? {
-				trigger: {
-					ref: (element: any) => void;
-					dom: Objects.SelectTrigger<S, O, "dom">;
-					vdom: Objects.SelectTrigger<S, O, "vdom">;
-				};
-				option: (option: any) => {
-					ref: (element: any) => void;
-					dom: Objects.SelectOption<S, O, "dom">;
-					vdom: Objects.SelectOption<S, O, "vdom">;
-				};
+				trigger: Attrs<S, O, Select.Trigger>;
+				option: (option: any) => Attrs<S, O, Select.Option>;
 			}
-		: S extends { type: "date" }
+		: S extends { type: "select.radio" }
 			? {
-					input: {
-						ref: (element: any) => void;
-						dom: Objects.DateInput<S, O, "dom">;
-						vdom: Objects.DateInput<S, O, "vdom">;
-					};
-					event(event: CALENDAR.EVENTS | keyof typeof CALENDAR.EVENTS): {
-						ref: (element: any) => void;
-						dom: Objects.DateEvent<S, O, "dom">;
-						vdom: Objects.DateEvent<S, O, "vdom">;
-					};
-					cell(cell: Extras.Date.CellDate | Extras.Date.CellTime | DateAttributeCells): {
-						ref: (element: any) => void;
-						dom: Objects.DateCell<S, O, "dom">;
-						vdom: Objects.DateCell<S, O, "vdom">;
-					};
-					option(option: Extras.Date.Option): {
-						ref: (element: any) => void;
-						dom: Objects.DateOption<S, O, "dom">;
-						vdom: Objects.DateOption<S, O, "vdom">;
-					};
+					trigger: Attrs<S, O, Select.Trigger>;
+					option: (option: any) => Attrs<S, O, Select.Radio>;
 				}
-			: {
-					input: {
-						ref: (element: any) => void;
-						dom: Objects.Input<S, O, "dom">;
-						vdom: Objects.Input<S, O, "vdom">;
+			: S extends { type: "date" }
+				? {
+						input: Attrs<S, O, Date.Input>;
+						event(event: CALENDAR.EVENTS | keyof typeof CALENDAR.EVENTS): Attrs<S, O, Date.Event>;
+						cell(
+							cell: Extras.Date.CellDate | Extras.Date.CellTime | DateAttributeCells,
+						): Attrs<S, O, Date.Cell>;
+						option(option: Extras.Date.Option): Attrs<S, O, Date.Option>;
+					}
+				: {
+						input: Attrs<S, O, Standard.Input>;
 					};
-				};
 }
