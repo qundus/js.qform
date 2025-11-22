@@ -15,6 +15,7 @@ it feels absolutly bizzare how html forms have become framework dedicated soluti
 <img width="150px" height="50px" src="https://img.shields.io/badge/features-yellow?style=for-the-badge" />
 <br />
 
+- handles all types of input
 - Clear separation of concern between data logic and markup/style
 - Independant and straight forward form logic
 - support for framework specific hooks through [qState]
@@ -33,7 +34,7 @@ it feels absolutly bizzare how html forms have become framework dedicated soluti
 <img width="150px" height="50px" src="https://img.shields.io/badge/disclaimer-red?style=for-the-badge" />
 <br />
 
-i need testers please, i also need help with svelte and vue frameworks as well, any help is much appreciated before the code source is available to the public somewhere in the next 2 months/early 2026
+i need testers please, i also need help with svelte and vue frameworks as well, any help/complaints/requests/bugs through github issues is much appreciated, thanks.
 
 <!-- installation -->
 <br />

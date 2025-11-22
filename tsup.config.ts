@@ -40,7 +40,7 @@ export default defineConfig((options) => {
 			outDir: "./dist",
 			clean: true, // Clean dist folder
 			splitting: true,
-			sourcemap: true, // Optional: for debugging
+			// sourcemap: true, // Optional: for debugging
 			minify: true,
 			treeshake: "recommended",
 			dts: true, // Generate .d.ts type files

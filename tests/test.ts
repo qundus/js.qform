@@ -197,8 +197,7 @@ const myForm = cc(
 			type: "select.radio",
 			attrs: {
 				map: {
-					// sadge: "dom"
-					dom: "vdom",
+					sadge: "dom",
 				},
 			},
 		},
@@ -213,6 +212,7 @@ const myForm = cc(
 );
 myForm.fields.name.store.get().attrs.trigger;
 
+myForm.store.subscribe((value) => {});
 // const name = form.fields.name.attrsVH.useStore();
 // vanilla
 // form.store.listen((value) => {
